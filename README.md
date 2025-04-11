@@ -1,9 +1,16 @@
 # Surge
 
-### Overview
 Surge is an advanced penetration testing framework that leverages Artificial Intelligence (AI) and Machine Learning (ML) to automate security testing and vulnerability assessment for target networks. The tool is designed to intelligently assess network stacks and topologies, detect vulnerabilities, prioritize them based on risk and impact, and suggest remediation strategies. A user-friendly web application provides a comprehensive overview, allowing security professionals to quickly understand potential threats, review exploit details, and implement solutions.
+
+## Table of Contents
+- [Key Features](#key-features)
+- [Architecture](#architecture)
+- [Technologies and Tools](#technologies-and-tools)
+- [Contributing](#contributing)
+- [Contact](#contact)
+- [License](#license)
  
-### Key Features
+## Key Features
 - **Network Topology Mapping**
     The system traces the network stack to visualize the network architecture, identifying connected devices, open ports, and potential entry points.
 
@@ -22,7 +29,7 @@ Surge is an advanced penetration testing framework that leverages Artificial Int
 	- **Detail Views:** In-depth information on each vulnerability, including potential exploits and mitigation strategies.
 	- **Historical Data:** Logs and past assessment reports to monitor trends and improvements over time.
 
-### Architecture
+## Architecture
 The application is modular, separating concerns across several components:
 1. Data Collection Module
 	- Responsible for network scanning and topology mapping.
@@ -41,9 +48,21 @@ The application is modular, separating concerns across several components:
 	- Exposes RESTful endpoints for interfacing with third-party security tools and automation systems.
 	- Supports integration with CI/CD pipelines and security information and event management (SIEM) systems.
 
-### Technologies and Tools
+## Technologies and Tools
 **Programming Languages:** Python (for backend scanning, AI/ML modules), JavaScript/TypeScript (for frontend development)
 **Machine Learning Libraries:** TensorFlow, Scikit-learn, PyTorch (depending on the algorithm requirements)
 **Web Frameworks:** Flask or Django for the API, coupled with a modern JS framework for the frontend
 **Database:** PostgreSQL, MongoDB, or another preferred solution for storing scan results and historical data
 **Security Tools and Libraries:** Nmap (for network scanning), OpenVAS or similar for vulnerability templates, integrated with custom modules
+
+
+## Contributing
+Contributions are welcome! Please see the [CONTRIBUTING.md](CONTRIBUTING.md) file for guidelines on how to report issues or suggest improvements.
+
+## Contact
+For further information, questions, or contributions, please reach out to:
+Jonathan Contreras – jonathansaulcontreras@gmail.com
+Brianna Hinds - 
+
+## License
+This project is licensed under the MIT License.
