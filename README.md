@@ -2,8 +2,21 @@
 ## PHASE 1: Network Exploration
 - The goal of this phase is to have the agent be able to COMPLETELY discover the full network of an unknown system without being detected. It will output a map at the end of each episode and any information it learned will be used in the next episode. 
 
-*This phase is completely random and has nothing to do with a real network nor real Python networking libraries. This is used to build the initial RL model.*
+*This phase is completely random and has nothing to do with a real network nor real Python networking libraries. This phase is strictly used to build (and learn) the initial RL model.*
 
+### Phase 1 Folder Structure:
+```
+/Phase 1
+|
+|-- env/
+|   |-- network.py
+|-- model/
+|   |-- agent.py
+|-- utils/
+|   |-- log.txt
+|-- main.py
+|-- README.md
+```
 ---
 
 ALGORITHM: Deep Q-Learning (since the network is unknown)
