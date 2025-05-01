@@ -2,14 +2,25 @@ import gym
 from gym import spaces
 import networkx as nx
 import numpy as np
-import matplotlib as plt  #visualize the what the agent discovers per episode
+import matplotlib as plt  #visualize the what the agent discovers per episode (?)
 import random
 import datetime
 
-"""
-    Custom wrapper class for OpenAI Gym.
-"""
+# use ns3 (network simulator tool to simulate networks) instead of networkx 
+
+
 class NetworkEnvironment(gym.Env):
+    """
+    Custom wrapper class for OpenAI Gym.
+
+    CLASS CONTENTS
+        __init__ 
+        generate_network 
+        reset
+        _get_obs
+        step
+        render
+    """
     def __init__(self, num_nodes=20):
         super(NetworkEnvironment, self).__init__()
 
@@ -43,6 +54,8 @@ class NetworkEnvironment(gym.Env):
             self.graph.nodes[node]['open_ports'] = random.sample([22, 80, 443], k=random.randint(1, 3))
             self.graph.nodes[node]['admin'] = random.choice([True, False])
 
+        # print a picture of the graph
+
     def reset(self):
         """
         Resets the environment to the beginning of a new episode and returns the initial observation.
@@ -72,12 +85,13 @@ class NetworkEnvironment(gym.Env):
         """
         Takes an action from the agent, updates the environment, and returns the next state, reward, and done flag.
 
-        :action: Action taken by the agent.
-            - 0: port scan
-            - 1: network scan (try unknown devices)
-            - 2: t-shark/sniff traffic
-            - 3: signature detection
-            - 4: anomaly rules
+        ARGS
+            action: Action taken by the agent.
+                - 0: port scan
+                - 1: network scan (try unknown devices)
+                - 2: t-shark/sniff traffic
+                - 3: signature detection
+                - 4: anomaly rules
         """
         reward = 0
         done = False
@@ -113,7 +127,6 @@ class NetworkEnvironment(gym.Env):
         with open("Phase 1\utils\log.txt", "a") as f:
             f.write(f"Timestamp: {timestamp}, Action Taken: {action_taken}")
 
-
         # if stealth is all gone
         if self.stealth_score < 0:
             done = True
@@ -124,6 +137,7 @@ class NetworkEnvironment(gym.Env):
         """
         Returns a summary of the movements of the agent.
 
-        :mode: the type of rendering (human = readable by a person)
+        ARGS
+            mode: the type of rendering (human = readable by a person)
         """
         return (f"Agent at: {self.agent_pos}, Discovered: {self.discovered}")

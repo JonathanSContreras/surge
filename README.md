@@ -6,16 +6,20 @@
 
 ### Phase 1 Folder Structure:
 ```
-/Phase 1
-|
-|-- env/
-|   |-- network.py
-|-- model/
-|   |-- agent.py
-|-- utils/
-|   |-- log.txt
-|-- main.py
-|-- README.md
+./Surge
+│   README.md
+│   
+└───Phase 1
+    │   main.py
+    │   
+    ├───env
+    │       network.py
+    │       
+    ├───model
+    │       agent.py
+    │       
+    └───utils
+            log.txt
 ```
 ---
 
@@ -41,11 +45,11 @@ STATES: (agent's current knowledge)
 The format of this will be a dictionary that summarizes the knowledge.
 
 REWARDS: 
-- -1: scan failed/detection triggered
+- -1: scan failed/detection triggered (maybe don't make this negative since negative encourages it to not go a route -> can maybe do negative reward for discovering a node it already had)
 - +1: new device discovered
 - +2: device scanned for open ports
 - +3: credential/file access gained
-- +5: full networkm discovered
+- +5: full network discovered
 The reward system will be a cumulative reward.
 
 EPISODE TERMINATION:
@@ -59,3 +63,4 @@ LEVELS (not created more so for mental notes):
 
 ENVIRONMENT CREATION:
 - networkx and custom gym.Env
+- transition out from random networkx and use ns3 (a networking tool used in research)
