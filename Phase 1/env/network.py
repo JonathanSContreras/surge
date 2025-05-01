@@ -2,7 +2,7 @@ import gym
 from gym import spaces
 import networkx as nx
 import numpy as np
-import matplotlib as plt  #visualize the what the agent discovers per episode (?)
+import matplotlib.pyplot as plt  #visualize the what the agent discovers per episode (?)
 import random
 import datetime
 
@@ -50,11 +50,18 @@ class NetworkEnvironment(gym.Env):
         """
         self.graph = nx.erdos_renyi_graph(self.num_nodes, 0.3)
         for node in self.graph.nodes:
-            self.graph.nodes[node]['ip'] = f"192.168.0.{node}"
-            self.graph.nodes[node]['open_ports'] = random.sample([22, 80, 443], k=random.randint(1, 3))
-            self.graph.nodes[node]['admin'] = random.choice([True, False])
+            self.graph.nodes[node]["ip"] = f"192.168.0.{node}"
+            self.graph.nodes[node]["open_ports"] = random.sample([22, 80, 443], k=random.randint(1, 3))
+            self.graph.nodes[node]["admin"] = random.choice([True, False])  # TUNE THIS LATER SO THAT WE GET AT LEAST 1 ADMIN
+
+            # change graph appearance
+            # large yellow node if admin
+            node_sizes = [1000 if self.graph.nodes[node]["admin"] == True else 300]
+            color_map = ["#ffb703" if self.graph.nodes[node]["admin"] == True else "#1f78b4"]
 
         # print a picture of the graph
+        nx.draw(self.graph, with_labels=True, node_size=node_sizes, node_color=color_map, pos=nx.spring_layout(self.graph))
+        plt.savefig("network.png")
 
     def reset(self):
         """
@@ -106,6 +113,8 @@ class NetworkEnvironment(gym.Env):
                 if n not in self.discovered:
                     self.discovered.add(n)
                     reward += 1
+                else:  # negative reward for going back to a discovered node (prevents infinite loops)
+                    reward -= 2
             action_taken = "network scan"
         elif action == 2:  # t-shark
             reward += 2
@@ -124,7 +133,7 @@ class NetworkEnvironment(gym.Env):
 
         # write to a log file
         timestamp = datetime.datetime.now()
-        with open("Phase 1\utils\log.txt", "a") as f:
+        with open("./Phase 1/utils/log.txt", "a") as f:
             f.write(f"Timestamp: {timestamp}, Action Taken: {action_taken}")
 
         # if stealth is all gone
@@ -141,3 +150,10 @@ class NetworkEnvironment(gym.Env):
             mode: the type of rendering (human = readable by a person)
         """
         return (f"Agent at: {self.agent_pos}, Discovered: {self.discovered}")
+    
+
+# testing network generation
+if __name__ == "__main__":
+    nw = NetworkEnvironment()
+    nw.generate_network()
+
