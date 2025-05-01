@@ -8,6 +8,14 @@ import datetime
 
 # use ns3 (network simulator tool to simulate networks) instead of networkx 
 
+"""
+TODO:
+mess with the following methods and variables
+- self.viewer()
+- close()
+
+"""
+
 
 class NetworkEnvironment(gym.Env):
     """
@@ -21,7 +29,7 @@ class NetworkEnvironment(gym.Env):
         step
         render
     """
-    def __init__(self, num_nodes=20):
+    def __init__(self, num_nodes=20, delay=0.05):
         super(NetworkEnvironment, self).__init__()
 
         self.graph = None
@@ -29,9 +37,11 @@ class NetworkEnvironment(gym.Env):
         self.agent_pos = None
         self.discovered = set()
         self.stealth_score = 5  # reduce when detection happens
+        self.delay = delay
 
         # actions (0-4)
         self.action_space = spaces.Discrete(5)
+        nA = len(self.action_space)  # number of actions
 
         # observation: discovered nodes + current node ID + stealth
         self.observation_space = spaces.Dict({
@@ -142,18 +152,40 @@ class NetworkEnvironment(gym.Env):
 
         return self._get_obs(), reward, done, {}
 
-    def render(self, mode="human"):
+    def render(self, mode="human", done=False):
         """
         Returns a summary of the movements of the agent.
 
         ARGS
             mode: the type of rendering (human = readable by a person)
         """
-        return (f"Agent at: {self.agent_pos}, Discovered: {self.discovered}")
+        if done:
+            sleep_time = 1
+        else:
+            sleep_time = self.delay
+            return (f"Agent at: {self.agent_pos}, Discovered: {self.discovered}")
     
+    def close(self):
+        if self.viewer:
+            self.viewer.close()
+            self.viewer = None
 
 # testing network generation
 if __name__ == "__main__":
     nw = NetworkEnvironment()
     nw.generate_network()
 
+
+    env = NetworkEnvironment()
+    for i in range(1):
+        s = env.reset()
+        env.render()
+        while True:
+            action = np.random.choice(env.nA)
+            res = env.step(action)
+            print(f"Action: {env.s}, {action}, -> {res}")
+            env.render(done=res[2])
+            if res[2]:
+                break
+
+    env.close()

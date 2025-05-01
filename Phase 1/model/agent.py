@@ -34,7 +34,7 @@ class Agent:
         Returns an action based on the e-greedy policy. A random uniform number is selected to determine whether the next action should be random or deterministic.
 
         ARGS
-            state: 
+            state: current condition of the agent (the agent's knowledge)
         """
 
         if np.random.uniform() < self.epsilon_greedy:
@@ -48,11 +48,33 @@ class Agent:
 
         return action
 
-    def _learn(self):
-        pass
+    def _learn(self, transition):
+        """
+        Updates the rule for the Q-learning algorithn.
 
-    def adjust_epsilon(self):
-        pass
+        ARGS
+            transition:
+        """
+        s, a, r, next_s, done = transition
+        q_val = self.q_table[s][a]
+
+        if done:
+            q_target = r
+        else:
+            q_target = r + self.discount_factor*np.max(self.q_table[next_s])
+
+        # update q_table
+        self.q_table[s][a] += self.lr * (q_target - q_val)
+
+        # adjust the epsilon
+        self._adjust_epsilon()
+
+    def _adjust_epsilon(self):
+        """
+        Adjusts the epsilon value until it reaches the minimum epsilon value.
+        """
+        if self.epsilon_greedy > self.epsilon_min:
+            self.epsilon_greedy *= self.decay
 
     def display_state(self):
         """
@@ -60,5 +82,4 @@ class Agent:
             - green nodes = discovered
             - red nodes = not discovered
         """
-        if self.epsilon_greedy > self.epsilon_min:
-            self.epsilon_greedy *= self.decay
+        pass
