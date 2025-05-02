@@ -41,7 +41,7 @@ class NetworkEnvironment(gym.Env):
 
         # actions (0-4)
         self.action_space = spaces.Discrete(5)
-        nA = len(self.action_space)  # number of actions
+        self.nA = len(self.action_space)  # number of actions
 
         # observation: discovered nodes + current node ID + stealth
         self.observation_space = spaces.Dict({
@@ -49,6 +49,9 @@ class NetworkEnvironment(gym.Env):
             "discovered": spaces.MultiBinary(num_nodes),
             "stealth_score": spaces.Box(0, 10, shape=(1,), dtype=np.float32)
         })
+
+        # number of states (states = agent's current knowledge)
+        self.nS = len(self.observation_space)
 
         # create the random network
         self.generate_network()
@@ -170,22 +173,22 @@ class NetworkEnvironment(gym.Env):
             self.viewer.close()
             self.viewer = None
 
-# testing network generation
-if __name__ == "__main__":
-    nw = NetworkEnvironment()
-    nw.generate_network()
+# # testing network generation
+# if __name__ == "__main__":
+#     nw = NetworkEnvironment()
+#     nw.generate_network()
 
 
-    env = NetworkEnvironment()
-    for i in range(1):
-        s = env.reset()
-        env.render()
-        while True:
-            action = np.random.choice(env.nA)
-            res = env.step(action)
-            print(f"Action: {env.s}, {action}, -> {res}")
-            env.render(done=res[2])
-            if res[2]:
-                break
+#     env = NetworkEnvironment()
+#     for i in range(1):
+#         s = env.reset()
+#         env.render()
+#         while True:
+#             action = np.random.choice(env.nA)
+#             res = env.step(action)
+#             print(f"Action: {env.s}, {action}, -> {res}")
+#             env.render(done=res[2])
+#             if res[2]:
+#                 break
 
-    env.close()
+#     env.close()
