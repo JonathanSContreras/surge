@@ -121,6 +121,7 @@ class Agent:
 
     def select_action(self, state):
         global steps_done
+        steps_done = 0
         self.sample = random.random()
 
         self.eps_threshold = self.eps_end + (self.eps_start - self.eps_end) * math.exp(-1 * steps_done / self.eps_delay)
@@ -186,19 +187,36 @@ class Agent:
             epochs: number of times the agent will attempt to explore the network (episode ends at terminal states)
         """
         for episode in range(epochs):
-            state, pos, score = self.env.reset()
+            state, pos, score = self.env.reset().values()
+
+            """NOTE
+            state : current node the agent is at
+            pos : the position of the agent will be where the 1 is in the array of zeros
+            score : stealth score
+            """
+            print(state, pos, score)
             self.state = torch.tensor(state, dtype=torch.float32).unsqueeze(0)
 
-            for t in pos():
+            for t in pos:
+                # print(t)
+                # print(pos)
                 self.action = self.select_action(state)
+                print(f"ACTION: {self.action}")
                 observation, reward, terminated, truncated = self.env.step(self.action.item())
+                print(f"OBS: {observation}, REWARD: {reward}, WAS IT TERMINATED: {terminated}, TRUNC: {truncated}")
                 self.reward = torch.tensor([reward]) 
                 done = terminated or truncated
+
+                # flatten the observation into a vector
+                print(observation)
+                print(self.env.num_nodes)
+                flat_obs = self.env.flatten_observation(observation, self.env.num_nodes)
+
 
                 if terminated:
                     self.next_state = None
                 else:
-                    self.next_state = torch.tensor(observation, dtype=torch.float32).unsqueeze(0)
+                    self.next_state = torch.tensor(flat_obs, dtype=torch.float32).unsqueeze(0)
 
                 # store the agent's transition in memory
                 self.agent_memory.push(self.state, self.action, self.next_state, self.reward)

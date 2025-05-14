@@ -41,7 +41,8 @@ class NetworkEnvironment(gym.Env):
 
         # actions (0-4)
         self.action_space = spaces.Discrete(5)
-        self.nA = len(self.action_space)  # number of actions
+        print(f"NUMBER OF ACTIONS: {self.action_space.n}")
+        self.nA = self.action_space.n  # number of actions
 
         # observation: discovered nodes + current node ID + stealth
         self.observation_space = spaces.Dict({
@@ -80,7 +81,7 @@ class NetworkEnvironment(gym.Env):
         """
         Resets the environment to the beginning of a new episode and returns the initial observation.
         """
-        self.agent_pos = random.choice(list(self.graph_nodes))
+        self.agent_pos = random.choice(list(self.graph.nodes))
         self.discovered = {self.agent_pos}
         self.stealth_score = 5
 
@@ -98,6 +99,23 @@ class NetworkEnvironment(gym.Env):
             "discovered": discovered,
             "stealth_score": np.array([self.stealth_score], dtype=np.float32),
         }
+    
+    def flatten_observation(obs, num_nodes):
+        """
+        Converts the structured observation dict into a flat vector.
+        """
+        # One-hot encode current_node
+        current_node_vec = np.eye(num_nodes)[obs["current_node"]]
+
+        # Discovered is already binary vector of size num_nodes
+        discovered_vec = obs["discovered"]
+
+        # Stealth score is already a 1-element array
+        stealth_vec = obs["stealth_score"]
+
+        # Concatenate all into one vector
+        return np.concatenate((current_node_vec, discovered_vec, stealth_vec), axis=0)
+
     
     # NEED TO ADD MORE TO EXPLORE, DISCOVER AND DETECT
     # LOG ACTIONS

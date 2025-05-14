@@ -1,0 +1,1 @@
+Timestamp: 2025-05-14 17:22:47.069288, Action Taken: anomaly rulesTimestamp: 2025-05-14 17:23:33.541144, Action Taken: sniffing trafficTimestamp: 2025-05-14 17:26:51.320238, Action Taken: signature detectionTimestamp: 2025-05-14 17:33:14.529646, Action Taken: network scanTimestamp: 2025-05-14 17:34:53.790343, Action Taken: network scan
