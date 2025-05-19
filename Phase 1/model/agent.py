@@ -80,7 +80,7 @@ class DQN(nn.Module):
         Feed-forward function for the Deep-Q Learning NN.
 
         ARGS
-            x: 
+            x: the input data to the network
         """
         x = F.relu(self.l1(x))
         x = F.relu(self.l2(x))
@@ -90,7 +90,7 @@ class DQN(nn.Module):
 # THINK OF A NAME FOR THE AI AGENT :)
 class Agent: 
     """
-    Brain that interacts with the network environment. Manages episodes, choose actions, optimizes the DQN.
+    Brain that interacts with the network environment. Manages episodes, chooses actions, optimizes the DQN.
 
     CLASS CONTENTS
         __init__
@@ -103,13 +103,16 @@ class Agent:
         # using a epsilon greedy exploration
         self.env = env
         self.steps_done = 0
-        self.batch_size = 128
-        self.gamma = 0.99
-        self.eps_start = 0.9
-        self.eps_end = 0.05
-        self.eps_delay = 1000
-        self.tau = 0.005 #?
-        self.lr = 0.0001
+        self.batch_size = 128  # number of transitions sampled from the buffer
+        self.gamma = 0.99  # discount factor
+        self.eps_start = 0.9  # starting value of epsilon
+        self.eps_end = 0.05  # ending value of epsilon
+        self.eps_decay = 1000  # controls the rate of exponential decay (higher = slower decay)
+        self.tau = 0.005 # update rate of the target network
+        self.lr = 0.0001  # learning rate of the Adam optimizer
+
+        self.steps_done = 0
+        self.episode_durations = []
 
         # model instantiation
         self.policy_net = DQN(state_dim, action_dim)
@@ -121,12 +124,13 @@ class Agent:
         self.agent_memory = ReplayMemory(10000)
 
     def select_action(self, state):
-        global steps_done
-        steps_done = 0
+        """
+            Select an action according to an epsilon greedy policy.
+        """
         self.sample = random.random()
 
-        self.eps_threshold = self.eps_end + (self.eps_start - self.eps_end) * math.exp(-1 * steps_done / self.eps_delay)
-        steps_done += 1
+        self.eps_threshold = self.eps_end + (self.eps_start - self.eps_end) * math.exp(-1 * self.steps_done / self.eps_decay)
+        self.steps_done += 1
 
         if self.sample > self.eps_threshold:
             with torch.no_grad():
@@ -135,16 +139,20 @@ class Agent:
         else:
             return torch.tensor([[self.env.action_space.sample()]], dtype=torch.long)
         
-        self.episode_durations = []
    
     def optimize_model(self):
+        """
+            Performs a single step of the optimization.
+        """
+        print(f"agents memory length: {len(self.agent_memory)}")
+        print(f"batch size: {self.batch_size}")
         if len(self.agent_memory) < self.batch_size:
             return
         
+        # sample and concatentate random batch
+        # https://stackoverflow.com/a/19343/3343043  converts batch-array of Transitions to Transition of batch-arrays
         self.transitions = self.agent_memory.sample(self.batch_size)
-        
-        # transpose batch
-        self.batch = Transition(*zip(self.transitions))
+        self.batch = Transition(*zip(*self.transitions))
 
         # compute mask of non-final states and concatenate the batch elements
         self.non_final_mask = torch.tensor(tuple(map(lambda s: s is not None, self.batch.next_state)), dtype=torch.bool)
@@ -153,7 +161,7 @@ class Agent:
         self.action_batch = torch.cat(self.batch.action)
         self.reward_batch = torch.cat(self.batch.reward)
 
-        # compute Q(s_t, a) -> actions that would have been taken for each state according to policy_net
+        # compute Q(s_t, a) -> the model will compute Q(s_t) and then the actions that would have been taken for each state according to policy_net
         self.state_action_values = self.policy_net(self.state_batch).gather(1, self.action_batch)
 
         # compute V(s_{t+1}) -> expected value of actions for non-final-next-states
@@ -188,6 +196,7 @@ class Agent:
             epochs: number of times the agent will attempt to explore the network (episode ends at terminal states)
         """
         for episode in range(epochs):
+            # reset the environment and get the initial state
             state, pos, score = self.env.reset().values()
 
             """NOTE
@@ -206,15 +215,14 @@ class Agent:
                 print(f"ACTION: {self.action}")
                 observation, reward, terminated, truncated = self.env.step(self.action.item())
                 # print(f"OBS: {observation}, REWARD: {reward}, WAS IT TERMINATED: {terminated}, TRUNC: {truncated}")
-                self.env.render()
+                self.env.render()  # graph of what the agent just discovered
                 self.reward = torch.tensor([reward]) 
                 done = terminated or truncated
 
                 # flatten the observation into a vector
-                print(observation)
-                print(self.env.num_nodes)
+                # print(observation)
+                # print(self.env.num_nodes)
                 flat_obs = self.env.flatten_observation(observation, self.env.num_nodes)
-
 
                 if terminated:
                     self.next_state = None
@@ -227,6 +235,7 @@ class Agent:
                 # move to the next state
                 self.state = self.next_state
                 self.total_reward = self.reward.item()
+                print(f"New state: {self.state}, Total reward: {self.total_reward}")
 
                 # perform one step of the optimization (on policy network)
                 self.optimize_model()
@@ -236,12 +245,12 @@ class Agent:
                 self.policy_net_state_dict = self.policy_net.state_dict()
 
                 for key in self.policy_net_state_dict:
-                    self.target_net_state_dict[key] = self.policy_net_state_dict[key]*self.tau + self.target_net_state_dict[key]*(1-self.tau)
+                    self.target_net_state_dict[key] = self.policy_net_state_dict[key] * self.tau + self.target_net_state_dict[key] * (1 - self.tau)
                 
                 self.target_net.load_state_dict(self.target_net_state_dict)
 
                 if done:
-                    self.episode_duration.append(t+1)
+                    self.episode_durations.append(t + 1)
                     self.plot_durations()
                     break
 
@@ -249,6 +258,9 @@ class Agent:
 
         
     def plot_durations(self, show_results=False):
+        """
+            Helper for plotting duration of episodes.
+        """
         plt.figure(1)
         self.durations_t = torch.tensor(self.episode_durations, dtype=torch.float)
 

@@ -12,5 +12,6 @@ bob = Agent(environment, state_size, action_size)  # ERROR AGENT self.state line
 
 # run an episode loop
 print("Starting training loop")
-bob.training(500)
+epochs = 100
+bob.training(epochs)  
 print("Training done.")

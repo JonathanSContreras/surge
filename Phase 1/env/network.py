@@ -43,6 +43,9 @@ class NetworkEnvironment(gym.Env):
         self.stealth_score = 5  # reduce when detection happens
         self.delay = delay
 
+        # used to keep track of agent's journey
+        self.agent_step = 0
+
         # actions (0-9)
         self.action_space = spaces.Discrete(11)
         print(f"NUMBER OF ACTIONS: {self.action_space.n}")
@@ -88,7 +91,6 @@ class NetworkEnvironment(gym.Env):
         plt.show()
 
         # return G
-
 
     def reset(self):
         """
@@ -237,8 +239,6 @@ class NetworkEnvironment(gym.Env):
         ARGS
             mode: the type of rendering (human = readable by a person)
         """
-        global agent_step
-        agent_step = 0 
         G = self.graph
         node_color = []
 
@@ -257,8 +257,8 @@ class NetworkEnvironment(gym.Env):
         plt.title(f"Agent at: {self.agent_pos} | Discovered: {self.discovered} | Stealth: {self.stealth_score}")
         plt.pause(0.5)
 
-        plt.savefig(f"Phase 1\model\journey\step{agent_step}.png")
-        agent_step += 1
+        plt.savefig(f"Phase 1\model\journey\step{self.agent_posagent_step}.png")
+        self.agent_step += 1
         plt.show()
 
         return (f"Agent at: {self.agent_pos} | Discovered: {self.discovered} | Stealth: {self.stealth_score}")
