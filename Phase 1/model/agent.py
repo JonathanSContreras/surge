@@ -17,7 +17,7 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 
-# REPLAY MEMORY
+# REPLAY MEMORY: experience replay
 Transition = namedtuple("Transition", ("state", "action", "next_state", "reward"))
 
 class ReplayMemory(object):
@@ -100,6 +100,7 @@ class Agent:
     """
     def __init__(self, env, state_dim, action_dim):
         # hyperparameter definitions
+        # using a epsilon greedy exploration
         self.env = env
         self.steps_done = 0
         self.batch_size = 128
@@ -197,13 +198,15 @@ class Agent:
             print(state, pos, score)
             self.state = torch.tensor(state, dtype=torch.float32).unsqueeze(0)
 
-            for t in pos:
+            max_steps_per_episode = 100
+            for t in range(max_steps_per_episode):
                 # print(t)
                 # print(pos)
                 self.action = self.select_action(state)
                 print(f"ACTION: {self.action}")
                 observation, reward, terminated, truncated = self.env.step(self.action.item())
                 print(f"OBS: {observation}, REWARD: {reward}, WAS IT TERMINATED: {terminated}, TRUNC: {truncated}")
+                self.env.render()
                 self.reward = torch.tensor([reward]) 
                 done = terminated or truncated
 
@@ -243,7 +246,6 @@ class Agent:
                     break
 
             print(f"Episode {episode + 1}, Total Reward: {self.total_reward}")
-
 
         
     def plot_durations(self, show_results=False):
