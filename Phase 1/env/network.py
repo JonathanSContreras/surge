@@ -119,14 +119,12 @@ class NetworkEnvironment(gym.Env):
         """
         Converts the structured observation dict into a flat vector.
         """
-        # One-hot encode current_node
-        current_node_vec = np.eye(num_nodes)[obs["current_node"]]
-
-        # Discovered is already binary vector of size num_nodes
+        print(obs["current_node"])
+        current_node_vec = np.eye(num_nodes)[obs["current_node"]]  # one hot encoding of position
         discovered_vec = obs["discovered"]
-
-        # Stealth score is already a 1-element array
         stealth_vec = obs["stealth_score"]
+
+        print("in flatten_observation method:", current_node_vec, discovered_vec, stealth_vec)
 
         # Concatenate all into one vector
         return np.concatenate((current_node_vec, discovered_vec, stealth_vec), axis=0)
@@ -168,7 +166,7 @@ class NetworkEnvironment(gym.Env):
 
         elif action == 2:  # t-shark
             self._sniff()
-            reward += 2
+            reward += 1
             action_taken = "sniffing traffic"
 
         elif action == 3:  # banner grab
@@ -183,17 +181,17 @@ class NetworkEnvironment(gym.Env):
 
         elif action == 5:  # exploit service
             self._exploit_service()
-            reward += 3
+            reward += 1
             action_taken = "exploit service"
 
         elif action == 6:  # pivot host
             self._pivot_host()
-            reward += 3
+            reward += 1
             action_taken = "pivot host"
 
         elif action == 7:  # download files
             self._download_file()
-            reward += 3
+            reward += 2
             action_taken = "downloading files"
 
         elif action == 8:  # compress files
@@ -257,7 +255,7 @@ class NetworkEnvironment(gym.Env):
         plt.title(f"Agent at: {self.agent_pos} | Discovered: {self.discovered} | Stealth: {self.stealth_score}")
         plt.pause(0.5)
 
-        plt.savefig(f"Phase 1\model\journey\step{self.agent_posagent_step}.png")
+        plt.savefig(f"Phase 1\model\journey\step{self.agent_step}.png")
         self.agent_step += 1
         plt.show()
 
@@ -322,8 +320,8 @@ class NetworkEnvironment(gym.Env):
         common_users = ["admin", "user", "guest", "1234567890", "root"]
         common_pwds = ["admin", "1234", "password", "toor"]
 
-        user = random.choice([common_users])
-        pwd = random.choice([common_pwds])
+        user = random.choice(common_users)
+        pwd = random.choice(common_pwds)
 
         print(f"~ Attempting to log in with {user}, {pwd}")
         success = random.random() < 0.2
@@ -338,7 +336,7 @@ class NetworkEnvironment(gym.Env):
         return user, pwd, r
 
     def _exploit_service(self):
-        print("[+] Running exploit on service")
+        print("~ Running exploit on service")
         vulnerable = random.choice([True, False])
         if vulnerable:
             print("    Exploit successful")
@@ -346,7 +344,7 @@ class NetworkEnvironment(gym.Env):
             print("    Exploit failed")
   
     def _pivot_host(self):  # lateral movements
-        print("[+] Running exploit on service")
+        print("~ Running exploit on service")
         vulnerable = random.choice([True, False])
         if vulnerable:
             print("    Exploit successful")
@@ -354,7 +352,7 @@ class NetworkEnvironment(gym.Env):
             print("    Exploit failed")
 
     def _download_file(self):  # collection
-        print("[+] Downloading sensitive files")
+        print("~ Downloading sensitive files")
         files = ["passwd.txt", "confidential.docx", "backup.sql"]
         stolen = random.choice(files)
         print(f"    Downloaded: {stolen}")

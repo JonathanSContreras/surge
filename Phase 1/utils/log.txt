@@ -1,0 +1,46 @@
+Timestamp: 2025-05-19 17:06:06.956733, Action Taken: port scan
+Timestamp: 2025-05-19 17:06:09.312631, Action Taken: sniffing traffic
+Timestamp: 2025-05-19 17:06:14.454247, Action Taken: port scan
+Timestamp: 2025-05-19 17:06:16.074161, Action Taken: exploit service
+Timestamp: 2025-05-19 17:06:17.110858, Action Taken: pivot host
+Timestamp: 2025-05-19 17:06:18.121167, Action Taken: exploit service
+Timestamp: 2025-05-19 17:06:19.331795, Action Taken: exit network
+Timestamp: 2025-05-19 17:06:27.412881, Action Taken: idle
+Timestamp: 2025-05-19 17:06:29.153162, Action Taken: attempting to log in using: USERNAME: guest, PASSWORD: toor
+Timestamp: 2025-05-19 17:06:30.252064, Action Taken: idle
+Timestamp: 2025-05-19 17:06:31.162110, Action Taken: attempting to log in using: USERNAME: user, PASSWORD: 1234
+Timestamp: 2025-05-19 17:06:32.157008, Action Taken: compressing files
+Timestamp: 2025-05-19 17:06:33.187103, Action Taken: exploit service
+Timestamp: 2025-05-19 17:06:34.192616, Action Taken: exit network
+Timestamp: 2025-05-19 17:07:27.699638, Action Taken: exit network
+Timestamp: 2025-05-19 17:07:30.194835, Action Taken: network scan
+Timestamp: 2025-05-19 17:07:37.507280, Action Taken: sniffing traffic
+Timestamp: 2025-05-19 17:07:38.606262, Action Taken: idle
+Timestamp: 2025-05-19 17:07:39.540577, Action Taken: downloading files
+Timestamp: 2025-05-19 17:09:40.952580, Action Taken: port scan
+Timestamp: 2025-05-19 17:10:46.805536, Action Taken: sniffing traffic
+Timestamp: 2025-05-19 17:10:49.068935, Action Taken: attempting to log in using: USERNAME: 1234567890, PASSWORD: admin
+Timestamp: 2025-05-19 17:10:50.411289, Action Taken: downloading files
+Timestamp: 2025-05-19 17:11:55.330937, Action Taken: exploit service
+Timestamp: 2025-05-19 17:12:24.679475, Action Taken: attempting to log in using: USERNAME: user, PASSWORD: admin
+Timestamp: 2025-05-19 17:12:26.444532, Action Taken: idle
+Timestamp: 2025-05-19 17:12:27.313110, Action Taken: attempting to log in using: USERNAME: admin, PASSWORD: admin
+Timestamp: 2025-05-19 17:12:28.499721, Action Taken: pivot host
+Timestamp: 2025-05-19 17:12:33.457172, Action Taken: port scan
+Timestamp: 2025-05-19 17:12:35.297802, Action Taken: pivot host
+Timestamp: 2025-05-19 17:12:36.483087, Action Taken: network scan
+Timestamp: 2025-05-19 17:12:41.462795, Action Taken: port scan
+Timestamp: 2025-05-19 17:12:43.009849, Action Taken: downloading files
+Timestamp: 2025-05-19 17:12:44.320035, Action Taken: downloading files
+Timestamp: 2025-05-19 17:12:45.577389, Action Taken: banner grab
+Timestamp: 2025-05-19 17:12:47.205912, Action Taken: compressing files
+Timestamp: 2025-05-19 17:12:48.445954, Action Taken: banner grab
+Timestamp: 2025-05-19 17:12:49.778429, Action Taken: banner grab
+Timestamp: 2025-05-19 17:12:51.211465, Action Taken: banner grab
+Timestamp: 2025-05-19 17:12:52.316752, Action Taken: network scan
+Timestamp: 2025-05-19 17:12:53.558965, Action Taken: sniffing traffic
+Timestamp: 2025-05-19 17:12:55.115215, Action Taken: compressing files
+Timestamp: 2025-05-19 17:12:59.958752, Action Taken: port scan
+Timestamp: 2025-05-19 17:13:01.776337, Action Taken: network scan
+Timestamp: 2025-05-19 17:13:02.601224, Action Taken: exit network
+Timestamp: 2025-05-19 17:13:05.190399, Action Taken: banner grab

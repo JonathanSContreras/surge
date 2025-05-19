@@ -71,6 +71,7 @@ class DQN(nn.Module):
         super(DQN, self).__init__()
 
         # network architecture
+        print("number of observations:", n_observations)
         self.l1 = nn.Linear(n_observations, 128)
         self.l2 = nn.Linear(128, 128)
         self.l3 = nn.Linear(128, n_actions)
@@ -82,6 +83,7 @@ class DQN(nn.Module):
         ARGS
             x: the input data to the network
         """
+        print(f"x value: {x}")
         x = F.relu(self.l1(x))
         x = F.relu(self.l2(x))
 
@@ -123,19 +125,25 @@ class Agent:
         self.optimizer = optim.Adam(self.policy_net.parameters(), lr=self.lr, amsgrad=True)
         self.agent_memory = ReplayMemory(10000)
 
-    def select_action(self, state):
+    def select_action(self, state):  # state is already flatten and turned in a tensor
         """
             Select an action according to an epsilon greedy policy.
         """
+        # print(f"in select_action method: {state}")
+        # flatten_state = self.env.flatten_observation(state, self.env.num_nodes)
+        # flatten_state_tensor = torch.tensor(flatten_state, dtype=torch.float32)
+        
+        # epsilon greedy
+        print("state size", state.dim)
         self.sample = random.random()
-
-        self.eps_threshold = self.eps_end + (self.eps_start - self.eps_end) * math.exp(-1 * self.steps_done / self.eps_decay)
+        self.eps_threshold = self.eps_end + (self.eps_start - self.eps_end) * math.exp(-1. * self.steps_done / self.eps_decay)
         self.steps_done += 1
 
         if self.sample > self.eps_threshold:
             with torch.no_grad():
                 # t.max(1) returns the highest largest column value for each row
-                return self.policy_net(state).max(1).indices.view(1, 1)
+                # get the values from the _get_obs method, flatten it, give it to the policy network (STATE values in one vector)
+                return self.policy_net(state).max(1).indices.view(1, 1)  # ERROR LINE
         else:
             return torch.tensor([[self.env.action_space.sample()]], dtype=torch.long)
         
@@ -144,8 +152,6 @@ class Agent:
         """
             Performs a single step of the optimization.
         """
-        print(f"agents memory length: {len(self.agent_memory)}")
-        print(f"batch size: {self.batch_size}")
         if len(self.agent_memory) < self.batch_size:
             return
         
@@ -158,6 +164,7 @@ class Agent:
         self.non_final_mask = torch.tensor(tuple(map(lambda s: s is not None, self.batch.next_state)), dtype=torch.bool)
         self.non_final_next_states = torch.cat([s for s in self.batch.next_state if s is not None])
         self.state_batch = torch.cat(self.batch.state)
+        print(f"in optimize_model: state_batch = {self.state_batch}")
         self.action_batch = torch.cat(self.batch.action)
         self.reward_batch = torch.cat(self.batch.reward)
 
@@ -197,37 +204,37 @@ class Agent:
         """
         for episode in range(epochs):
             # reset the environment and get the initial state
-            state, pos, score = self.env.reset().values()
+            obs = self.env.reset()
+            flatten_obs = self.env.flatten_observation(obs, self.env.num_nodes)
+            self.state = torch.tensor(flatten_obs, dtype=torch.float32).unsqueeze(0)
+
 
             """NOTE
-            state : current node the agent is at
-            pos : the position of the agent will be where the 1 is in the array of zeros
-            score : stealth score
+            obs : state, pos and score of the agent all together
             """
-            print(state, pos, score)
-            self.state = torch.tensor(state, dtype=torch.float32).unsqueeze(0)
+            # print(state, pos, score)
+            # self.state = torch.tensor(state, dtype=torch.float32).unsqueeze(0)
 
+            self.total_reward = 0
             max_steps_per_episode = 100
             for t in range(max_steps_per_episode):
                 # print(t)
                 # print(pos)
-                self.action = self.select_action(state)
-                print(f"ACTION: {self.action}")
-                observation, reward, terminated, truncated = self.env.step(self.action.item())
-                # print(f"OBS: {observation}, REWARD: {reward}, WAS IT TERMINATED: {terminated}, TRUNC: {truncated}")
+                self.action = self.select_action(self.state)
+                print(f"training method ACTION: {self.action}")
+                next_obs, reward, terminated, truncated = self.env.step(self.action.item())
                 self.env.render()  # graph of what the agent just discovered
-                self.reward = torch.tensor([reward]) 
+
+                self.reward = torch.tensor([reward], dtype=torch.float32) 
                 done = terminated or truncated
 
-                # flatten the observation into a vector
-                # print(observation)
-                # print(self.env.num_nodes)
-                flat_obs = self.env.flatten_observation(observation, self.env.num_nodes)
-
                 if terminated:
+                    print("was terminated")
                     self.next_state = None
                 else:
-                    self.next_state = torch.tensor(flat_obs, dtype=torch.float32).unsqueeze(0)
+                    # flatten the observation to feed into the NN
+                    next_state_flatten = self.env.flatten_observation(next_obs, self.env.num_nodes)
+                    self.next_state = torch.tensor(next_state_flatten, dtype=torch.float32).unsqueeze(0)
 
                 # store the agent's transition in memory
                 self.agent_memory.push(self.state, self.action, self.next_state, self.reward)
