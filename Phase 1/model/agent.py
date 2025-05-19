@@ -56,7 +56,7 @@ class ReplayMemory(object):
         """
         Length of the memory.
         """
-        return self.memory
+        return len(self.memory)
     
 class DQN(nn.Module):
     """
@@ -205,7 +205,7 @@ class Agent:
                 self.action = self.select_action(state)
                 print(f"ACTION: {self.action}")
                 observation, reward, terminated, truncated = self.env.step(self.action.item())
-                print(f"OBS: {observation}, REWARD: {reward}, WAS IT TERMINATED: {terminated}, TRUNC: {truncated}")
+                # print(f"OBS: {observation}, REWARD: {reward}, WAS IT TERMINATED: {terminated}, TRUNC: {truncated}")
                 self.env.render()
                 self.reward = torch.tensor([reward]) 
                 done = terminated or truncated

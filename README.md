@@ -4,6 +4,8 @@
 
 *This phase is completely random and has nothing to do with a real network nor real Python networking libraries. This phase is strictly used to build (and learn) the initial RL model.*
 
+*As of right now my goal is more so agent training nad not getting the "perfect" network, however I still want to train my agent on network knowledge.*
+
 ### Phase 1 Folder Structure:
 ```
 ./Surge
@@ -35,6 +37,11 @@ ACTIONS:
 - 2: t-shark/sniff traffic
 - 3: signature detection
 - 4: anomaly rules
+- 5: pivot host
+- 6: download file
+- 7: banner grab
+- 8: idle
+- 9: exit
 
 STATES: (agent's current knowledge)
 - list of known devices
@@ -63,4 +70,5 @@ LEVELS (not created more so for mental notes):
 
 ENVIRONMENT CREATION:
 - networkx and custom gym.Env
-- transition out from random networkx and use ns3 (a networking tool used in research)
+- transition out from networkx and use ns3 or mininet to then transition into a real network
+    - ns3 is a Linux based so will probably need to use Ubuntu or Kali Linux

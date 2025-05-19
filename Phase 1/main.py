@@ -11,4 +11,6 @@ action_size = environment.nA
 bob = Agent(environment, state_size, action_size)  # ERROR AGENT self.state line 211
 
 # run an episode loop
+print("Starting training loop")
 bob.training(500)
+print("Training done.")

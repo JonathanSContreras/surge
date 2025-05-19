@@ -1,6 +1,10 @@
 import gym
 from gym import spaces
+
 import networkx as nx
+import subprocess  # used with networkx to mimic real hacking processes
+import socket
+
 import numpy as np
 import matplotlib.pyplot as plt  #visualize the what the agent discovers per episode (?)
 import random
@@ -12,31 +16,11 @@ import datetime
 # import ns.internet
 # import ns.point_to_point
 
-# SimPy (a good python/windows based network simulator library)
-import simpy
-
 """
 TODO:
-
+- implement anomaly based detection and signature based detection and find some way to reduce the stealth score (anomaly: reduce if it scans to much too often, signature: reduce if it does things that might be common to do)
 
 """
-
-class Device:
-    """
-    Represents a simulated network device.
-    """
-    def __init__(self, simpy_env, node_id, is_admin=False):
-        self.simpy_env = simpy_env
-        self.node_id = node_id
-        self.ip = f"10.10.4.{node_id}"
-        self.open_ports = random.sample([22, 80, 443], k=random.randint(1, 3))
-        self.is_admin = is_admin
-        self.file_access = simpy.Resource(simpy_env, capacity=1)
-
-    def __repr__(self):
-        return f"Device({self.node_id}, Admin={self.is_admin})"
-
-
 class NetworkEnvironment(gym.Env):
     """
     Custom wrapper class for OpenAI Gym + SimPy.
@@ -52,28 +36,15 @@ class NetworkEnvironment(gym.Env):
     def __init__(self, num_nodes=20, delay=0.05):
         super(NetworkEnvironment, self).__init__()
 
-        self.simpy_env = simpy.Environment()
+        self.graph = None  # networkx graph 
         self.num_nodes = num_nodes
-        self.devices = []
-        self.graph = {}  # adjacency list
         self.agent_pos = None
         self.discovered = set()
         self.stealth_score = 5  # reduce when detection happens
         self.delay = delay
 
         # actions (0-9)
-        self.action_space = spaces.Discrete(10)
-        """ACTION SPACE
-        - network scan
-        - port scan
-        - banner grab
-        - exploit service
-        - brute force login
-        - pivot host
-        - download file
-        - stay idle
-        - exit network
-        """
+        self.action_space = spaces.Discrete(11)
         print(f"NUMBER OF ACTIONS: {self.action_space.n}")
         self.nA = self.action_space.n  # number of actions
 
@@ -89,31 +60,41 @@ class NetworkEnvironment(gym.Env):
 
         # create the random network
         self.generate_network()
-        plt.ion()  # enables interactive plotting
         
-    def generate_network(self):
+    def generate_network(self, num_nodes=20):  # ground truth network for the agent to discover
         """
-        Creates a simulated network with SimPy devices and random topology.
+        Randomized network graph with 20 nodes, using the Erods Renyi Graph concept.
         """
-        self.devices = []
+        node_colors = []
+        node_sizes = []
+        self.graph = nx.erdos_renyi_graph(num_nodes, 0.3)  # random connectivity
+        for node in self.graph.nodes:
+            self.graph.nodes[node]["ip"] = f"10.10.4.{node+1}"
+            self.graph.nodes[node]["admin"] = True if node == 0 else random.choice([True, False])
+            self.graph.nodes[node]["open_ports"] = random.sample([22, 80, 443], k=random.randint(1, 3))
+            self.graph.nodes[node]["services"] = {"80": "http", "22": "ssh", "443": "https"}
 
-        for i in range(self.num_nodes):
-            is_admin = True if i == 0 else random.choice([False, False, True])  # ensure 1 admin
-            dev = Device(self.simpy_env, i, is_admin)
-            self.devices.append(dev)
+            # based if it is an admin or not change the color of the node and the size
+            node_colors.append("#ffc300") if self.graph.nodes[node]["admin"] == True else node_colors.append("#1f78b4")
+            node_sizes.append(600) if self.graph.nodes[node]["admin"] == True else node_sizes.append(300)
 
-        # create a simple random adjacency list (graph)
-        for i in range(self.num_nodes):
-            neighbors = random.sample(range(self.num_nodes), k=random.randint(1, 3))
-            self.graph[i] = list(set(neighbors) - {i})  # no self-loops
+        # print(node_colors)
+        # print(node_sizes)
+        # print(G.nodes[node])
+        nx.draw(self.graph, pos=nx.spring_layout(self.graph), node_color=node_colors, node_size=node_sizes, with_labels=True)
+
+        # save the graph
+        plt.savefig("network.png")
+        plt.show()
+
+        # return G
 
 
     def reset(self):
         """
         Resets the environment to the beginning of a new episode and returns the initial observation.
         """
-        self.simpy_env = simpy.Environment()
-        self.agent_pos = random.randint(0, self.num_nodes-1)
+        self.agent_pos = random.choice(list(self.graph.nodes))
         self.discovered = {self.agent_pos}
         self.stealth_score = 5
 
@@ -159,68 +140,75 @@ class NetworkEnvironment(gym.Env):
             action: Action taken by the agent.
                 - 0: port scan
                 - 1: network scan (try unknown devices)
-                - 2: t-shark/sniff traffic
-                - 3: signature detection
-                - 4: anomaly rules
-                - 5: pivot host
-                - 6: download file
-                - 7: banner grab
+                - 2: t-shark/sniff traffic (packet sniffing)
+                - 3: banner grab
+                - 4: brute force login
+                - 5: exploit service
+                - 6: pivot host
+                - 7: download files
+                - 8: compress files
                 - 8: idle
-                - 9: exit
+                - 10: exit
         """
         reward = 0
         done = False
         action_taken = ""
-        device = self.devices[self.agent_pos]
 
         if action == 0:  # port scan
+            self._port_scan()
             reward += 1
             action_taken = "port scan"
 
         elif action == 1:  # network scan
-            neighbors = self.graph[self.agent_pos]
-            for n in neighbors:
-                if n not in self.discovered:
-                    self.discovered.add(n)
-                    reward += 1
-                else:  # negative reward for going back to a discovered node (prevents infinite loops)
-                    reward -= 2
+            r = self._network_scan()
+            reward += r
             action_taken = "network scan"
 
         elif action == 2:  # t-shark
+            self._sniff()
             reward += 2
             action_taken = "sniffing traffic"
 
-        elif action == 3:  # signature detection
+        elif action == 3:  # banner grab
+            self._banner_grab()
             reward += 2
-            action_taken = "signature detection"
+            action_taken = "banner grab"
 
-        elif action == 4:  # anomaly rules
+        elif action == 4:  # brute force login
+            user, pwd, r = self._brute_force_login()
+            reward += r
+            action_taken = f"attempting to log in using: USERNAME: {user}, PASSWORD: {pwd}"
+
+        elif action == 5:  # exploit service
+            self._exploit_service()
             reward += 3
-            action_taken = "anomaly rules"
+            action_taken = "exploit service"
 
-        elif action == 5:  # pivot host
+        elif action == 6:  # pivot host
+            self._pivot_host()
             reward += 3
             action_taken = "pivot host"
 
-        elif action == 6:  # download file
-            with device.file_access.request() as req:
-                self.simpy_env.process(self.simpy_env.timeout(1))  # simulate access delay
-                reward += 3            
-            action_taken = "downloading a file"
-
-        elif action == 7:  # banner grab
+        elif action == 7:  # download files
+            self._download_file()
             reward += 3
-            action_taken = "grabbing a banner"
+            action_taken = "downloading files"
 
-        elif action == 8:  # idle
+        elif action == 8:  # compress files
+            self._compress_file()
             reward -= 0.5
-            action_taken = "waiting"
+            action_taken = "compressing files"
 
-        elif action == 9:  # exit
+        elif action == 9:  # idle
+            self._idle()
+            reward += 1
+            action_taken = "idle"
+
+        elif action == 10:
+            self._exit()
             done = True
             reward += 2
-            action_taken = "exiting network"
+            action_taken = "exit network"
 
         else: # default
             reward += 0.5
@@ -244,55 +232,144 @@ class NetworkEnvironment(gym.Env):
 
     def render(self, mode="human", done=False):
         """
-        Returns a summary of the movements of the agent.
+        Returns a summary of the movements of the agent. 
 
         ARGS
             mode: the type of rendering (human = readable by a person)
         """
-        G = nx.Graph()
-
-        # add nodes and edges
-        for node, neighbors in self.graph.items():
-            G.add_node(node)
-            for n in neighbors:
-                G.add_edge(node, n)
-
-        node_colors = []
-        node_sizes = []
+        global agent_step
+        agent_step = 0 
+        G = self.graph
+        node_color = []
 
         for node in G.nodes:
             if node == self.agent_pos:
-                node_colors.append("red")  # current position
-                node_sizes.append(800)
+                node_color.append("#c1121f")  # this is the agents current position
             elif node in self.discovered:
-                node_colors.append("green")  # discovered
-                node_sizes.append(500)
-            elif self.devices[node].is_admin:
-                node_colors.append("orange")  # admin but not discovered yet
-                node_sizes.append(500)
+                node_color.append("#6a994e")  # the agent has discovered this node
+            elif G.nodes[node]["admin"] == True:  # admin
+                node_color.append("#ffc300")
             else:
-                node_colors.append("gray")  # unknown
-                node_sizes.append(300)
-
-            pos = nx.spring_layout(G, seed=42)
+                node_color.append("#8d99ae")  # undiscovered
 
         plt.clf()
-        nx.draw(
-            G,
-            pos,
-            with_labels=True,
-            node_color=node_colors,
-            node_size=node_sizes,
-            font_color="white"
-        )
-
-        plt.title(f"Agent Position: {self.agent_pos} | Stealth: {self.stealth_score}")
+        nx.draw(G, pos=nx.spring_layout(G), with_labels=True, node_color=node_color, font_color="white")
+        plt.title(f"Agent at: {self.agent_pos} | Discovered: {self.discovered} | Stealth: {self.stealth_score}")
         plt.pause(0.5)
 
-        # return (f"Agent at: {self.agent_pos}, Discovered: {self.discovered}")
+        plt.savefig(f"Phase 1\model\journey\step{agent_step}.png")
+        agent_step += 1
+        plt.show()
+
+        return (f"Agent at: {self.agent_pos} | Discovered: {self.discovered} | Stealth: {self.stealth_score}")
     
-    def close(self):
-        pass
+    #### ACTION METHODS
+    """
+    The agent is learning based on the MITRE ATT&CK Framework, where each of the 10 actions is either a tactic or a technique to move from node to node in the network.
+    Depending on the output, the reward will be returned from the method itself.
+    """
+    def _port_scan(self):  # discovery
+        ip = self.graph.nodes[self.agent_pos]["ip"]
+        print(f"~ Port scanning {ip}")
+
+        try: 
+            result = subprocess.run(["ping", ip, "-n", "1"], capture_output=True, text=True)
+            if "TTL=" in result.stdout:
+                print(f"    Host {ip} is up")
+            else:
+                print(f"    Host {ip} is down")
+        except Exception as e:
+            print(f"    Port scan error: {e}")
+            
+    def _network_scan(self):  # discovery
+        print("~ Scanning network neighbors.")
+
+        neighbors = list(self.graph[self.agent_pos])
+        for n in neighbors:
+            ip = self.graph.nodes[n]["ip"]
+            print(f"    Found neighbor: NODE {n}, IP {ip}")
+
+            if n not in self.discovered:
+                self.discovered.add(n)
+                r = 1
+            else:  # negative reward for going back to a discovered node (prevents infinite loops)
+                r = -2
+
+        print(r)
+        return r
+
+    def _sniff(self):  # collection
+        print(f"~ Sniffing traffic near node {self.agent_pos}")
+        fake_creds = random.choice(["admin:admin", "1234:1234", "root:toor"])
+        print(f"~ Credentials found: {fake_creds}")
+
+    def _banner_grab(self):  # discovery
+        ip = self.graph.nodes[self.agent_pos]["ip"]
+        ports = self.graph.nodes[self.agent_pos]["open_ports"]
+        print(f"~ Grabbing banner from {ip} on port {ports[0]}")
+
+        try:
+            s = socket.create_connection((ip, ports[0]), timeout=2)
+            s.sendall(b"HEAD / HTTP/1.0\r\n\r\n")
+            banner = s.recv(1024).decode(errors="ignore")
+            s.close()
+            print(f"    Banner: {banner.strip()}")
+        except Exception as e:
+            print(" Failed to grab banner: {e}")
+
+    """WORK ON THIS TO POSSIBLY USE PASSWORD HACKING TOOLS"""
+    def _brute_force_login(self):  # credential access
+        common_users = ["admin", "user", "guest", "1234567890", "root"]
+        common_pwds = ["admin", "1234", "password", "toor"]
+
+        user = random.choice([common_users])
+        pwd = random.choice([common_pwds])
+
+        print(f"~ Attempting to log in with {user}, {pwd}")
+        success = random.random() < 0.2
+
+        if success:
+            print(" Login successful.")
+            r = 2
+        else:
+            print(" Login failed.")
+            r = -1
+
+        return user, pwd, r
+
+    def _exploit_service(self):
+        print("[+] Running exploit on service")
+        vulnerable = random.choice([True, False])
+        if vulnerable:
+            print("    Exploit successful")
+        else:
+            print("    Exploit failed")
+  
+    def _pivot_host(self):  # lateral movements
+        print("[+] Running exploit on service")
+        vulnerable = random.choice([True, False])
+        if vulnerable:
+            print("    Exploit successful")
+        else:
+            print("    Exploit failed")
+
+    def _download_file(self):  # collection
+        print("[+] Downloading sensitive files")
+        files = ["passwd.txt", "confidential.docx", "backup.sql"]
+        stolen = random.choice(files)
+        print(f"    Downloaded: {stolen}")
+
+    def _compress_file(self):  # exfiltration
+        print("~ Compressing files for exfiltration.")
+        print("~ Files sucessfully created: archive.zip")
+
+    def _idle(self):  # defensive evasion
+        print("~ Idling to avoid detection.")
+
+    def _exit(self):  # exfiltration
+        print("~ Exiting network - exfiltration complete.")
+
+    ######################
 
 # # testing network generation
 # if __name__ == "__main__":
