@@ -1,0 +1,8 @@
+5/20:
+- finished up the code for the agent and network
+
+TODO
+- make a better log file output (use json and include more information) <- test via json_test.py then implement
+- get better reward amounts
+- finetune the model's hyperparameters (use Optuna)
+- ask chatgpt how my files look (and change anything based on the feedback)
