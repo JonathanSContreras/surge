@@ -83,7 +83,6 @@ class DQN(nn.Module):
         ARGS
             x: the input data to the network
         """
-        print(f"x value: {x}")
         x = F.relu(self.l1(x))
         x = F.relu(self.l2(x))
 
@@ -120,7 +119,6 @@ class Agent:
         self.policy_net = DQN(state_dim, action_dim)
         self.target_net = DQN(state_dim, action_dim)
         self.target_net.load_state_dict(self.policy_net.state_dict())
-        print("model instance", self.policy_net, self.target_net)
 
         # optimizer
         self.optimizer = optim.Adam(self.policy_net.parameters(), lr=self.lr, amsgrad=True)
@@ -166,7 +164,6 @@ class Agent:
         self.non_final_mask = torch.tensor(tuple(map(lambda s: s is not None, self.batch.next_state)), dtype=torch.bool)
         self.non_final_next_states = torch.cat([s for s in self.batch.next_state if s is not None])
         self.state_batch = torch.cat(self.batch.state)
-        print(f"in optimize_model: state_batch = {self.state_batch}")
         self.action_batch = torch.cat(self.batch.action)
         self.reward_batch = torch.cat(self.batch.reward)
 
@@ -215,16 +212,12 @@ class Agent:
             """NOTE
             obs : state, pos and score of the agent all together
             """
-            # print(state, pos, score)
-            # self.state = torch.tensor(state, dtype=torch.float32).unsqueeze(0)
-
             self.total_reward = 0
             max_steps_per_episode = 100
             for t in range(max_steps_per_episode):
                 # print(t)
                 # print(pos)
                 self.action = self.select_action(self.state)
-                print(f"training method ACTION: {self.action}")
                 next_obs, reward, terminated, truncated = self.env.step(self.action.item())
                 self.env.render()  # graph of what the agent just discovered
 
@@ -245,7 +238,6 @@ class Agent:
                 # move to the next state
                 self.state = self.next_state
                 self.total_reward = self.reward.item()
-                print(f"New state: {self.state}, Total reward: {self.total_reward}")
 
                 # perform one step of the optimization (on policy network)
                 self.optimize_model()
@@ -294,60 +286,3 @@ class Agent:
 
     def display_state(self):
         pass
-
-
-
-    # def choose_action(self, state):
-    #     """
-    #     Returns an action based on the e-greedy policy. A random uniform number is selected to determine whether the next action should be random or deterministic.
-
-    #     ARGS
-    #         state: current condition of the agent (the agent's knowledge)
-    #     """
-
-    #     if np.random.uniform() < self.epsilon_greedy:
-    #         action = np.random.choice(self.env.nA)
-    #     else:
-    #         q_vals = self.q_table[state]
-    #         perm_actions = np.random.permutation(self.env.nA)
-    #         q_vals = [q_vals[a] for a in perm_actions]
-    #         perm_q_argmax = np.argmax(q_vals)
-    #         action = perm_actions[perm_q_argmax]
-
-    #     return action
-
-    # def _learn(self, transition):
-    #     """
-    #     Updates the rule for the Q-learning algorithn.
-
-    #     ARGS
-    #         transition:
-    #     """
-    #     s, a, r, next_s, done = transition
-    #     q_val = self.q_table[s][a]
-
-    #     if done:
-    #         q_target = r
-    #     else:
-    #         q_target = r + self.discount_factor*np.max(self.q_table[next_s])
-
-    #     # update q_table
-    #     self.q_table[s][a] += self.lr * (q_target - q_val)
-
-    #     # adjust the epsilon
-    #     self._adjust_epsilon()
-
-    # def _adjust_epsilon(self):
-    #     """
-    #     Adjusts the epsilon value until it reaches the minimum epsilon value.
-    #     """
-    #     if self.epsilon_greedy > self.epsilon_min:
-    #         self.epsilon_greedy *= self.decay
-
-    # def display_state(self):
-    #     """
-    #     After the end of each episode the nodes that the model discovers will be diplayed.
-    #         - green nodes = discovered
-    #         - red nodes = not discovered
-    #     """
-    #     pass

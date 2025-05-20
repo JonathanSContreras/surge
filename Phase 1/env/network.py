@@ -48,7 +48,6 @@ class NetworkEnvironment(gym.Env):
 
         # actions (0-10)
         self.action_space = spaces.Discrete(11)
-        print(f"NUMBER OF ACTIONS: {self.action_space.n}")
         self.nA = self.action_space.n  # number of actions
 
         # observation: discovered nodes + current node ID + stealth
@@ -59,7 +58,7 @@ class NetworkEnvironment(gym.Env):
         })
 
         # number of states (states = agent's current knowledge)
-        self.nS = (self.observation_space["current_node"].n + self.observation_space["discovered"].n + 1)  # 41  PROBLEM LINE (probably has to do with the way everything is being flattened/called)
+        self.nS = (self.observation_space["current_node"].n + self.observation_space["discovered"].n + 1) 
 
         # create the random network
         self.generate_network()
@@ -81,16 +80,11 @@ class NetworkEnvironment(gym.Env):
             node_colors.append("#ffc300") if self.graph.nodes[node]["admin"] == True else node_colors.append("#1f78b4")
             node_sizes.append(600) if self.graph.nodes[node]["admin"] == True else node_sizes.append(300)
 
-        # print(node_colors)
-        # print(node_sizes)
-        # print(G.nodes[node])
         nx.draw(self.graph, pos=nx.spring_layout(self.graph), node_color=node_colors, node_size=node_sizes, with_labels=True)
 
         # save the graph
         plt.savefig("network.png")
         plt.show()
-
-        # return G
 
     def reset(self):
         """
@@ -119,7 +113,6 @@ class NetworkEnvironment(gym.Env):
         """
         Converts the structured observation dict into a flat vector.
         """
-        print(obs["current_node"])
         current_node_vec = np.eye(num_nodes)[obs["current_node"]]  # one hot encoding of position
         discovered_vec = obs["discovered"]
         stealth_vec = obs["stealth_score"]
@@ -257,7 +250,8 @@ class NetworkEnvironment(gym.Env):
 
         plt.savefig(f"Phase 1\model\journey\step{self.agent_step}.png")
         self.agent_step += 1
-        plt.show()
+        plt.show()  # can comment this line out when training so it can run continuously
+        print("STEP TAKEN...")
 
         return (f"Agent at: {self.agent_pos} | Discovered: {self.discovered} | Stealth: {self.stealth_score}")
     
