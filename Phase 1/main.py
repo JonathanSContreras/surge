@@ -6,9 +6,11 @@ from model.agent import Agent
 environment = NetworkEnvironment() 
 
 # get the state and action size
-state_size = environment.nS
+state_size = environment.nS  # problem
 action_size = environment.nA
-bob = Agent(environment, state_size, action_size)  # ERROR AGENT self.state line 211
+print("state_size", state_size)
+print("action_size", action_size)
+bob = Agent(environment, state_size, action_size)  
 
 # run an episode loop
 print("Starting training loop")

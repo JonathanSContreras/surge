@@ -58,8 +58,11 @@ class NetworkEnvironment(gym.Env):
             "stealth_score": spaces.Box(0, 10, shape=(1,), dtype=np.float32)
         })
 
-        # number of states (states = agent's current knowledge)
-        self.nS = len(self.observation_space)
+        print(self.observation_space)
+        # number of states (states = agent's current knowledge) = length of the flatten observation space
+        self.flattened_obs_space = self.flatten_observation(self.observation_space, self.num_nodes)
+        print(self.flattened_obs_space)
+        self.nS = len(self.flattened_obs_space)  # 41  PROBLEM LINE (probably has to do with the way everything is being flattened/called)
 
         # create the random network
         self.generate_network()
