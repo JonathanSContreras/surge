@@ -46,23 +46,20 @@ class NetworkEnvironment(gym.Env):
         # used to keep track of agent's journey
         self.agent_step = 0
 
-        # actions (0-9)
+        # actions (0-10)
         self.action_space = spaces.Discrete(11)
         print(f"NUMBER OF ACTIONS: {self.action_space.n}")
         self.nA = self.action_space.n  # number of actions
 
         # observation: discovered nodes + current node ID + stealth
         self.observation_space = spaces.Dict({
-            "current_node": spaces.Discrete(num_nodes),
-            "discovered": spaces.MultiBinary(num_nodes),
-            "stealth_score": spaces.Box(0, 10, shape=(1,), dtype=np.float32)
+            "current_node": spaces.Discrete(num_nodes),  # 20
+            "discovered": spaces.MultiBinary(num_nodes),  # 20
+            "stealth_score": spaces.Box(0, 10, shape=(1,), dtype=np.float32)  # 1 value
         })
 
-        print(self.observation_space)
-        # number of states (states = agent's current knowledge) = length of the flatten observation space
-        self.flattened_obs_space = self.flatten_observation(self.observation_space, self.num_nodes)
-        print(self.flattened_obs_space)
-        self.nS = len(self.flattened_obs_space)  # 41  PROBLEM LINE (probably has to do with the way everything is being flattened/called)
+        # number of states (states = agent's current knowledge)
+        self.nS = (self.observation_space["current_node"].n + self.observation_space["discovered"].n + 1)  # 41  PROBLEM LINE (probably has to do with the way everything is being flattened/called)
 
         # create the random network
         self.generate_network()

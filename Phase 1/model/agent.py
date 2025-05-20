@@ -87,7 +87,7 @@ class DQN(nn.Module):
         x = F.relu(self.l1(x))
         x = F.relu(self.l2(x))
 
-        return self.l3
+        return self.l3(x)
 
 # THINK OF A NAME FOR THE AI AGENT :)
 class Agent: 
@@ -120,6 +120,7 @@ class Agent:
         self.policy_net = DQN(state_dim, action_dim)
         self.target_net = DQN(state_dim, action_dim)
         self.target_net.load_state_dict(self.policy_net.state_dict())
+        print("model instance", self.policy_net, self.target_net)
 
         # optimizer
         self.optimizer = optim.Adam(self.policy_net.parameters(), lr=self.lr, amsgrad=True)
@@ -134,7 +135,7 @@ class Agent:
         # flatten_state_tensor = torch.tensor(flatten_state, dtype=torch.float32)
         
         # epsilon greedy
-        print("state size", state.dim)
+        print("state size", len(state))
         self.sample = random.random()
         self.eps_threshold = self.eps_end + (self.eps_start - self.eps_end) * math.exp(-1. * self.steps_done / self.eps_decay)
         self.steps_done += 1
@@ -143,6 +144,7 @@ class Agent:
             with torch.no_grad():
                 # t.max(1) returns the highest largest column value for each row
                 # get the values from the _get_obs method, flatten it, give it to the policy network (STATE values in one vector)
+                print("in select_action function: STATE", state)
                 return self.policy_net(state).max(1).indices.view(1, 1)  # ERROR LINE
         else:
             return torch.tensor([[self.env.action_space.sample()]], dtype=torch.long)
@@ -207,6 +209,7 @@ class Agent:
             obs = self.env.reset()
             flatten_obs = self.env.flatten_observation(obs, self.env.num_nodes)
             self.state = torch.tensor(flatten_obs, dtype=torch.float32).unsqueeze(0)
+            print("in training method", self.state)
 
 
             """NOTE
