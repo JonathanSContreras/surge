@@ -1,3 +1,9 @@
+"""
+Environment building for the RL agent.
+
+@author : Brianna Hinds
+"""
+
 import gym
 from gym import spaces
 
@@ -147,10 +153,15 @@ class NetworkEnvironment(gym.Env):
         done = False
         action_taken = ""
 
+        
+        """NOTE
+        - punish the agent for exiting and not fully discovering the network
+        """
+
         if action == 0:  # port scan
-            self._port_scan()
+            address = self._port_scan()
             reward += 1
-            action_taken = "port scan"
+            action_taken = f"port scanning {address}"
 
         elif action == 1:  # network scan
             r = self._network_scan()
@@ -200,12 +211,12 @@ class NetworkEnvironment(gym.Env):
         elif action == 10:
             self._exit()
             done = True
-            reward += 2
+            reward += 0
             action_taken = "exit network"
 
-        else: # default
-            reward += 0.5
-            action_taken = "other"
+        # else: # default
+        #     reward += 0.5
+        #     action_taken = "other"
 
         # risk of being caught
         if random.random() < 0.1:
@@ -215,7 +226,7 @@ class NetworkEnvironment(gym.Env):
         # write to a log file
         timestamp = datetime.datetime.now()
         with open("./Phase 1/utils/log.txt", "a") as f:
-            f.write(f"Timestamp: {timestamp}, Action Taken: {action_taken}\n")
+            f.write(f"Timestamp: {timestamp} -> Agent at node {self.agent_pos}, Action Taken: {action_taken}, Discovered: Nodes {self.discovered}\n")
 
         # if stealth is all gone
         if self.stealth_score < 0:
@@ -248,9 +259,9 @@ class NetworkEnvironment(gym.Env):
         plt.title(f"Agent at: {self.agent_pos} | Discovered: {self.discovered} | Stealth: {self.stealth_score}")
         plt.pause(0.5)
 
-        plt.savefig(f"Phase 1\model\journey\step{self.agent_step}.png")
-        self.agent_step += 1
-        plt.show()  # can comment this line out when training so it can run continuously
+        # plt.savefig(f"Phase 1\model\journey\step{self.agent_step}.png")
+        # self.agent_step += 1
+        # plt.show()  # can comment this line out when training so it can run continuously
         print("STEP TAKEN...")
 
         return (f"Agent at: {self.agent_pos} | Discovered: {self.discovered} | Stealth: {self.stealth_score}")
@@ -272,6 +283,8 @@ class NetworkEnvironment(gym.Env):
                 print(f"    Host {ip} is down")
         except Exception as e:
             print(f"    Port scan error: {e}")
+
+        return ip
             
     def _network_scan(self):  # discovery
         print("~ Scanning network neighbors.")

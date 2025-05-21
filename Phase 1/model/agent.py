@@ -1,12 +1,12 @@
 """
-    Deep Q-Learning AI Agent.
-    @author :  Brianna Hinds
+Deep Q-Learning AI Agent.
+@author :  Brianna Hinds
 
-    REFERENCES: 
-    https://pytorch.org/tutorials/intermediate/reinforcement_q_learning.html
+REFERENCES: 
+https://pytorch.org/tutorials/intermediate/reinforcement_q_learning.html
 """ 
 
-import numpy as np
+# import numpy as np
 import random
 import math
 from collections import namedtuple, deque
@@ -32,15 +32,17 @@ class ReplayMemory(object):
     """
     def __init__(self, capacity):
         """
-        DESCRIPTION
+        Inititalization of the agent's Memory.
 
         ARGS
-            capacity: 
+            capacity: defined as how long the agent's memory will be
         """
         self.memory = deque([], maxlen=capacity)
 
     def push(self, *args):
-        """Save a transition."""
+        """
+        Save a transition
+        """
         self.memory.append(Transition(*args))
 
     def sample(self, batch_size):
@@ -48,7 +50,7 @@ class ReplayMemory(object):
         Selecting a random batch of transitions for training.
 
         ARGS
-            batch_size: 
+            batch_size: number of values to get at each sampling
         """
         return random.sample(self.memory, batch_size)
 
@@ -126,7 +128,7 @@ class Agent:
 
     def select_action(self, state):  # state is already flatten and turned in a tensor
         """
-            Select an action according to an epsilon greedy policy.
+        Select an action according to an epsilon greedy policy.
         """
         # print(f"in select_action method: {state}")
         # flatten_state = self.env.flatten_observation(state, self.env.num_nodes)
@@ -150,7 +152,7 @@ class Agent:
    
     def optimize_model(self):
         """
-            Performs a single step of the optimization.
+        Performs a single step of the optimization.
         """
         if len(self.agent_memory) < self.batch_size:
             return
@@ -219,7 +221,7 @@ class Agent:
                 # print(pos)
                 self.action = self.select_action(self.state)
                 next_obs, reward, terminated, truncated = self.env.step(self.action.item())
-                self.env.render()  # graph of what the agent just discovered
+                print(self.env.render())  # graph of what the agent just discovered
 
                 self.reward = torch.tensor([reward], dtype=torch.float32) 
                 done = terminated or truncated
@@ -258,10 +260,9 @@ class Agent:
 
             print(f"Episode {episode + 1}, Total Reward: {self.total_reward}")
 
-        
     def plot_durations(self, show_results=False):
         """
-            Helper for plotting duration of episodes.
+        Helper for plotting duration of episodes.
         """
         plt.figure(1)
         self.durations_t = torch.tensor(self.episode_durations, dtype=torch.float)
@@ -273,7 +274,7 @@ class Agent:
             plt.title("Training...")
 
         plt.xlabel("Episode")
-        plt.ylabel("Duration")
+        plt.ylabel("Duration (steps)")
         plt.plot(self.durations_t.numpy())
 
         # take 100 episode average and plot 
@@ -282,7 +283,7 @@ class Agent:
             means = torch.cat((torch.zeros(99), means))
             plt.plot(means.numpy())
 
-        plt.show()
+        plt.show(block=False)
 
     def display_state(self):
         pass

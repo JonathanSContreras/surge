@@ -3,6 +3,13 @@
 
 TODO
 - make a better log file output (use json and include more information) <- test via json_test.py then implement
-- get better reward amounts
 - finetune the model's hyperparameters (use Optuna)
+- get better reward amounts
 - ask chatgpt how my files look (and change anything based on the feedback)
+
+5/21
+- worked on running the model and the log file output (didn't implement json just yet)
+- PROBLEM WITH plot_durations() method 
+    - I want the code to be able to run without me having to exit the graph, instead the graph doesn't show at all
+
+TODO (same as 5/20)
