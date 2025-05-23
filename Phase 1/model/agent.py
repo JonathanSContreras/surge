@@ -29,6 +29,7 @@ class ReplayMemory(object):
         push
         sample
         __len__
+        reset
     """
     def __init__(self, capacity):
         """
@@ -60,6 +61,12 @@ class ReplayMemory(object):
         """
         return len(self.memory)
     
+    def reset(self):
+        """
+        Resetting the memory of the agent.
+        """
+        self.memory.clear()
+    
 class DQN(nn.Module):
     """
     Deep-Q Learning network responsible for approximating Q-values.
@@ -70,10 +77,17 @@ class DQN(nn.Module):
     """
 
     def __init__(self, n_observations, n_actions):
+        """
+        Initializer for the DQN model, defines the NN.
+
+        ARGS
+            n_observations: input value for the NN model
+            n_actions: output value for the NN model (choices the agent can do)
+        """
         super(DQN, self).__init__()
 
         # network architecture
-        print("number of observations:", n_observations)
+        # print("number of observations:", n_observations)
         self.l1 = nn.Linear(n_observations, 128)
         self.l2 = nn.Linear(128, 128)
         self.l3 = nn.Linear(128, n_actions)
@@ -102,6 +116,14 @@ class Agent:
         plot_durations
     """
     def __init__(self, env, state_dim, action_dim):
+        """
+        Initializer for the Agent's NN model, defines the hyperparameters and important values to the Bellman equation.
+
+        ARGS
+            env: environment object for the model to learn in
+            state_dim: dimension of the agent's state
+            action_dim: dimension of the agent's actions (number of actions the agent can do)
+        """
         # hyperparameter definitions
         # using a epsilon greedy exploration
         self.env = env
@@ -126,9 +148,22 @@ class Agent:
         self.optimizer = optim.Adam(self.policy_net.parameters(), lr=self.lr, amsgrad=True)
         self.agent_memory = ReplayMemory(10000)
 
+    def preprocess_state(self, state):
+        """
+        Flattens the state, to be pushed into the DQN as a Tenor object
+
+        ARGS:
+            state: dictionary object that contains what node the agent is on, node's discovered, and stealth score
+        """
+        flat_state = self.env.flatten_observation(state, self.env.num_nodes)
+        return torch.tensor(flat_state, dtype=torch.float32).unsqueeze(0)
+
     def select_action(self, state):  # state is already flatten and turned in a tensor
         """
         Select an action according to an epsilon greedy policy.
+
+        ARGS:
+            state: flattened Tensor object that contains what node the agent is on, node's discovered, and stealth score
         """
         # print(f"in select_action method: {state}")
         # flatten_state = self.env.flatten_observation(state, self.env.num_nodes)
@@ -143,8 +178,7 @@ class Agent:
         if self.sample > self.eps_threshold:
             with torch.no_grad():
                 # t.max(1) returns the highest largest column value for each row
-                # get the values from the _get_obs method, flatten it, give it to the policy network (STATE values in one vector)
-                print("in select_action function: STATE", state)
+                # print("in select_action function: STATE", state)
                 return self.policy_net(state).max(1).indices.view(1, 1)  # ERROR LINE
         else:
             return torch.tensor([[self.env.action_space.sample()]], dtype=torch.long)
@@ -192,9 +226,9 @@ class Agent:
         nn.utils.clip_grad_value_(self.policy_net.parameters(), 100)
         self.optimizer.step()
 
-        # train model
-        self.epochs = 500
-        self.training(self.epochs)
+        # # train model
+        # self.epochs = 500
+        # self.training(self.epochs)
 
     def training(self, epochs):
         """
@@ -206,8 +240,7 @@ class Agent:
         for episode in range(epochs):
             # reset the environment and get the initial state
             obs = self.env.reset()
-            flatten_obs = self.env.flatten_observation(obs, self.env.num_nodes)
-            self.state = torch.tensor(flatten_obs, dtype=torch.float32).unsqueeze(0)
+            self.state = self.preprocess_state(obs)
             print("in training method", self.state)
 
 
@@ -232,7 +265,7 @@ class Agent:
                 else:
                     # flatten the observation to feed into the NN
                     next_state_flatten = self.env.flatten_observation(next_obs, self.env.num_nodes)
-                    self.next_state = torch.tensor(next_state_flatten, dtype=torch.float32).unsqueeze(0)
+                    self.next_state = self.preprocess_state(next_state_flatten)
 
                 # store the agent's transition in memory
                 self.agent_memory.push(self.state, self.action, self.next_state, self.reward)
@@ -258,7 +291,7 @@ class Agent:
                     self.plot_durations()
                     break
 
-            print(f"Episode {episode + 1}, Total Reward: {self.total_reward}")
+            print(f"Episode {episode + 1}, Total Reward: {self.total_reward}, Epsilon Value: {self.eps_threshold:.4f}")
 
     def plot_durations(self, show_results=False):
         """
@@ -283,7 +316,4 @@ class Agent:
             means = torch.cat((torch.zeros(99), means))
             plt.plot(means.numpy())
 
-        plt.show(block=False)
-
-    def display_state(self):
-        pass
+        plt.show()
