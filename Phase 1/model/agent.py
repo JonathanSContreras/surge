@@ -264,8 +264,7 @@ class Agent:
                     self.next_state = None
                 else:
                     # flatten the observation to feed into the NN
-                    next_state_flatten = self.env.flatten_observation(next_obs, self.env.num_nodes)
-                    self.next_state = self.preprocess_state(next_state_flatten)
+                    self.next_state = self.preprocess_state(next_obs)
 
                 # store the agent's transition in memory
                 self.agent_memory.push(self.state, self.action, self.next_state, self.reward)
@@ -316,4 +315,5 @@ class Agent:
             means = torch.cat((torch.zeros(99), means))
             plt.plot(means.numpy())
 
-        plt.show()
+        plt.pause(2)
+        # plt.show()

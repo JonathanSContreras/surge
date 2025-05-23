@@ -14,6 +14,6 @@ bob = Agent(environment, state_size, action_size)
 
 # run an episode loop
 print("Starting training loop")
-epochs = 50  # start with 100 then go to 100 then 500
+epochs = 10  # start with 10, 50, 100 then go to 100 then 500
 bob.training(epochs)  
 print("Training done.")

@@ -226,7 +226,7 @@ class NetworkEnvironment(gym.Env):
         # write to a log file
         timestamp = datetime.datetime.now()
         with open("./Phase 1/utils/log.txt", "a") as f:
-            f.write(f"Timestamp: {timestamp} -> Agent at node {self.agent_pos}, Action Taken: {action_taken}, Discovered: Nodes {self.discovered}\n")
+            f.write(f"Timestamp: {timestamp} -> Agent at node {self.agent_pos}, Action Taken: {action_taken}, \n\t\tDiscovered: {len(self.discovered)}, Nodes Discovered: {self.discovered}\n\t\tEpisode: {self.env.episode + 1}, TOtal Reward: {self.env.total_reward}, Epsilon Value: {self.env.eps_threshold:.4f}\n")
 
         # if stealth is all gone
         if self.stealth_score < 0:
@@ -296,7 +296,7 @@ class NetworkEnvironment(gym.Env):
 
             if n not in self.discovered:
                 self.discovered.add(n)
-                r = 1
+                r = 3
             else:  # negative reward for going back to a discovered node (prevents infinite loops)
                 r = -2
 

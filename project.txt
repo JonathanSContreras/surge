@@ -13,3 +13,11 @@ TODO
     - I want the code to be able to run without me having to exit the graph, instead the graph doesn't show at all
 
 TODO (same as 5/20)
+
+5/22
+- cleaned up the log file prinout
+- asked chat and have a good direction on where to edit and make changes
+
+TODO
+- fine tune the model's hyperparameters
+- change the reward (noticed that the model is more likely to exit the network)

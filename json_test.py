@@ -17,6 +17,6 @@ def values():
     action_taken = "port scanned"
     port = 80
     
-    return f"Timestamp: 2025-05-21 17:06:14.454247 -> Agent at node: {node}, Action Taken: {action_taken}, Port: {port}"
+    return f"Timestamp: 2025-05-21 17:06:14.454247 -> Agent at node: {node}, Action Taken: {action_taken},\n\tDiscovered: 5 nodes, [sadadassaa]"
 
 print(values())
