@@ -211,8 +211,17 @@ class NetworkEnvironment(gym.Env):
         elif action == 10:
             self._exit()
             done = True
-            reward += 0
+            # reward -= 0.3
+
+            # take out a reward based on how much the network has been discovered
+            discovery = len(self.discovered)/self.env.num_nodes
+            if discovery < 0.8:
+                reward -= 2
+            else:
+                reward +=2
+
             action_taken = "exit network"
+
 
         # else: # default
         #     reward += 0.5
@@ -221,7 +230,7 @@ class NetworkEnvironment(gym.Env):
         # risk of being caught
         if random.random() < 0.1:
             self.stealth_score -= 1
-            reward -= 1
+            reward -= 0.3  # reducing stealth score increase over time
 
         # write to a log file
         timestamp = datetime.datetime.now()
@@ -298,7 +307,7 @@ class NetworkEnvironment(gym.Env):
                 self.discovered.add(n)
                 r = 3
             else:  # negative reward for going back to a discovered node (prevents infinite loops)
-                r = -2
+                r = -1
 
         print(r)
         return r
