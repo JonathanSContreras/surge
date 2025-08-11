@@ -1,74 +1,51 @@
 # AI Pentester
-## PHASE 1: Network Exploration
-- The goal of this phase is to have the agent be able to COMPLETELY discover the full network of an unknown system without being detected. It will output a map at the end of each episode and any information it learned will be used in the next episode. 
+## Network Exploration (with Pentesting Capabilities)
+Overview: 
+An agentic network tool that has pentesting capabilities, network feedback, networking mapping, vulnerability scans, exploitation tool, and a vulnerability classifier.
 
-*This phase is completely random and has nothing to do with a real network nor real Python networking libraries. This phase is strictly used to build (and learn) the initial RL model.*
+The tools used will be:
+- OpenAI gpt-oss (free-weight LLM)
+- LangChain (the agent)
+- Python for method definitions (nmap, explotations, etc.)
+- PyTorch
+    - network mapping (GNN)
+    - vulnerability classification
+- Next.js for dashboard
+    - deployed on Vercel
+    - uses custom API routes to access the agent
 
-*As of right now my goal is more so agent training nad not getting the "perfect" network, however I still want to train my agent on network knowledge.*
-
-### Phase 1 Folder Structure:
+## Folder Structure:
 ```
 ./Surge
 │   README.md
-│   
-└───Phase 1
-    │   main.py
-    │   
-    ├───env
-    │       network.py
-    │       
-    ├───model
-    │       agent.py
-    │       
-    └───utils
-            log.txt
+│   main.py
+│       
+├───model
+│       NAME.py  # FIND A NAME FOR AGENT
+│       toolkit.py
+│
+├───notebooks
+│       nmap_gnn.ipynb
+│       vulnerability_classifier.ipynb
+│       
+└───utils
+        log.json
 ```
 ---
 
-ALGORITHM: Deep Q-Learning (since the network is unknown)
+## Functionality Breakdown
+### Agent
+The LangChain agent will perform:
+1) Reconnaissance via the `nmap` tool.
+2) Vulnerability Detection via `OpenVAS`/`Nikto`.
+3) Vulnerability Classification via PyTorch model classifying an identified vulnerability as None/Low/Medium/High/Critical
+4) Prioritization which will sort vulnerabilities based on CVSS score
+5) Exploitation via `Metasploit`, this will be controlled. It will either run real exploits or pseudo-exploits.
+6) Reporting through log action and send to the dashboard.
 
-AGENT: "ethical hacker" (need to come up with name)
+When it comes to exploitation, the agent will exploit a vulernability based ona vulnerability score (CVSS) if it is a high vulnerability score then the agent will exploit those first. The agent will know what is deemed as vulnerable through the CVE database which data will be pulled from the `NVD API` and will be stored locally in a `Postgres` so the agent can search quickly. In the end this will be used to rank vulnerabilities and explain patches.
 
-ENVIRONMENT: unknown network
+LangChain will wrap `nmap`, `nikto`, `OpenVAS`, `Metasploit`, etc. into the `Tool()` method so the LLM can call them in sequence.
 
-ACTIONS:
-- 0: port scan
-- 1: network scan (try unknown devices)
-- 2: t-shark/sniff traffic
-- 3: signature detection
-- 4: anomaly rules
-- 5: pivot host
-- 6: download file
-- 7: banner grab
-- 8: idle
-- 9: exit
-
-STATES: (agent's current knowledge)
-- list of known devices
-- known open ports per device
-- known vulnerabilities (through scan results)
-- stealth level/risk of detection
-- last action/target node
-The format of this will be a dictionary that summarizes the knowledge.
-
-REWARDS: 
-- -1: scan failed/detection triggered (maybe don't make this negative since negative encourages it to not go a route -> can maybe do negative reward for discovering a node it already had)
-- +1: new device discovered
-- +2: device scanned for open ports
-- +3: credential/file access gained
-- +5: full network discovered
-The reward system will be a cumulative reward.
-
-EPISODE TERMINATION:
-An episode will end when the agent maps all reachable nodes OR gets detected too many times (the stealth score drops below 0)
-
-LEVELS (not created more so for mental notes):
-- LEVEL 1: discover nodes
-- LEVEL 2: port scanning
-- LEVEL 3: credential access
-- LEVEL 4: file access/lateral movement
-
-ENVIRONMENT CREATION:
-- networkx and custom gym.Env
-- transition out from networkx and use ns3 or mininet to then transition into a real network
-    - ns3 is a Linux based so will probably need to use Ubuntu or Kali Linux
+### Dashboard
+The dashboard built via `next.js` will contain graphs that are normally on a vulnerability dashboard but it will also include the GNN graph that was created and will dynmaically show/callout areas of the network the agent deemed as "risky". The graph view will be done through `D3.js` or `Cyroscape.js`.
