@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<nmaprun scanner="nmap" args="nmap -A -p 22,80,443 192.168.1.1 192.168.1.2" start="1692120000">
+  
+  <!-- Host 1: Full details -->
+  <host>
+    <status state="up"/>
+    <address addr="192.168.1.1" addrtype="ipv4"/>
+    <address addr="00:1A:2B:3C:4D:5E" addrtype="mac" vendor="Cisco"/>
+    <hostnames>
+      <hostname name="router.local" type="PTR"/>
+      <hostname name="router-alt.local" type="user"/>
+    </hostnames>
+    <os>
+      <osmatch name="Cisco IOS" accuracy="98" line="10"/>
+      <osmatch name="Generic Router OS" accuracy="85" line="15"/>
+    </os>
+    <ports>
+      <port protocol="tcp" portid="22">
+        <state state="open" reason="syn-ack"/>
+        <service name="ssh"/>
+      </port>
+      <port protocol="tcp" portid="80">
+        <state state="filtered" reason="no-response"/>
+        <service name="http"/>
+      </port>
+      <port protocol="tcp" portid="443">
+        <state state="open" reason="syn-ack"/>
+        <service name="https"/>
+      </port>
+    </ports>
+  </host>
+
+  <!-- Host 2: Up, IPv4 only, no MAC, single OS match -->
+  <host>
+    <status state="up"/>
+    <address addr="192.168.1.2" addrtype="ipv4"/>
+    <hostnames>
+      <hostname name="webserver.local" type="PTR"/>
+    </hostnames>
+    <os>
+      <osmatch name="Linux 5.x" accuracy="92" line="25"/>
+    </os>
+    <ports>
+      <port protocol="tcp" portid="8080">
+        <state state="open" reason="syn-ack"/>
+        <service name="http-proxy"/>
+      </port>
+    </ports>
+  </host>
+
+  <!-- Host 3: MAC only, down -->
+  <host>
+    <status state="down"/>
+    <address addr="00:AA:BB:CC:DD:EE" addrtype="mac" vendor="HP"/>
+  </host>
+
+  <!-- Host 4: IPv4 up, no hostname, no OS -->
+  <host>
+    <status state="up"/>
+    <address addr="192.168.1.3" addrtype="ipv4"/>
+    <ports>
+      <port protocol="tcp" portid="21">
+        <state state="closed" reason="reset"/>
+        <service name="ftp"/>
+      </port>
+    </ports>
+  </host>
+
+  <!-- Host 5: IPv4 up, no ports section at all -->
+  <host>
+    <status state="up"/>
+    <address addr="192.168.1.4" addrtype="ipv4"/>
+  </host>
+
+</nmaprun>
