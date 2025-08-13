@@ -20,7 +20,7 @@
       </port>
       <port protocol="tcp" portid="25">
         <state state="open" reason="syn-ack"/>
-        <service name="smtp" product="Postfix smtpd" version="3.4.13"/>
+        <service name="ftp" product="vsftpd" version="3.0.3"/>
       </port>
     </ports>
     <os>
