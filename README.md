@@ -19,16 +19,25 @@ The tools used will be:
 ./Surge
 │   README.md
 │   main.py
-│       
+│    
+├───data
+│       nmap_output.xml  # might change to be name of scan
+│ 
 ├───model
-│       NAME.py  # FIND A NAME FOR AGENT
+│       sam.py
 │       toolkit.py
-│
+│ 
 ├───notebooks
 │       nmap_gnn.ipynb
-│       vulnerability_classifier.ipynb
+│ 
+├───output
+│       xml_to_networkx.png
+│ 
+├───src
+│       xml_to_network.py
 │       
 └───utils
+        imports.py  # MIGHT DELETE
         log.json
 ```
 ---
