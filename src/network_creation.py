@@ -11,13 +11,15 @@ import matplotlib.pyplot as plt
 ## XML PARSING ##
 def xml_parse(xml_file):
     """
-    Reads a .xml file and parses it storing network information. Returns a dictionary of important network components.
+    Reads a .xml file and parses it storing network information. 
+    Returns the nmap command used and a dictionary of important network components.
 
     ARGS
         xml_file: nmap scan .xml output
     """
     tree = ET.parse(xml_file)
     root = tree.getroot()  # tag that envelopes everything (SAM)
+    scan_command = root.attrib["args"]
 
     # loop over root children and their sub attributes
     # network info will be housed in a dictionary
@@ -83,7 +85,6 @@ def xml_parse(xml_file):
             network_config["hostname"] = hostname_list  # store list of hostnames if contains multiple
 
             # find IP open ports
-            # ERROR PORTION (not getting all information)
             port_root = child.find("ports")
             if port_root is not None:
                 port_lst = []
@@ -99,26 +100,34 @@ def xml_parse(xml_file):
         # add the host into the dictionary
         network[ip_addr] = network_config
 
-    return network
+    return scan_command, network
 
 ## NETWORK CREATION ##
-def dictionary_to_networkx(network_dict):
+def dictionary_to_networkx(network_dict, cmd):
     """
     Takes a dictionary and visualizes the network defined.
 
     ARGS
         network_dict: Dictionary object containing network information.
+        cmd: nmap command
     """
     G = nx.Graph()
     SCANNER = "SAM"
+    PORT_COLORS = {
+        80: "#fb8500",  # web
+        443: "#fb8500",  # web
+        22: "#d9d9d9"  # ssh
+    }
+
     # parse the dictionary to get the nodes (scanner -> IP -> Ports)
     G.add_node(SCANNER)
 
     for ip in network_dict.keys():
-        G.add_node(ip, color="#4c956c" if network_dict[ip]["state"] == "up" else "#d9d9d9")  # adding a node to IP
+        state = network_dict[ip].get("state", "unknown")
+        G.add_node(ip, color="#4c956c" if state == "up" else "#d9d9d9")  # adding a node to IP
 
         # if down connect using dashed lines
-        if network_dict[ip]["state"] != "up":
+        if state != "up":
             G.add_edge(SCANNER, ip)
         else:
             G.add_edge(SCANNER, ip)
@@ -127,17 +136,11 @@ def dictionary_to_networkx(network_dict):
         if network_dict[ip]["ports"] is not None:
             for n in network_dict[ip]["ports"]:
                 # color code port edges
-                if n["portid"] in [80, 443]:
-                    color = "#fb8500"
-                elif n["portid"] == 22:
-                    color = "#d9d9d9"
-                else:
-                    color = "#0077b6"
-
+                # color = PORT_COLORS.get(int(n["portid"]), "#0077b6")
                 service_label = f"{n['portid']}/{n.get('name', 'unknown')}"
-                G.add_node(service_label)
-                G.add_edge(ip, service_label, color=color)
 
+                G.add_node(service_label)
+                G.add_edge(ip, service_label, color="#0077b6")
 
     # display graph
     # pull the colors used
@@ -155,7 +158,7 @@ def dictionary_to_networkx(network_dict):
     )
 
     # save the fig as the name of the nmap command
-    plt.savefig("nmap_out_ad.png")
+    plt.savefig(f"{cmd}.png")
     plt.show()
 
 def main():
@@ -164,8 +167,8 @@ def main():
     xml2 = "../data/nmap_output_adv.xml"
     xml3 = "../data/nmap_stress_test.xml"
 
-    network = xml_parse(xml1)
-    dictionary_to_networkx(network)
+    command, network = xml_parse(xml1)
+    dictionary_to_networkx(network, command)
 
 if __name__ == "__main__":
     main()
