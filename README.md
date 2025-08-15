@@ -4,7 +4,7 @@ Overview:
 An agentic network tool that has pentesting capabilities, network feedback, networking mapping, vulnerability scans, exploitation tool, and a vulnerability classifier.
 
 The tools used will be:
-- OpenAI gpt-oss (free-weight LLM)
+- OpenAI gpt-oss (free-weight LLM) (might use Claude)
 - LangChain (the agent)
 - Python for method definitions (nmap, explotations, etc.)
 - PyTorch
