@@ -10,7 +10,6 @@ Description: Defines all nmap scans SAM can do, its toolkit.
 # after running log the actions into a database
 
 from langchain.tools import tool
-# import nmap
 import subprocess  # allows for command execution and easy integration with metasploit
 
 # NMAP HELPER FUNCTION
