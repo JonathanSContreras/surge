@@ -11,6 +11,8 @@ Description: Defines all nmap scans SAM can do, its toolkit.
 
 from langchain.tools import tool
 import subprocess  # allows for command execution and easy integration with metasploit
+import time
+import datetime
 
 # NMAP HELPER FUNCTION
 def run_nmap(cmd, scan):
@@ -22,25 +24,32 @@ def run_nmap(cmd, scan):
         cmd: List object of the nmap command.
         scan: String definition of the scan type, used in result metadata.
     """
+    start = time.time()
     try:
         result = subprocess.run(
             cmd,
             capture_output=True, text=True, timeout=100
         )
         return {
+            "timestamp": datetime.datetime.now(),
+            "target": cmd[-1],
             "command": " ".join(cmd),
             "scan_type": scan,
             "xml": result.stdout,
             "stderr": result.stderr,
-            "success": result.returncode == 0
+            "success": result.returncode == 0,
+            "process_time": round(time.time()-start, 2)
         }
     except subprocess.TimeoutExpired:
         return {
+            "timestamp": datetime.datetime.now(),
+            "target": cmd[-1],
             "command": " ".join(cmd),
             "scan_type": scan, 
             "xml": "",
             "stderr": "Scan timed out.",
-            "success": False
+            "success": False,
+            "process_time": round(time.time()-start, 2)
         }
     
 ## INCLUDE METHODS to remember past scans in .5 hours and log the most recent scan
