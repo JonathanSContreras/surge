@@ -3,11 +3,11 @@
 Description: Defines all nmap scans SAM can do, its toolkit.
 """
 # TODO
-# make better/clear docstrings (when/why) explaining when to use each method
 # provide context to SAM in the prompt so SAM knows to follow pentest methodology
 # store prior scan results in memory so it doesnt re run the same scan unnecessarily
 # after running make sure the output is useable for the parser
 # after running log the actions into a database
+# include a way to turn the xml file into networkx graph
 
 from langchain.tools import tool
 import subprocess  # allows for command execution and easy integration with metasploit
