@@ -43,6 +43,8 @@ def run_nmap(cmd, scan):
             "success": False
         }
     
+## INCLUDE METHODS to remember past scans in .5 hours and log the most recent scan
+    
 @tool
 def ping_sweep(target:str) -> dict:
     """
