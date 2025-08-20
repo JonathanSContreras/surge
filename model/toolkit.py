@@ -3,7 +3,7 @@
 Description: Defines all nmap scans SAM can do, its toolkit.
 """
 # TODO
-# make better/clear docstrings explaining when to use each method
+# make better/clear docstrings (when/why) explaining when to use each method
 # provide context to SAM in the prompt so SAM knows to follow pentest methodology
 # store prior scan results in memory so it doesnt re run the same scan unnecessarily
 # after running make sure the output is useable for the parser
@@ -56,6 +56,8 @@ def ping_sweep(target:str) -> dict:
 def port_scan_stealth(target:str) -> dict:
     """
     Find all open ports on a target with minimal detection via stealth SYN scan.
+    Use this when you need to discover open ports on a host *without being easily detected*. 
+    Good first step before aggressive scans.
     """
     return run_nmap(["nmap", "-sS", "-p-", "-oX", "-", target], "stealth port scan")
 
@@ -95,8 +97,5 @@ def vuln_scan(target:str) -> dict:
     return run_nmap(["nmap", "--script", "vuln", "-oX", "-", target], "vulnerability scan")
 
 @tool
-def custom_exploit(target):
-    """
-    CUSTOM EXPLOIT VIA METASPLOIT
-    """
-    pass
+def pseudo_exploit(target:str):
+    return f"Simulated exploit attempt on {target} -> success!"
