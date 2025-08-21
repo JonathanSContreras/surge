@@ -1,13 +1,16 @@
-# LangChain (v0.3.74) agent using gpt-oss or claude
+# LangChain (v0.3.74)/LangGraph agent using gpt-oss or claude
 
 # libraries
 from langchain.memory import ConversationBufferMemory
-from langchain.agents import initialize_agent
+from langchain_openai import ChatOpenAI  # chatgpt
+from langchain_anthropic import ChatAnthropic  # claude
+from langchain.agents import create_react_agent
 from toolkit import *
 from ..src.xml_to_network import dictionary_to_networkx
+from langgraph.graph import StateGraph
 
-
-LLM = 0 # DEFINE LLM API HERE
+# define LLM
+LLM = ChatOpenAI(model="", api_key="")
 
 # define memory
 memory = ConversationBufferMemory(memory_key="history", return_messages=True)
@@ -22,19 +25,18 @@ tools = [ping_sweep,
          os_fingerprint, 
          vuln_scan, 
          pseudo_exploit]
+llm_w_tools = LLM.bind_tools(tools)
 
 system_prompt = """"""
-llm = # DEFINE LLM API HERE
-
 
 # create an Agent instance
-sam = initialize_agent(
+sam = create_react_agent(
+    llm=LLM,
     tools=tools,
-    llm=llm,
-    system_prompt=
+    prompt=system_prompt
 )
 
-# run SAM
+# create LangGraph of SAM
 """
 1. takes the goal
 2. SAM decides sequence of tools to run
