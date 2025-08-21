@@ -5,7 +5,8 @@ An agentic network tool that has pentesting capabilities, network feedback, netw
 
 The tools used will be:
 - OpenAI gpt-oss (free-weight LLM) (might use Claude)
-- LangChain (the agent)
+- LangChain or LangGraph (the agent)
+    - LangGraph gives us more control because this is a non-linear task
 - Python for method definitions (nmap, explotations, etc.)
 - PyTorch
     - network mapping (GNN)
@@ -44,7 +45,7 @@ The tools used will be:
 
 ## Functionality Breakdown
 ### Agent
-The LangChain agent will perform:
+The agent will perform:
 1) Reconnaissance via the `nmap` tool.
 2) Vulnerability Detection via `OpenVAS`/`Nikto`.
 3) Vulnerability Classification via PyTorch model classifying an identified vulnerability as None/Low/Medium/High/Critical
