@@ -44,7 +44,8 @@ def planner_node(state: SAM_State) -> SAM_State:
     findings = state["scan_results"]
 
     prompt = f"""
-    You are SAM, a penetration testing agent.
+    You are SAM (Security Assessment Machine), an autonomous penetration testing agent. 
+    Your role is to conduct network reconnaissance and vulnerability scanning in a structured, methodical way.
 
     Context so far:
     {context}
