@@ -1,7 +1,7 @@
 # Agentic Network Analysis
 ## Network Exploration
 Overview: 
-An agentic network tool that has pentesting capabilities, network feedback, networking mapping, vulnerability scans, exploitation tool, and a vulnerability classifier.
+An agentic network tool that has capabilities, network feedback capabilities, networking mapping, vulnerability scans, exploitation tool, and a vulnerability classifier. The brain of the agent will follow MITRE ATTACK strategies and workflows.
 
 The tools used will be:
 - OpenAI gpt-oss (free-weight LLM) (might use Claude)
@@ -45,15 +45,21 @@ The tools used will be:
 
 ## Functionality Breakdown
 ### Agent
-The agent will perform:
+The agent start with:
 1) Reconnaissance via the `nmap` tool.
-2) Vulnerability Detection via `OpenVAS`/`Nikto`.
-3) Vulnerability Classification via PyTorch model classifying an identified vulnerability as None/Low/Medium/High/Critical
-4) Prioritization which will sort vulnerabilities based on CVSS score
-5) Exploitation via `Metasploit`, this will be controlled. It will either run real exploits or pseudo-exploits.
-6) Reporting through log action and send to the dashboard.
 
-When it comes to exploitation, the agent will exploit a vulernability based ona vulnerability score (CVSS) if it is a high vulnerability score then the agent will exploit those first. The agent will know what is deemed as vulnerable through the CVE database which data will be pulled from the `NVD API` and will be stored locally in a `Postgres` so the agent can search quickly. In the end this will be used to rank vulnerabilities and explain patches.
+After reconnaissance the agent will make a Next Best Action decision from the following choices:
+- Reporting through log action and send to the dashboard.
+- Port scanning (either stealthy, decoy, aggressive)
+- OS Scanner
+- Service enumerator
+- Vulnerability Detection Scan (`nmap`) and then transition into `OpenVAS`/`Nikto`
+- Prioritization which will sort vulnerabilities based on CVSS score
+- Exploitation via `Metasploit`, this will be controlled. It will either run real exploits or pseudo-exploits.
+
+When it comes to exploitation, the agent will exploit a vulnerability based on a vulnerability score (CVSS) if it is a high vulnerability score then the agent will exploit those first. Or there might be a EPSS score that determines what to exploit. The agent will know what is deemed as vulnerable through a classifier, from the CVE database which data will be pulled from the `NVD API` and will be stored locally in a `Postgres` so the agent can search quickly. In the end this will be used to rank vulnerabilities and explain patches.
+
+The vulnerability classifier will be built via PyTorch model classifying an identified vulnerability as None/Low/Medium/High/Critical
 
 LangChain will wrap `nmap`, `nikto`, `OpenVAS`, `Metasploit`, etc. into the `Tool()` method so the LLM can call them in sequence.
 
