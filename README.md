@@ -1,5 +1,5 @@
 # Agentic Network Analysis
-## Network Exploration (with Pentesting Capabilities)
+## Network Exploration
 Overview: 
 An agentic network tool that has pentesting capabilities, network feedback, networking mapping, vulnerability scans, exploitation tool, and a vulnerability classifier.
 
