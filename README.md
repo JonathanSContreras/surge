@@ -59,7 +59,7 @@ After reconnaissance the agent will make a Next Best Action decision from the fo
 
 When it comes to exploitation, the agent will exploit a vulnerability based on a vulnerability score (CVSS) if it is a high vulnerability score then the agent will exploit those first. Or there might be a EPSS score that determines what to exploit. The agent will know what is deemed as vulnerable through a classifier, from the CVE database which data will be pulled from the `NVD API` and will be stored locally in a `Postgres` so the agent can search quickly. In the end this will be used to rank vulnerabilities and explain patches.
 
-For the `EPSS` score, that process will either be pulled from first.org (as a Python library) or created ourselves. 
+For the `EPSS` score, that process will either be pulled from first.org (as a Python library `epss-api`) or created ourselves. 
 
 The vulnerability classifier will be built via PyTorch model classifying an identified vulnerability as None/Low/Medium/High/Critical
 
