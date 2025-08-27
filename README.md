@@ -7,6 +7,7 @@ The tools used will be:
 - OpenAI gpt-oss (free-weight LLM) (might use Claude)
 - LangChain or LangGraph (the agent)
     - LangGraph gives us more control because this is a non-linear task
+- LangSmith for analyzing the agents, making sure there is no hallucinations.
 - Python for method definitions (nmap, explotations, etc.)
 - PyTorch
     - network mapping (GNN)
