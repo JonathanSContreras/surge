@@ -44,8 +44,10 @@ The tools used will be:
 ---
 
 ## Functionality Breakdown
-### Agent
-The agent start with:
+### Agents
+The approach we are taking is a multi-agent system (MAS) where there is an agent for Reconnaissance, Vulnerability Identifying, Summary/Reporting Agent, and there will be subagents for Recon and Vulnerability whose's sole purpose would be to analyze the its parent's output.
+
+The process start with:
 1) Reconnaissance via the `nmap` tool.
 
 After reconnaissance the agent will make a Next Best Action decision from the following choices:
