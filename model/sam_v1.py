@@ -6,7 +6,7 @@ import networkx as nx
 from langchain_openai import ChatOpenAI  # chatgpt
 from langchain_anthropic import ChatAnthropic  # claude
 from langgraph.prebuilt import tool_node
-from toolkit import *
+from model.toolkit_v1 import *
 from ..src.xml_to_network import dictionary_to_networkx
 from langgraph.graph import StateGraph, START, END
 from langgraph.checkpoint.memory import MemorySaver
