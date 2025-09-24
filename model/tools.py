@@ -11,6 +11,7 @@ import datetime
 import time
 import json
 import shlex
+from nmap_sanitization import sanitize_flags_for_tier
 
 ## --- CONFIGURATIONS --- ##
 TIMEOUT_VAL = 300
@@ -136,53 +137,50 @@ def log_history(entry):
         pass
 
 @tool
-def nmap_scanning(flags: list[str], targets: list[str], timeout: int = TIMEOUT_VAL) -> dict:
+def nmap_scanning(scan_type: str, flags: list[str], targets: list[str], timeout: int = TIMEOUT_VAL) -> dict:
     """
-    Run an nmap request. `request` HAS to be a string and has to contain -oX to output it as a XML file:
-      - a string like: "nmap -sV -p 1-1024 192.168.1.0/24"
+    Run an nmap scan in a safe, tiered manner.
 
-    Structured nmap invocation that avoids shell concatenation.
-    flags: list of nmap flags (e.g. ["-sS", "-p1-1024", "-sV", "-T3"])
-    targets: list of targets e.g. ["192.168.1.0/24"] or ["192.168.1.10"]
-
-    Returns a dict with raw XML and metadata:
-      {
+    Returns JSON only. Structure:
+    {
         "timestamp": ISO timestamp,
-        "command": ["nmap","-sV",...],
+        "command": [...],
         "targets": [...],
-        "xml": "<...>" or None,
+        "xml": "<xml string>",
         "stderr": "...",
         "returncode": 0,
-        "success": bool,
-        "runtime_s": float,
-      }
+        "success": true/false,
+        "runtime_s": float
+    }
+
+    The LLM must not output human-readable messages, only JSON.
     """
 
     ## --- ROBUST CHECKS --- ##
-    # sanitize flags
-    flags_flat = []
-    for f in flags:
-        # split things like "-p1-1024" vs multi tokens
-        flags_flat.extend(shlex.split(f))
-    # ensure -oX - present (output xml to stdout)
-    if "-oX" not in flags_flat:
-        # nmap syntax: "-oX -" means XML to stdout
-        flags_flat += ["-oX", "-"]
-
-    # check for disallowed tokens in flags
-    for token in flags_flat:
-        if any(c in token for c in (";", "&&", "||", "`", "$(")):
-            return {"error": "disallowed shell/operator in flags"}
+    # check flags content
+    if not isinstance(flags, list):
+        return {"error": "flags must be a list"}
 
     # check the target list content
     if not isinstance(targets, list) or len(targets) == 0:
         return {"error": "targets must be a non-empty list"}
+
+    flags_flat = []
+    for f in flags:
+        flags_flat.extend(shlex.split(f))  # split commands like "-p1-1024" vs multi tokens
     ## --------- ##
+
+    ## --- SANITIZATION --- ##
+    sanitized = sanitize_flags_for_tier(flags_flat, scan_type)
+    if isinstance(sanitized, dict) and "error" in sanitized:
+        return sanitized  # return the error directly
+    
+    flags_flat = sanitized
 
     # scan variables
     cmd = ["nmap"] + flags_flat + targets
     start_time = time.time()
-    timestamp = datetime.datetime.utcnow().isoformat() + "Z"
+    timestamp = datetime.datetime.now().isoformat() + "Z"
 
     try:
         proc = subprocess.run(

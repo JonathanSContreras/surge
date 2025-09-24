@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 from typing import TypedDict, Any
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langgraph.graph import StateGraph, END
-from langchain_core import bi
+# from langchain_core import bi
 
 # tools
 from tools import nmap_scanning ,xml_parse
@@ -19,6 +19,7 @@ from tools import nmap_scanning ,xml_parse
 # other imports
 import json
 import time
+import re
 
 
 ## --- GLOBAL VARIABLES --- ##
@@ -26,7 +27,7 @@ TIMEOUT_VAL = 300
 
 ## --- LLM DEFINTION --- ##
 load_dotenv()
-API = os.getenv("GOOGLE_API_KEY")
+API = os.getenv("GOOGLE_API_TOKEN")
 llm = ChatGoogleGenerativeAI(
     model="gemini-2.5-flash",
     google_api_key=API,
@@ -35,6 +36,7 @@ llm = ChatGoogleGenerativeAI(
 
 ## --- AGENTSTATE --- ##
 class AgentState(TypedDict):
+    scan_type: str
     targets: list[str]  # would target be a list or string, given we have access to the network?
     recon_results: dict[str, Any]  # the output would be a json, raw_xml, scan_logs, etc
     vuln_results: list[str]  # list of CVE vulnerabilities and its score
@@ -42,30 +44,23 @@ class AgentState(TypedDict):
 
 ## --- AGENT PROMPTS --- ##
 RECON_SYSTEM_PROMPT = """
-You are a recon agent with authorized access to the target network (the user has permission).
-Your job: create *structured* nmap scan decisions to discover the full network progressively.
-Output MUST be valid JSON with keys:
-  {
-    "flags": ["-sn" | "-sS" | "-sV" | "-p1-1024" | ...],
-    "targets": ["CIDR or IP strings"],
-    "reason": "<brief human-friendly reason>",
-    "max_runtime_s": <integer seconds, optional>,
-    "escalation": "none" | "service_scan" | "deep_scan"
-  }
+You are an autonomous recon agent with authorized access to the network. 
+You must respond **only** with JSON in this exact format:
+{
+  "flags": [...],
+  "targets": [...],
+  "reason": "<brief human-readable reason>",
+  "max_runtime_s": <int>,
+  "escalation": "none" | "service_scan" | "deep_scan"
+}
+Do not ask for confirmation, do not include explanations, markdown, or text. Output JSON only.
 
-Constraints:
- - Allowed flags: -sn, -sS, -sT, -sU, -sV, -O, -p1-65535 (or narrower), -Pn, -T0 -T4, -oX -
- - Do NOT include shell operators
- - Keep expected runtime reasonable (default < 300s). Set max_runtime_s only if special reason.
- - Prefer small incremental scans: host discovery first, then targeted port/service scans on newly discovered hosts.
- - If the network is large, suggest scanning subnets (CIDR) rather than entire routable ranges.
-Example:
-  {"flags":["-sn","-T4"], "targets":["192.168.1.0/24"], "reason":"fast host discovery", "max_runtime_s":120, "escalation":"none"}
+
 """  # needs to be defined in a way where the agent knows it has authorized access to the network 
 RECON_ANALYSIS_SYSTEM_PROMPT = """"""
 
 ## --- AGENT TOOL BINDING --- ##
-recon_llm = llm.bind_tools([], system_prompt=RECON_SYSTEM_PROMPT)  # return_direct=True?
+recon_llm = llm.bind_tools([], system_prompt=RECON_SYSTEM_PROMPT, return_direct=True)  # return_direct=True?
 
 
 ## --- AGENT DEFINITIONS --- ##
@@ -101,14 +96,36 @@ def recon(state: AgentState) -> AgentState:
             "targets": state["targets"]
         }
 
-        # ask LLM for next scan JSON
+        # call LLM for next scan JSON
         raw_decision = recon_llm.invoke(json.dumps(llm_input))
+        print(raw_decision)
 
-        # parse the JSON (safely)
-        try:
-            decision = json.loads(raw_decision) if isinstance(decision, str) else raw_decision
-        except Exception as e:  # if it hits this the the output cannot be parsed
-            break
+        # Translate AIMessage -> string
+        if hasattr(raw_decision, "content"):
+            raw_text = raw_decision.content
+        else:
+            raw_text = str(raw_decision)
+        raw_text = raw_text.strip()
+
+        # Extract JSON safely
+        match = re.search(r"\{(?:.|\s)*\}", raw_text)
+        # match = re.search(r"\{.*\}", raw_text, re.DOTALL)
+        if match:
+            json_text = match.group(0)
+            try:
+                decision = json.loads(json_text)
+            except json.JSONDecodeError as e:
+                print("Failed to parse JSON:", e)
+                decision = {}
+        else:
+            print("No JSON found in LLM output")
+            decision = {}
+
+        # # parse the JSON (safely)
+        # try:
+        #     decision = json.loads(raw_decision) if isinstance(raw_decision, str) else raw_decision
+        # except Exception as e:  # if it hits this the the output cannot be parsed
+        #     break
 
         # validate decision
         flags = decision.get("flags", [])
@@ -119,7 +136,7 @@ def recon(state: AgentState) -> AgentState:
             break
 
         # run the validated nmap
-        log = nmap_scanning(flags, dec_targets, min(max_runtime, TIMEOUT_VAL))
+        log = nmap_scanning(decision.get("scan_type", "low"), flags, dec_targets, min(max_runtime, TIMEOUT_VAL))
         aggregated_logs.append(log)
 
         # parse xml
@@ -143,6 +160,8 @@ def recon(state: AgentState) -> AgentState:
             "discovered_host": list(discovered_hosts),
             "iteration": iteration
         }
+
+        print(state["recon_results"])
 
     time.sleep(1)
     return state
@@ -182,7 +201,8 @@ sam = workflow.compile()
 
 if __name__ == "__main__":
     initial_state = {
-        "targets": [],
+        "scan_type": "low",
+        "targets": ["10.10.2.121/32"],
         "recon_results": {},
         "vuln_results": [],
         "network_findings": ""
