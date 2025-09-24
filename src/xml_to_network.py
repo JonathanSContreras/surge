@@ -3,13 +3,13 @@
 Description: Parses an nmap .xml output and turns it into a networkx graph.
 """
 
-
+import os
 import xml.etree.ElementTree as ET  # ElementTree library is used to parse XML data
 import networkx as nx
 import matplotlib.pyplot as plt
 
 ## XML PARSING ##
-def xml_parse(xml_file):
+def xml_parse(xml_input):
     """
     Reads a .xml file and parses it storing network information. 
     Returns the nmap command used and a dictionary of important network components.
@@ -17,9 +17,26 @@ def xml_parse(xml_file):
     ARGS
         xml_file: nmap scan .xml output
     """
-    tree = ET.parse(xml_file)
-    root = tree.getroot()  # tag that envelopes everything (SAM)
-    scan_command = root.attrib["args"]
+    if not xml_input:
+        return {}
+    
+    # get the xml_ouput (either string or XML file)
+    try:
+        if os.path.exists(xml_input):
+            tree = ET.parse(xml_input)
+            root = tree.getroot()
+        else:
+            s = xml_input.strip()
+
+            if not (s.startswith("<")):  # check if the string is XML looking
+                return {"error": "~INPUT DOES NOT APPEAR TO BE XML"}
+            
+            root = ET.fromstring(s)
+
+    except ET.ParseError as pe:
+        return {"error": f"~ISSUE PARSING ELEMENTTREE: {pe}"}
+    except Exception as e:
+        return {"error": f"~UNEXPECTED ERROR PARSING XML: {e}"}
 
     # loop over root children and their sub attributes
     # network info will be housed in a dictionary
@@ -100,10 +117,10 @@ def xml_parse(xml_file):
         # add the host into the dictionary
         network[ip_addr] = network_config
 
-    return scan_command, network
+    return network
 
 ## NETWORK CREATION ##
-def dictionary_to_networkx(network_dict, cmd):
+def dictionary_to_networkx(network_dict, cmd="COMMAND"):
     """
     Takes a dictionary and visualizes the network defined.
 
@@ -120,7 +137,11 @@ def dictionary_to_networkx(network_dict, cmd):
     }
 
     # parse the dictionary to get the nodes (scanner -> IP -> Ports)
-    G.add_node(SCANNER)
+    G.add_node(SCANNER, color="#8ecae6")
+
+    # # connect to first host
+    # first_ip = next(iter(network_dict.keys()))
+    # G.add_edge(SCANNER, first_ip, style="dashed")
 
     for ip in network_dict.keys():
         state = network_dict[ip].get("state", "unknown")
@@ -150,6 +171,7 @@ def dictionary_to_networkx(network_dict, cmd):
     nx.draw(
         G,
         pos=nx.spring_layout(G),  # mess around with layouts
+        # pos=nx.shell_layout(G),
         # pos=nx.multipartite_layout(G, subset_key=""), 
         node_color=node_colors,
         edge_color=edge_colors,
@@ -163,12 +185,47 @@ def dictionary_to_networkx(network_dict, cmd):
 
 def main():
     # run both xml parser and network creator
-    xml1 = "../data/nmap_output.xml"
-    xml2 = "../data/nmap_output_adv.xml"
-    xml3 = "../data/nmap_stress_test.xml"
+    xml1 = "./data/nmap_output.xml"
+    xml2 = "./data/nmap_output_adv.xml"
+    xml3 = "./data/nmap_stress_test.xml"
 
-    command, network = xml_parse(xml1)
-    dictionary_to_networkx(network, command)
+    network = xml_parse(xml1)
+    print(network)
+    dictionary_to_networkx(network)
+
+def main_string():
+    # minimal nmap XML string
+    xml_str = """<?xml version="1.0"?>
+    <nmaprun scanner="nmap" args="nmap -oX - localhost" start="1695580000" version="7.94" xmloutputversion="1.05">
+      <host>
+        <status state="up" reason="syn-ack" reason_ttl="64"/>
+        <address addr="127.0.0.1" addrtype="ipv4"/>
+        <hostnames>
+          <hostname name="localhost" type="user"/>
+        </hostnames>
+        <ports>
+          <port protocol="tcp" portid="22">
+            <state state="open" reason="syn-ack" reason_ttl="64"/>
+            <service name="ssh" method="table" conf="3"/>
+          </port>
+          <port protocol="tcp" portid="80">
+            <state state="closed" reason="reset" reason_ttl="64"/>
+            <service name="http" method="table" conf="3"/>
+          </port>
+        </ports>
+        <os>
+          <osmatch name="Linux 5.X" accuracy="98"/>
+        </os>
+      </host>
+    </nmaprun>
+    """
+
+    # call your parser with a string
+    network = xml_parse(xml_str)
+
+    print("Parsed dictionary:\n", network)
+    dictionary_to_networkx(network)
+
 
 if __name__ == "__main__":
     main()

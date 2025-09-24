@@ -17,21 +17,34 @@ TIMEOUT_VAL = 300
 LOG_FILE = "./utils/scan_history.json"
 
 ## --- RECON METHOD/TOOLS --- ##
-def xml_parse(xml_file: str) -> dict:
+def xml_parse(xml_input: str) -> dict:
     """
-    Reads a .xml file and parses it storing network information. 
+    Reads a either an XML file or a string XML output and parses it storing network information. 
     Returns the nmap command used and a dictionary of important network components.
 
     ARGS
-        xml_file: nmap scan .xml output
+        xml_input: nmap scan .xml output
     """
-    if not xml_file:
+    if not xml_input:
         return {}
+    
+    # get the xml_ouput (either string or XML file)
+    try:
+        if os.path.exists(xml_input):
+            tree = ET.parse(xml_input)
+            root = tree.getroot()
+        else:
+            s = xml_input.strip()
 
+            if not (s.startswith("<")):  # check if the string is XML looking
+                return {"error": "~INPUT DOES NOT APPEAR TO BE XML"}
+            
+            root = ET.fromstring(s)
 
-    tree = ET.parse(xml_file)
-    root = tree.getroot()  # tag that envelopes everything (SAM)
-    # scan_command = root.attrib["args"]
+    except ET.ParseError as pe:
+        return {"error": f"~ISSUE PARSING ELEMENTTREE: {pe}"}
+    except Exception as e:
+        return {"error": f"~UNEXPECTED ERROR PARSING XML: {e}"}
 
     # loop over root children and their sub attributes
     # network info will be housed in a dictionary
