@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 from typing import TypedDict, Any
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langgraph.graph import StateGraph, END
-# from langchain_core import bi
+from langchain.schema import AIMessage
 
 # tools
 from tools import nmap_scanning ,xml_parse
@@ -45,6 +45,7 @@ class AgentState(TypedDict):
 ## --- AGENT PROMPTS --- ##
 RECON_SYSTEM_PROMPT = """
 You are an autonomous recon agent with authorized access to the network. 
+Your goal is to discover as much of the network as possible.
 You must respond **only** with JSON in this exact format:
 {
   "flags": [...],
@@ -58,7 +59,7 @@ Do not ask for confirmation, do not include explanations, markdown, or text. Out
 RECON_ANALYSIS_SYSTEM_PROMPT = """"""
 
 ## --- AGENT TOOL BINDING --- ##
-recon_llm = llm.bind_tools([], system_prompt=RECON_SYSTEM_PROMPT, return_direct=True)  # return_direct=True?
+# recon_llm = llm.bind_tools([], system_prompt=RECON_SYSTEM_PROMPT, return_direct=True)  # return_direct tells the tool binding to return the AI's raw output
 
 
 ## --- AGENT DEFINITIONS --- ##
@@ -95,33 +96,26 @@ def recon(state: AgentState) -> AgentState:
         }
 
         # call LLM for next scan JSON
-        raw_decision = recon_llm.invoke(json.dumps(llm_input))
+        raw_decision: AIMessage = llm.invoke(json.dumps(llm_input), system_message=RECON_SYSTEM_PROMPT, return_direct=True)
         print(raw_decision)
 
-        # Translate AIMessage -> string
+        # parse the AIMessage
         if hasattr(raw_decision, "content"):
             raw_text = raw_decision.content
         else:
             raw_text = str(raw_decision)
-        raw_text = raw_text.strip()
 
-        # Extract JSON safely
-        match = re.search(r"\{(?:.|\s)*\}", raw_text)
-        # match = re.search(r"\{.*\}", raw_text, re.DOTALL)
+        # extract JSON using regex
+        match = re.search(r"\{.*\}", raw_text, re.DOTALL)
         if match:
-            json_text = match.group(0)
-            try:
-                decision = json.loads(json_text)
-            except json.JSONDecodeError as e:
-                print("Failed to parse JSON:", e)
-                decision = {}
+            decision = json.loads(match.group(0))
         else:
-            print("No JSON found in LLM output")
             decision = {}
 
-        # # parse the JSON (safely)
+
+        # # parse the JSON (safely) by pulling the AIMessage
         # try:
-        #     decision = json.loads(raw_decision) if isinstance(raw_decision, str) else raw_decision
+        #     decision = json.loads(raw_decision.content) if isinstance(raw_decision, AIMessage) else raw_decision
         # except Exception as e:  # if it hits this the the output cannot be parsed
         #     break
 
@@ -130,6 +124,7 @@ def recon(state: AgentState) -> AgentState:
         dec_targets = decision.get("targets", [])
         max_runtime = decision.get("runtime_s", TIMEOUT_VAL)
 
+        # check nmap scanning parameters
         if not isinstance(flags, list) or not isinstance(dec_targets, list) or len(dec_targets) == 0:
             break
 

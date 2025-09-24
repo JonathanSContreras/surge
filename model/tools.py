@@ -15,7 +15,7 @@ from nmap_sanitization import sanitize_flags_for_tier
 
 ## --- CONFIGURATIONS --- ##
 TIMEOUT_VAL = 300
-LOG_FILE = "./utils/scan_history.json"
+LOG_FILE = "../utils/scan_history.json"
 
 ## --- RECON METHOD/TOOLS --- ##
 def xml_parse(xml_input: str) -> dict:
