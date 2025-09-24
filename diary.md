@@ -16,3 +16,8 @@ Decided to focus more on the network vulnerability side of the project (underpro
 $$START -> RECON -> RECON ANALYSIS -> END$$
 - RECON: free `nmap` scans, write to the log file, output `.xml` to be parsed by RECON ANALYSIS AGENT and VULNERABILITY AGENT
 - RECON ANALYSIS: analyze `.xml` output
+
+**9/24:**
+- working on RECON workflow (mainly the RECON agent)
+- decided to define a tiered sanitization for the nmap commands
+- got it running but the gemini LLM is asking for user input (i.e. "Would you like to initiate a scan?")

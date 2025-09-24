@@ -54,8 +54,6 @@ You must respond **only** with JSON in this exact format:
   "escalation": "none" | "service_scan" | "deep_scan"
 }
 Do not ask for confirmation, do not include explanations, markdown, or text. Output JSON only.
-
-
 """  # needs to be defined in a way where the agent knows it has authorized access to the network 
 RECON_ANALYSIS_SYSTEM_PROMPT = """"""
 
