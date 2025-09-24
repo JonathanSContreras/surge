@@ -14,9 +14,6 @@ import shlex
 
 ## --- CONFIGURATIONS --- ##
 TIMEOUT_VAL = 300
-# RATE_LIMIT = 2
-# ALLOWED_FLAGS = []
-# DISALLOWED_FLAGS = []
 LOG_FILE = "./utils/scan_history.json"
 
 ## --- RECON METHOD/TOOLS --- ##
@@ -28,6 +25,10 @@ def xml_parse(xml_file: str) -> dict:
     ARGS
         xml_file: nmap scan .xml output
     """
+    if not xml_file:
+        return {}
+
+
     tree = ET.parse(xml_file)
     root = tree.getroot()  # tag that envelopes everything (SAM)
     # scan_command = root.attrib["args"]
@@ -122,12 +123,16 @@ def log_history(entry):
         pass
 
 @tool
-def nmap_scanning(request: str) -> dict:
+def nmap_scanning(flags: list[str], targets: list[str], timeout: int = TIMEOUT_VAL) -> dict:
     """
     Run an nmap request. `request` HAS to be a string and has to contain -oX to output it as a XML file:
       - a string like: "nmap -sV -p 1-1024 192.168.1.0/24"
 
-    Returns a dict:
+    Structured nmap invocation that avoids shell concatenation.
+    flags: list of nmap flags (e.g. ["-sS", "-p1-1024", "-sV", "-T3"])
+    targets: list of targets e.g. ["192.168.1.0/24"] or ["192.168.1.10"]
+
+    Returns a dict with raw XML and metadata:
       {
         "timestamp": ISO timestamp,
         "command": ["nmap","-sV",...],
@@ -137,55 +142,74 @@ def nmap_scanning(request: str) -> dict:
         "returncode": 0,
         "success": bool,
         "runtime_s": float,
-        "validation": "OK" or "reason",
-        "history_id": optional
       }
     """
 
-    # variable definitions
-    start_time = time.time()
-    timestamp = datetime.datetime.now().isoformat() + "Z"
-    cmd = request.lower().split()   # turns the command into a list
-
     ## --- ROBUST CHECKS --- ##
-    # check for shell metacharacters
-    for m in (";", "&&", "||", "`", "$("):
-        if m in cmd:
-            return {"error": "command contains not allowed shell operators"}
+    # sanitize flags
+    flags_flat = []
+    for f in flags:
+        # split things like "-p1-1024" vs multi tokens
+        flags_flat.extend(shlex.split(f))
+    # ensure -oX - present (output xml to stdout)
+    if "-oX" not in flags_flat:
+        # nmap syntax: "-oX -" means XML to stdout
+        flags_flat += ["-oX", "-"]
 
-    # check if request is a string
-    if not isinstance(request, str):
-        return {"error": "request must be a string"}
-    
-    # check if the -oX is in the list
-    if "-oX" not in cmd:
-        return {"error": "scan must contain, -oX, so it can output an XML"}
+    # check for disallowed tokens in flags
+    for token in flags_flat:
+        if any(c in token for c in (";", "&&", "||", "`", "$(")):
+            return {"error": "disallowed shell/operator in flags"}
 
+    # check the target list content
+    if not isinstance(targets, list) or len(targets) == 0:
+        return {"error": "targets must be a non-empty list"}
+    ## --------- ##
+
+    # scan variables
+    cmd = ["nmap"] + flags_flat + targets
+    start_time = time.time()
+    timestamp = datetime.datetime.utcnow().isoformat() + "Z"
 
     try:
         proc = subprocess.run(
             cmd,
             capture_output=True, 
             text=True, 
-            timeout=TIMEOUT_VAL
+            timeout=timeout
         )
-        return {
+
+        log = {
             "timestamp": timestamp,
-            "command": request,
+            "command": cmd,
+            "targets": targets,
             "xml": proc.stdout,
             "stderr": proc.stderr,
+            "returncode": proc.returncode,
             "success": proc.returncode == 0,
-            "process_time": round(time.time()-start_time, 2)
+            "runtime_s": round(time.time()-start_time, 2)
         }
+
+        # add log
+        log_history(log)
+
+        return log
     except subprocess.TimeoutExpired:
-        return {
+        log = {
             "timestamp": timestamp,
-            "command": request,
-            "xml": "",
-            "stderr": "Scan timed out.",
+            "command": cmd,
+            "targets": targets,
+            "xml": None,
+            "stderr": "~SCAN TIMED OUT",
+            "returncode": None,
             "success": False,
-            "process_time": round(time.time()-start_time, 2)
+            "runtime_s": round(time.time()-start_time, 2)
         }
+
+        # add log
+        log_history(log)
+
+        return log
 
 
 ## --- VULNERABILITY TOOLS --- ##
