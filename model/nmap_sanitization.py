@@ -2,34 +2,8 @@
 @author: Brianna Hinds
 Description: Method definitions of nmap command sanitization
 """
-import re
+from utils.globals import SANITIZATION_TIER_CONFIG, METACHARACTERS
 
-## --- CONFIGURATIONS --- ##
-TIER_CONFIG = {
-    "low": {  # only host discovery
-        "allowed_flags": {"-sn", "-T0", "-T1", "-T2", "-T3", "-T4"},
-        "max_port_range": 0,   # 0 indicates "no port scans allowed"
-        "max_runtime_s": 120,
-        "allow_service_detection": False,
-    },
-    "medium": {  # limited port/sreeevice scans
-        "allowed_flags": {"-sn", "-sS", "-sT", "-sV", "-Pn", "-T0", "-T1", "-T2", "-T3"},
-        "max_port_range": 1024,  # allow ports up to 1-1024 (or lists of ports within that)
-        "max_runtime_s": 300,
-        "allow_service_detection": True,
-    },
-    "high": {  # "critical" / admin-approved — wide permissions
-        "allowed_flags": {
-            "-sn", "-sS", "-sT", "-sU", "-sV", "-O", "-Pn",
-            "-T0", "-T1", "-T2", "-T3", "-T4", "-p"  # -p treated specially
-        },
-        "max_port_range": 65535,
-        "max_runtime_s": 1800,
-        "allow_service_detection": True,
-    },
-}
-    
-METACHARACTERS = (";", "&", "|", "`", "$(", "$", "||")
 
 ## --- SANITIZATION METHODS --- ##
 def _extract_port_expressions(flags: list[str]) -> list[str]:
@@ -82,7 +56,7 @@ def sanitize_flags_for_tier(flags: list[str], tier: str):
         flags: List of flags from nmap command
         tier: user inputed string, either "low", "medium", "high"
     """
-    config = TIER_CONFIG.get(tier)
+    config = SANITIZATION_TIER_CONFIG.get(tier)
     if config is None:
         return {"error": f"unknown tier value: {tier}"}
     

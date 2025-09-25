@@ -14,16 +14,14 @@ from langgraph.graph import StateGraph, END
 from langchain.schema import AIMessage
 
 # tools
-from tools import nmap_scanning ,xml_parse
+from tools import nmap_scanning, xml_parse
 
 # other imports
+from utils.globals import TIMEOUT_VAL
 import json
 import time
 import re
 
-
-## --- GLOBAL VARIABLES --- ##
-TIMEOUT_VAL = 300
 
 ## --- LLM DEFINTION --- ##
 load_dotenv()

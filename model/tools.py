@@ -12,10 +12,7 @@ import time
 import json
 import shlex
 from nmap_sanitization import sanitize_flags_for_tier
-
-## --- CONFIGURATIONS --- ##
-TIMEOUT_VAL = 300
-LOG_FILE = "../utils/scan_history.json"
+from utils.globals import TIMEOUT_VAL, LOG_FILE  # configuration file
 
 ## --- RECON METHOD/TOOLS --- ##
 def xml_parse(xml_input: str) -> dict:
