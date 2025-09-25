@@ -47,12 +47,12 @@ You must respond **only** with JSON in this exact format:
 {
   "flags": [...],
   "targets": [...],
+  "scan_type": "low" | "medium" | "high",
   "reason": "<brief human-readable reason>",
-  "max_runtime_s": <int>,
-  "escalation": "none" | "service_scan" | "deep_scan"
+  "max_runtime_s": <int>
 }
 Do not ask for confirmation, do not include explanations, markdown, or text. Output JSON only.
-""" 
+"""
 RECON_ANALYSIS_SYSTEM_PROMPT = """"""
 
 ## --- AGENT TOOL BINDING --- ##
@@ -71,6 +71,7 @@ def recon(state: AgentState) -> AgentState:
     discovered_hosts = set()
     iteration = 0
     max_iterations = 8
+    aggregated_logs = []
 
     # set condition variables so the model doesn't get stuck
     no_new_count = 0
@@ -83,7 +84,6 @@ def recon(state: AgentState) -> AgentState:
         discovered_hosts.update(parsed.keys())
     
     # define a stop condition for the looping
-    aggregated_logs = []
     while iteration < max_iterations and no_new_count < no_new_threshold:
         iteration += 1
 
@@ -94,28 +94,63 @@ def recon(state: AgentState) -> AgentState:
             "targets": state["targets"]
         }
 
+        ## SANITY CHECK
+        print(f"\n--- ITERATION {iteration} ---")
+        print(f"LLM input: {json.dumps(llm_input, indent=2)}")
+        ####
+
         # call LLM for next scan JSON
-        raw_decision: AIMessage = llm.invoke(json.dumps(llm_input), system_message=SystemMessage(content=RECON_SYSTEM_PROMPT), return_direct=True)
-        print(raw_decision)
+        raw_decision: AIMessage = llm.invoke(
+            json.dumps(llm_input), 
+            system_message=SystemMessage(content=RECON_SYSTEM_PROMPT), 
+            return_direct=True
+        )
 
         # parse the AIMessage
-        if hasattr(raw_decision, "content"):
-            raw_text = raw_decision.content
-        else:
-            raw_text = str(raw_decision)
+        raw_text = getattr(raw_decision, "content", str(raw_decision))
+        print(f"LLM raw output: {raw_text}")
 
-        # Extract JSON with fallback
+        # extract the JSON
         decision = extract_json(raw_text, iteration)
 
         if not decision:
-            # If no decision, log & retry (instead of breaking)
+            # log error and continue
             aggregated_logs.append({
-                "error": "No valid JSON from LLM",
+                "error": "~NO VALID JSON FROM LLM",
                 "raw_output": raw_text,
                 "iteration": iteration
             })
             no_new_count += 1
-            continue  # skip this round but keep recon loop alive
+
+            # update the state
+            state["recon_results"] = {
+                "last_log": {},
+                "parsed_network": {},
+                "all_logs": aggregated_logs,
+                "discovered_hosts": list(discovered_hosts),
+                "iteration": iteration
+            }
+            continue
+
+
+        # # parse the AIMessage
+        # if hasattr(raw_decision, "content"):
+        #     raw_text = raw_decision.content
+        # else:
+        #     raw_text = str(raw_decision)
+
+        # # Extract JSON with fallback
+        # decision = extract_json(raw_text, iteration)
+
+        # if not decision:
+        #     # If no decision, log & retry (instead of breaking)
+        #     aggregated_logs.append({
+        #         "error": "No valid JSON from LLM",
+        #         "raw_output": raw_text,
+        #         "iteration": iteration
+        #     })
+        #     no_new_count += 1
+        #     continue  # skip this round but keep recon loop alive
 
         # parse the AIMessage
         # if hasattr(raw_decision, "content"):
@@ -133,15 +168,25 @@ def recon(state: AgentState) -> AgentState:
         # validate decision
         flags = decision.get("flags", [])
         dec_targets = decision.get("targets", [])
-        max_runtime = decision.get("runtime_s", TIMEOUT_VAL)
+        max_runtime = decision.get("max_runtime_s", TIMEOUT_VAL)
 
+        ## --- SANITY CHECKS --- ##
         # check nmap scanning parameters
-        if not isinstance(flags, list) or not isinstance(dec_targets, list) or len(dec_targets) == 0:
-            break
+        if not isinstance(flags, list) or not isinstance(dec_targets, list):
+            print(f"~INVALID DECISION FIELDS:\tflags: {flags}\ttargets: {dec_targets}")
+            no_new_count += 1
+            continue
+        
+        
+        if len(dec_targets) == 0:
+            print("~LLM DEFINED NO TARGETS")
+            no_new_count += 1
+            continue
+        ####
 
         # run the validated nmap
         log = nmap_scanning.invoke({
-            "scan_type": decision.get("scan_type", "low"), 
+            "scan_type": decision.get("scan_type", state["scan_type"]), 
             "flags": flags, 
             "targets": dec_targets, 
             "timeout": min(max_runtime, TIMEOUT_VAL)})
@@ -169,7 +214,7 @@ def recon(state: AgentState) -> AgentState:
             "iteration": iteration
         }
 
-        print(state["recon_results"])
+        print(f"Discovered hosts so far: {state['recon_results']['discovered_hosts']}")
 
     time.sleep(1)
     return state

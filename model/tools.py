@@ -147,7 +147,7 @@ def nmap_scanning(scan_type: str, flags: list[str], targets: list[str], timeout:
         "stderr": "...",
         "returncode": 0,
         "success": true/false,
-        "runtime_s": float
+        "max_runtime_s": float
     }
 
     The LLM must not output human-readable messages, only JSON.
@@ -196,7 +196,7 @@ def nmap_scanning(scan_type: str, flags: list[str], targets: list[str], timeout:
             "stderr": proc.stderr,
             "returncode": proc.returncode,
             "success": proc.returncode == 0,
-            "runtime_s": round(time.time()-start_time, 2)
+            "max_runtime_s": round(time.time()-start_time, 2)
         }
 
         # add log
@@ -212,7 +212,7 @@ def nmap_scanning(scan_type: str, flags: list[str], targets: list[str], timeout:
             "stderr": "~SCAN TIMED OUT",
             "returncode": None,
             "success": False,
-            "runtime_s": round(time.time()-start_time, 2)
+            "max_runtime_s": round(time.time()-start_time, 2)
         }
 
         # add log
