@@ -1,9 +1,10 @@
 """
 @author: Brianna Hinds
-Description: Method definitions of nmap command sanitization
+Description: Helper functions for the agentic model.
 """
-from utils.globals import SANITIZATION_TIER_CONFIG, METACHARACTERS
-
+from globals import SANITIZATION_TIER_CONFIG, METACHARACTERS
+import re
+import json
 
 ## --- SANITIZATION METHODS --- ##
 def _extract_port_expressions(flags: list[str]) -> list[str]:
@@ -98,3 +99,23 @@ def sanitize_flags_for_tier(flags: list[str], tier: str):
         flags.extend(["-oX", "-"])
 
     return flags
+
+
+## --- JSON FUNCTIONS -- ##
+def extract_json(raw_text: str, iteration: int = 0) -> dict:
+    """
+    Try to extract a valid JSON object from raw LLM output.
+    Uses regex to find JSON blocks and falls back safely.
+    """
+    # Look for all JSON-like objects in the text
+    matches = re.findall(r"\{.*?\}", raw_text, re.DOTALL)
+
+    for m in matches:
+        try:
+            return json.loads(m)  # first valid JSON wins
+        except json.JSONDecodeError as e:
+            print(f"~[Iteration {iteration}]. Invalid JSON candidate, skipping: {e}")
+
+    # If nothing valid was found
+    print(f"~[Iteration {iteration}]. No valid JSON found in LLM output")
+    return {}

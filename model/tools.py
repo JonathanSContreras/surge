@@ -11,8 +11,8 @@ import datetime
 import time
 import json
 import shlex
-from nmap_sanitization import sanitize_flags_for_tier
-from utils.globals import TIMEOUT_VAL, LOG_FILE  # configuration file
+from helper import sanitize_flags_for_tier
+from globals import TIMEOUT_VAL, LOG_FILE  # configuration file
 
 ## --- RECON METHOD/TOOLS --- ##
 def xml_parse(xml_input: str) -> dict:
@@ -178,6 +178,7 @@ def nmap_scanning(scan_type: str, flags: list[str], targets: list[str], timeout:
     cmd = ["nmap"] + flags_flat + targets
     start_time = time.time()
     timestamp = datetime.datetime.now().isoformat() + "Z"
+    print(cmd)
 
     try:
         proc = subprocess.run(

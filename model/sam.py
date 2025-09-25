@@ -11,17 +11,16 @@ from dotenv import load_dotenv
 from typing import TypedDict, Any
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langgraph.graph import StateGraph, END
-from langchain.schema import AIMessage
+from langchain.schema import AIMessage, SystemMessage
 
 # tools
 from tools import nmap_scanning, xml_parse
 
 # other imports
-from utils.globals import TIMEOUT_VAL
+from globals import TIMEOUT_VAL
+from helper import extract_json
 import json
 import time
-import re
-
 
 ## --- LLM DEFINTION --- ##
 load_dotenv()
@@ -34,8 +33,8 @@ llm = ChatGoogleGenerativeAI(
 
 ## --- AGENTSTATE --- ##
 class AgentState(TypedDict):
-    scan_type: str
-    targets: list[str]  # would target be a list or string, given we have access to the network?
+    scan_type: str  # e.g. "low"/"medium"/"high"
+    targets: list[str]  # e.g. ["10.10.1/25"]
     recon_results: dict[str, Any]  # the output would be a json, raw_xml, scan_logs, etc
     vuln_results: list[str]  # list of CVE vulnerabilities and its score
     network_findings: str
@@ -53,7 +52,7 @@ You must respond **only** with JSON in this exact format:
   "escalation": "none" | "service_scan" | "deep_scan"
 }
 Do not ask for confirmation, do not include explanations, markdown, or text. Output JSON only.
-"""  # needs to be defined in a way where the agent knows it has authorized access to the network 
+""" 
 RECON_ANALYSIS_SYSTEM_PROMPT = """"""
 
 ## --- AGENT TOOL BINDING --- ##
@@ -72,6 +71,8 @@ def recon(state: AgentState) -> AgentState:
     discovered_hosts = set()
     iteration = 0
     max_iterations = 8
+
+    # set condition variables so the model doesn't get stuck
     no_new_count = 0
     no_new_threshold = 2
 
@@ -88,13 +89,13 @@ def recon(state: AgentState) -> AgentState:
 
         # prompt content
         llm_input = {
-            "known_hosts": list(discovered_hosts)[:200],  # cap the size
+            "known_hosts": list(discovered_hosts)[:200],  # cap the size of hosts discovered
             "scan_history": [l.get("command") for l in aggregated_logs[- 5:]],
             "targets": state["targets"]
         }
 
         # call LLM for next scan JSON
-        raw_decision: AIMessage = llm.invoke(json.dumps(llm_input), system_message=RECON_SYSTEM_PROMPT, return_direct=True)
+        raw_decision: AIMessage = llm.invoke(json.dumps(llm_input), system_message=SystemMessage(content=RECON_SYSTEM_PROMPT), return_direct=True)
         print(raw_decision)
 
         # parse the AIMessage
@@ -103,19 +104,31 @@ def recon(state: AgentState) -> AgentState:
         else:
             raw_text = str(raw_decision)
 
-        # extract JSON using regex
-        match = re.search(r"\{.*\}", raw_text, re.DOTALL)
-        if match:
-            decision = json.loads(match.group(0))
-        else:
-            decision = {}
+        # Extract JSON with fallback
+        decision = extract_json(raw_text, iteration)
 
+        if not decision:
+            # If no decision, log & retry (instead of breaking)
+            aggregated_logs.append({
+                "error": "No valid JSON from LLM",
+                "raw_output": raw_text,
+                "iteration": iteration
+            })
+            no_new_count += 1
+            continue  # skip this round but keep recon loop alive
 
-        # # parse the JSON (safely) by pulling the AIMessage
-        # try:
-        #     decision = json.loads(raw_decision.content) if isinstance(raw_decision, AIMessage) else raw_decision
-        # except Exception as e:  # if it hits this the the output cannot be parsed
-        #     break
+        # parse the AIMessage
+        # if hasattr(raw_decision, "content"):
+        #     raw_text = raw_decision.content
+        # else:
+        #     raw_text = str(raw_decision)
+
+        # # extract JSON using regex
+        # match = re.search(r"\{.*\}", raw_text, re.DOTALL)
+        # if match:
+        #     decision = json.loads(match.group(0))
+        # else:
+        #     decision = {}
 
         # validate decision
         flags = decision.get("flags", [])
@@ -127,13 +140,17 @@ def recon(state: AgentState) -> AgentState:
             break
 
         # run the validated nmap
-        log = nmap_scanning(decision.get("scan_type", "low"), flags, dec_targets, min(max_runtime, TIMEOUT_VAL))
+        log = nmap_scanning.invoke({
+            "scan_type": decision.get("scan_type", "low"), 
+            "flags": flags, 
+            "targets": dec_targets, 
+            "timeout": min(max_runtime, TIMEOUT_VAL)})
         aggregated_logs.append(log)
 
         # parse xml
         parsed = {}
         if log.get("xml"):
-            parsed = xml_parse(log["xml"])  # might need to define xml parser from string
+            parsed = xml_parse(log["xml"])  # this can take either an xml file or a string
 
         # detect new hosts
         hosts = set(parsed.keys()) - discovered_hosts
@@ -145,10 +162,10 @@ def recon(state: AgentState) -> AgentState:
 
         # update state
         state["recon_results"] = {
-            "last_log": log,
-            "parsed_network": parsed,
+            "last_log": log if decision else {},
+            "parsed_network": parsed if decision else {},
             "all_logs": aggregated_logs,
-            "discovered_host": list(discovered_hosts),
+            "discovered_hosts": list(discovered_hosts),
             "iteration": iteration
         }
 
@@ -193,7 +210,7 @@ sam = workflow.compile()
 if __name__ == "__main__":
     initial_state = {
         "scan_type": "low",
-        "targets": ["10.10.2.121/32"],
+        "targets": ["10.10.160.0/22"],
         "recon_results": {},
         "vuln_results": [],
         "network_findings": ""
