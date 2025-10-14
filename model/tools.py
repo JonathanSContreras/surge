@@ -15,7 +15,65 @@ from helper import sanitize_flags_for_tier
 from globals import TIMEOUT_VAL, LOG_FILE  # configuration file
 
 ## --- RECON METHOD/TOOLS --- ##
-def xml_parse(xml_input: str) -> dict:
+def xml_parse(xml_data):
+    """
+    Parses nmap XML output into structured dictionary form.
+    Handles missing fields gracefully.
+    """
+    import xml.etree.ElementTree as ET
+    network_config = {}
+
+    try:
+        root = ET.fromstring(xml_data)
+    except ET.ParseError:
+        print("⚠️ XML parsing error: malformed data")
+        return {}
+
+    for host in root.findall("host"):
+        host_addr = None
+        host_name = None
+        port_lst = []  # ✅ Always initialize this
+
+        # --- Extract address ---
+        addr_elem = host.find("address")
+        if addr_elem is not None:
+            host_addr = addr_elem.attrib.get("addr")
+
+        # --- Extract hostname (optional) ---
+        hostnames_elem = host.find("hostnames/hostname")
+        if hostnames_elem is not None:
+            host_name = hostnames_elem.attrib.get("name")
+
+        # --- Extract ports (if any) ---
+        ports_elem = host.find("ports")
+        if ports_elem is not None:
+            for port in ports_elem.findall("port"):
+                port_id = port.attrib.get("portid")
+                protocol = port.attrib.get("protocol")
+                state_elem = port.find("state")
+                service_elem = port.find("service")
+
+                state = state_elem.attrib.get("state") if state_elem is not None else "unknown"
+                service = service_elem.attrib.get("name") if service_elem is not None else "unknown"
+
+                port_lst.append({
+                    "port": port_id,
+                    "protocol": protocol,
+                    "state": state,
+                    "service": service
+                })
+
+        # --- Store host summary ---
+        if host_addr:
+            network_config[host_addr] = {
+                "hostname": host_name or "unknown",
+                "ports": port_lst,  # ✅ Safe even if empty
+            }
+
+    return network_config
+
+
+def xml_parse_v1(xml_input: str) -> dict:
     """
     Reads a either an XML file or a string XML output and parses it storing network information. 
     Returns the nmap command used and a dictionary of important network components.

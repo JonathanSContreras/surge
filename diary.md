@@ -21,3 +21,10 @@ $$START -> RECON -> RECON ANALYSIS -> END$$
 - working on RECON workflow (mainly the RECON agent)
 - decided to define a tiered sanitization for the nmap commands
 - got it running but the gemini LLM is asking for user input (i.e. "Would you like to initiate a scan?")
+
+**10/14**
+- got the recon agent fully running without having to ask for confirmation (used chatgpt)
+- connected to a switch and was able to discover the switch and jonathan's device (192.163.2.0/24 and "low" scan)
+- state is a JSON file ready for the recon analysis agent to analyze
+- biggest thing is the change in messaging System Message -> AI Message -> Human Message -> etc.
+- I am thinking of having a reprompt after the agent does not discover anything new after 2 iterations

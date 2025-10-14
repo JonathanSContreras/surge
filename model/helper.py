@@ -5,6 +5,7 @@ Description: Helper functions for the agentic model.
 from globals import SANITIZATION_TIER_CONFIG, METACHARACTERS
 import re
 import json
+import datetime
 
 ## --- SANITIZATION METHODS --- ##
 def _extract_port_expressions(flags: list[str]) -> list[str]:
@@ -102,20 +103,21 @@ def sanitize_flags_for_tier(flags: list[str], tier: str):
 
 
 ## --- JSON FUNCTIONS -- ##
-def extract_json(raw_text: str, iteration: int = 0) -> dict:
+def extract_json(raw_text: str, iteration: int) -> dict:
     """
-    Try to extract a valid JSON object from raw LLM output.
-    Uses regex to find JSON blocks and falls back safely.
+    Tries to extract JSON from the model output.
+    If invalid or missing, logs the issue and returns an empty dict.
     """
-    # Look for all JSON-like objects in the text
-    matches = re.findall(r"\{.*?\}", raw_text, re.DOTALL)
+    # Try to find JSON block
+    match = re.search(r"\{[\s\S]*\}", raw_text)
+    if not match:
+        print(f"[{datetime.datetime.now()}] WARNING: No JSON block found in iteration {iteration}")
+        return {}
 
-    for m in matches:
-        try:
-            return json.loads(m)  # first valid JSON wins
-        except json.JSONDecodeError as e:
-            print(f"~[Iteration {iteration}]. Invalid JSON candidate, skipping: {e}")
-
-    # If nothing valid was found
-    print(f"~[Iteration {iteration}]. No valid JSON found in LLM output")
-    return {}
+    try:
+        parsed = json.loads(match.group(0))
+        print(f"[{datetime.datetime.now()}] ✅ Extracted valid JSON decision.")
+        return parsed
+    except json.JSONDecodeError as e:
+        print(f"[{datetime.datetime.now()}] ⚠️ Invalid JSON at iteration {iteration}: {e}")
+        return {}

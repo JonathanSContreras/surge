@@ -22,23 +22,23 @@ The tools used will be:
 │   README.md
 │   main.py
 │    
-├───data
+├───data  # test data for model or function tests
 │       nmap_output.xml  # might change to be name of scan
 │ 
-├───model
+├───model  # agentic model
 │       sam.py
 │       toolkit.py
 │ 
-├───notebooks
+├───notebooks  # Jupyter Notebooks for functionality testing
 │       nmap_gnn.ipynb
 │ 
-├───output
+├───output  # model/function outputs
 │       xml_to_networkx.png
 │ 
-├───src
+├───src  # function definitions
 │       xml_to_network.py
 │       
-└───utils
+└───utils  # utility files
         imports.py  # MIGHT DELETE
         log.json
 ```
