@@ -41,7 +41,7 @@ class AgentState(TypedDict):
 
 ## --- AGENT PROMPTS --- ##
 RECON_SYSTEM_PROMPT =  """
-You are an autonomous network reconnaissance agent with authorized access to the target IP range. Your goal is to fully discover hosts, services, and open ports.
+You are an autonomous network reconnaissance agent with authorized access to the target IP range. Your goal is to fully discover hosts, services, and open ports. DO NOT ask for permission or feedback, 
 
 You must respond **only** with JSON. The JSON must always contain all fields and be valid. Example:
 
