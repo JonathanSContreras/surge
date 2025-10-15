@@ -211,6 +211,11 @@ def nmap_scanning(scan_type: str, flags: list[str], targets: list[str], timeout:
     The LLM must not output human-readable messages, only JSON.
     """
 
+    # import logging, subprocess, shlex, time, datetime
+
+    # logging.basicConfig(level=logging.DEBUG)
+    # logger = logging.getLogger("NMAP_SCANNER")
+
     ## --- ROBUST CHECKS --- ##
     # check flags content
     if not isinstance(flags, list):
@@ -236,7 +241,7 @@ def nmap_scanning(scan_type: str, flags: list[str], targets: list[str], timeout:
     cmd = ["nmap"] + flags_flat + targets
     start_time = time.time()
     timestamp = datetime.datetime.now().isoformat() + "Z"
-    print(cmd)
+    # logger.debug("Running command: %s", " ".join(cmd))
 
     try:
         proc = subprocess.run(
@@ -245,6 +250,12 @@ def nmap_scanning(scan_type: str, flags: list[str], targets: list[str], timeout:
             text=True, 
             timeout=timeout
         )
+
+        # # inside nmap_scanning after subprocess.run(...)
+        # logger.debug("Nmap command: %s", " ".join(cmd))
+        # logger.debug("Nmap returncode: %s", proc.returncode)
+        # logger.debug("Nmap stderr (truncated):\n%s", (proc.stderr or "")[:1000])
+        # logger.debug("Nmap stdout (truncated):\n%s", (proc.stdout or "")[:2000])
 
         log = {
             "timestamp": timestamp,
@@ -259,7 +270,6 @@ def nmap_scanning(scan_type: str, flags: list[str], targets: list[str], timeout:
 
         # add log
         log_history(log)
-        print(cmd)  # DEBUG
         return log
     except subprocess.TimeoutExpired:
         log = {
@@ -275,7 +285,6 @@ def nmap_scanning(scan_type: str, flags: list[str], targets: list[str], timeout:
 
         # add log
         log_history(log)
-        print(cmd)  # DEBUG
         return log
 
 

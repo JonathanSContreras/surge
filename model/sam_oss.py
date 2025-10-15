@@ -32,7 +32,7 @@ llm = ChatOpenAI(
     base_url=BASE_URL,
     api_key="ollama",  # this is an unused placeholder (required by SDK)
     temperature=0,
-    top_p=0.9  # makes the model model deterministic
+    top_p=1 # makes the model model deterministic
 )
 
 ## --- AGENTSTATE --- ##
@@ -156,23 +156,29 @@ def recon(state: AgentState) -> AgentState:
 
         # --- ROBUST CHECK: fallback and reprompt LLM if the JSON is not found
         if not decision:
+            print("decision not good, reprompting")
             print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] No valid JSON, reprompting model to reformat output...")
 
             repair_prompt = f"""
             You previously generated malformed or incomplete JSON. 
-            Reformat the following into a **strictly valid JSON object**, with no explanations or extra text.
+            Reformat the following into a strictly valid JSON object only (no explanations, no code fences, no markdown, no extra text)
             Ensure it matches exactly this schema:
 
             {{
-            "flags": [string],
-            "targets": [string],
-            "scan_type": "low" | "medium" | "high",
+            "flags": [string],  // list of flag strings
+            "targets": {state["targets"]},   // exactly this list (do not change)
+            "scan_type": "low" | "medium" | "high" 
             "reason": "string",
             "max_runtime_s": int
             }}
 
-            Do not include markdown, comments, code fences, or text outside the JSON.
-            Text to fix:
+            Context:
+            - Preferred scan_type (from user/state): "{state['scan_type']}"
+            - If you cannot decide, use the preferred scan_type above.
+            - Do not include any fields beyond the five shown.
+            - Do not use code fences. Output a single valid JSON object only.
+
+            Text to reformat:
             {raw_text}
             """
 

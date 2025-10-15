@@ -68,38 +68,86 @@ def sanitize_flags_for_tier(flags: list[str], tier: str):
         return {"error": "~DISALLOWED SHELL/OPERATOR IN FLAGS"}
     
     allowed = config["allowed_flags"]
+    print(f"allowed flags for {tier}: {allowed}")
 
+    sanitized_flags = []
     for tok in flags:
         if not tok.startswith("-"):
+            sanitized_flags.append(tok)
             continue
+
+        # timing flags
         if tok.startswith("-T"):
-            if not any(t.startswith("-T") for t in allowed):
-                return {"error": f"timing template {tok} not allowed for tier {tier}"}
+            if any(t.startswith("-T") for t in allowed):
+                sanitized_flags.append(tok)
             continue
+
+                # allow output flags
         if tok in ("-oX", "-oX-"):
+            sanitized_flags.append(tok)
             continue
+
+        # allow port flags if tier allows
         if tok.startswith("-p"):
-            if "-p" not in allowed:
-                return {"error": "port scans not allowed for this tier"}
+            if "-p" in allowed:
+                sanitized_flags.append(tok)
             continue
-        if tok not in allowed:
-            return {"error": f"flag '{tok}' not allowed for tier {tier}"}
 
-    # validate port ranges
+        # otherwise, only keep if allowed
+        if tok in allowed:
+            sanitized_flags.append(tok)
+    
+    # validate port ranges if applicable
     max_port_range = config["max_port_range"]
-    port_exprs = _extract_port_expressions(flags)
+    port_exprs = _extract_port_expressions(sanitized_flags)
     if port_exprs:
-        if max_port_range == 0:
-            return {"error": "port scans are disabled for this tier"}
+        valid_ports = []
         for expr in port_exprs:
-            if not _validate_port_expr(expr, max_port_range):
-                return {"error": f"port expression '{expr}' exceeds max allowed port {max_port_range}"}
+            if max_port_range == 0:
+                continue  # skip port expressions entirely
+            if _validate_port_expr(expr, max_port_range):
+                valid_ports.append(expr)
+        # replace original port expressions with validated ones
+        sanitized_flags = [f for f in sanitized_flags if not f.startswith("-p")] + valid_ports
 
-    # ensure -oX - is defined
-    if "-oX" not in flags:
-        flags.extend(["-oX", "-"])
+    # ensure XML output is requested
+    if "-oX" not in sanitized_flags:
+        sanitized_flags.extend(["-oX", "-"])
 
-    return flags
+    return sanitized_flags
+
+    # for tok in flags: # instead of not running, strip the flag
+        
+    #     if not tok.startswith("-"):
+    #         continue
+    #     if tok.startswith("-T"):
+    #         if not any(t.startswith("-T") for t in allowed):
+    #             return {"error": f"timing template {tok} not allowed for tier {tier}"}
+    #         continue
+    #     if tok in ("-oX", "-oX-"):
+    #         continue
+    #     if tok.startswith("-p"):
+    #         if "-p" not in allowed:
+    #             return {"error": "port scans not allowed for this tier"}
+    #         continue
+    #     if tok not in allowed:
+    #         return {"error": f"flag '{tok}' not allowed for tier {tier}"}
+
+    # # validate port ranges
+    # max_port_range = config["max_port_range"]
+    # port_exprs = _extract_port_expressions(flags)
+    # if port_exprs:
+    #     if max_port_range == 0:
+    #         return {"error": "port scans are disabled for this tier"}
+    #     for expr in port_exprs:
+    #         if not _validate_port_expr(expr, max_port_range):
+    #             return {"error": f"port expression '{expr}' exceeds max allowed port {max_port_range}"}
+
+    # # # ensure -oX - is defined
+    # # if "-oX" not in flags:
+    # #     flags.extend(["-oX", "-"])
+
+    # return flags
 
 
 ## --- JSON FUNCTIONS -- ##
