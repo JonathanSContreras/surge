@@ -32,3 +32,7 @@ $$START -> RECON -> RECON ANALYSIS -> END$$
 **10/15**
 - going from gpt oss to gemini means that the prompting will have to change
     - gpt needs a role-based message format (system, user, assistant) where system = context/rules, user = input/targets/history/etc
+- got it working with gpt oss from jonathan's server
+- BIG CHANGES:
+    - instead of pushing an error that has any disallowed flags, it instead takes those flags out
+    - changed the xml log output (from putting the raw file to outputting it to a .xml file and calling the path in the log)
