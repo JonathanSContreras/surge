@@ -28,3 +28,7 @@ $$START -> RECON -> RECON ANALYSIS -> END$$
 - state is a JSON file ready for the recon analysis agent to analyze
 - biggest thing is the change in messaging System Message -> AI Message -> Human Message -> etc.
 - I am thinking of having a reprompt after the agent does not discover anything new after 2 iterations
+
+**10/15**
+- going from gpt oss to gemini means that the prompting will have to change
+    - gpt needs a role-based message format (system, user, assistant) where system = context/rules, user = input/targets/history/etc

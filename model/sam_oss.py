@@ -9,9 +9,9 @@ from dotenv import load_dotenv
 
 # Agentic libraries
 from typing import TypedDict, Any
-from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_openai import ChatOpenAI
 from langgraph.graph import StateGraph, END
-from langchain.schema import AIMessage, SystemMessage
+from langchain.schema import AIMessage, SystemMessage, HumanMessage
 
 # tools
 from tools import nmap_scanning, xml_parse
@@ -25,11 +25,14 @@ import datetime
 
 ## --- LLM DEFINTION --- ##
 load_dotenv()
-API = os.getenv("GOOGLE_API_TOKEN")
-llm = ChatGoogleGenerativeAI(
-    model="gemini-2.5-flash",
-    google_api_key=API,
-    temperature=0
+BASE_URL = os.getenv("TAILSCALE_URL")
+print(BASE_URL)
+llm = ChatOpenAI(
+    model="qwen2.5:14b",
+    base_url=BASE_URL,
+    api_key="ollama",  # this is an unused placeholder (required by SDK)
+    temperature=0,
+    top_p=0.9  # makes the model model deterministic
 )
 
 ## --- AGENTSTATE --- ##
@@ -78,6 +81,7 @@ RECON_ANALYSIS_SYSTEM_PROMPT = """"""
 def _now():
     return datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
+# RECON AGENT #
 def recon(state: AgentState) -> AgentState:
     """
     Progressive recon loop that calls nmap commands to map out the full network. 
@@ -94,7 +98,7 @@ def recon(state: AgentState) -> AgentState:
     no_new_count = 0
     no_new_threshold = 4
 
-    # Load previous recon state if exists
+    # load previous recon state if exists
     prev = state.get("recon_results", {})
     if prev:
         parsed = prev.get("parsed_network", {})
@@ -106,76 +110,81 @@ def recon(state: AgentState) -> AgentState:
 
         print(f"\n--- ITERATION {iteration} [{time.strftime('%Y-%m-%d %H:%M:%S')}] ---")
 
-        # Simplified LLM input
+        # prompt LLM to ensure correct output
         llm_input = f"""
-                        You are continuing a network reconnaissance operation.
+        You are an autonomous network reconnaissance specialist.
 
-                        Known hosts so far: {len(discovered_hosts)}.
-                        Scan history count: {len(aggregated_logs)}.
-                        Targets to analyze: {', '.join(state['targets'])}.
+        Context summary:
+        - Known hosts discovered so far: {len(discovered_hosts)}.
+        - Total scan iterations completed: {len(aggregated_logs)}.
+        - Active targets under analysis: {', '.join(state['targets'])}.
 
-                        If no new hosts or open ports have been found after 2 iterations, 
-                        switch to a **different scanning strategy** automatically. 
-                        You may adjust parameters such as:
-                        - Port range (`-p`), e.g. limit to 1 to 1024 or top 1000 ports
-                        - Timing template (`-T`), e.g. T3 for normal or T5 for fast scans
-                        - Discovery methods (`-sn`, `-Pn`, `-sS`, `-sU`)
-                        - Parallelism and retries (`--max-retries`, `--min-rate`, etc.)
+        If no new hosts or open ports have been found after 2 iterations, 
+        switch to a **different scanning strategy** automatically. 
+        You may adjust parameters such as:
+        - Port range (`-p`), e.g. limit to 1–1024 or top 1000 ports
+        - Timing template (`-T`), e.g. T3 for normal or T5 for fast scans
+        - Discovery methods (`-sn`, `-Pn`, `-sS`, `-sU`)
+        - Parallelism and retries (`--max-retries`, `--min-rate`, etc.)
 
-                        Your goal is to produce a JSON decision that adapts dynamically 
-                        to scan results and previous outcomes.
+        Your goal is to produce a JSON decision that adapts dynamically 
+        to scan results and previous outcomes.
 
-                        Respond **only** with a valid JSON object matching this schema:
-                        {{
-                        "flags": [string],
-                        "targets": [string],
-                        "scan_type": "low" | "medium" | "high",
-                        "reason": "string",
-                        "max_runtime_s": int
-                        }}
-                    """
+        Respond **only** with valid JSON in this exact schema:
+        {{
+        "flags": [string],          # example: ["-T4", "-sS", "--open"]
+        "targets": [string],        # subnets or hosts to focus on
+        "scan_type": "low" | "medium" | "high",
+        "reason": "string",         # describe why the new strategy is chosen
+        "max_runtime_s": int        # upper bound for how long this scan can run
+        }}
+        """
 
-        # --- STEP 1: Ask Gemini for the next scan decision ---
-        raw_decision: AIMessage = llm.invoke(
-            llm_input,
-            system_message=SystemMessage(content=RECON_SYSTEM_PROMPT),
-            return_direct=True
-        )
+
+        # ask LLM for scan descision (gpt oss needs it in a chat message list form)
+        raw_decision: AIMessage = llm.invoke([
+            SystemMessage(content=RECON_SYSTEM_PROMPT),
+            HumanMessage(content=json.dumps(llm_input))
+             
+        ])
 
         raw_text = getattr(raw_decision, "content", str(raw_decision))
         print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] LLM raw output:\n{raw_text}")
 
-        # --- STEP 2: Try to extract JSON ---
+        # extract json (json = LLM response/output)
         decision = extract_json(raw_text, iteration)
 
-        # --- STEP 3: Auto-repair fallback if JSON not found ---
+        # --- ROBUST CHECK: fallback and reprompt LLM if the JSON is not found
         if not decision:
-            print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] ⚠️ No valid JSON, reprompting model to reformat output...")
+            print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] No valid JSON, reprompting model to reformat output...")
 
             repair_prompt = f"""
-                                Reformat the following text into a valid JSON object that matches:
-                                {{
-                                "flags": [],
-                                "targets": [],
-                                "scan_type": "low",
-                                "reason": "string",
-                                "max_runtime_s": 30
-                                }}
+            You previously generated malformed or incomplete JSON. 
+            Reformat the following into a **strictly valid JSON object**, with no explanations or extra text.
+            Ensure it matches exactly this schema:
 
-                                Text to fix:
-                                {raw_text}
-                            """
+            {{
+            "flags": [string],
+            "targets": [string],
+            "scan_type": "low" | "medium" | "high",
+            "reason": "string",
+            "max_runtime_s": int
+            }}
 
-            repaired = llm.invoke(
-                repair_prompt,
-                system_message=SystemMessage(content=RECON_SYSTEM_PROMPT),
-                return_direct=True
-            )
+            Do not include markdown, comments, code fences, or text outside the JSON.
+            Text to fix:
+            {raw_text}
+            """
+
+            repaired = llm.invoke([
+                SystemMessage(content=RECON_SYSTEM_PROMPT),
+                HumanMessage(content=repair_prompt)
+            ])
 
             decision = extract_json(getattr(repaired, "content", str(repaired)), iteration)
 
             if not decision:
-                # Still invalid — log and skip iteration
+                # if still invalid, move to next iteration
                 aggregated_logs.append({
                     "error": "~NO_VALID_JSON",
                     "raw_output": raw_text,
@@ -191,7 +200,7 @@ def recon(state: AgentState) -> AgentState:
                 }
                 continue
 
-        # --- STEP 4: Validate decision fields ---
+        # validate decision fields for nmap scan
         flags = decision.get("flags", [])
         dec_targets = decision.get("targets", [])
         max_runtime = decision.get("max_runtime_s", TIMEOUT_VAL)
@@ -206,7 +215,7 @@ def recon(state: AgentState) -> AgentState:
             no_new_count += 1
             continue
 
-        # --- STEP 5: Run validated nmap scan ---
+        # run validated nmap scan
         print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Running Nmap scan: {dec_targets}")
         log = nmap_scanning.invoke({
             "scan_type": decision.get("scan_type", state["scan_type"]),
@@ -216,22 +225,22 @@ def recon(state: AgentState) -> AgentState:
         })
         aggregated_logs.append(log)
 
-        # --- STEP 6: Parse scan output ---
+        # parse nmap scan output
         parsed = {}
         if log.get("xml"):
             parsed = xml_parse(log["xml"])
 
-        # --- STEP 7: Detect new hosts ---
+        # detect new hosts
         hosts = set(parsed.keys()) - discovered_hosts
         if hosts:
-            print(f"✅ New hosts discovered: {hosts}")
+            print(f"New hosts discovered: {hosts}")
             discovered_hosts.update(hosts)
             no_new_count = 0
         else:
             print("~No new hosts found.")
             no_new_count += 1
 
-        # --- STEP 8: Update agent state ---
+        # update agent state
         state["recon_results"] = {
             "last_log": log,
             "parsed_network": parsed,
@@ -240,10 +249,10 @@ def recon(state: AgentState) -> AgentState:
             "iteration": iteration
         }
 
-        print(f"📊 Hosts discovered so far: {state['recon_results']['discovered_hosts']}")
+        print(f"Hosts discovered so far: {state['recon_results']['discovered_hosts']}")
         time.sleep(1)
 
-    print(f"🧭 Recon finished after {iteration} iterations.")
+    print(f"Recon finished after {iteration} iterations.")
     return state
 
 

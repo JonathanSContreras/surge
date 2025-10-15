@@ -16,7 +16,7 @@ SANITIZATION_TIER_CONFIG= {
     "high": {  # "critical" / admin-approved — wide permissions
         "allowed_flags": {
             "-sn", "-sS", "-sT", "-sU", "-sV", "-O", "-Pn",
-            "-T0", "-T1", "-T2", "-T3", "-T4", "-p"  # -p treated specially
+            "-T0", "-T1", "-T2", "-T3", "-T4", "-p", "--open"  # -p treated specially
         },
         "max_port_range": 65535,
         "max_runtime_s": 1800,

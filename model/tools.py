@@ -259,7 +259,7 @@ def nmap_scanning(scan_type: str, flags: list[str], targets: list[str], timeout:
 
         # add log
         log_history(log)
-
+        print(cmd)  # DEBUG
         return log
     except subprocess.TimeoutExpired:
         log = {
@@ -275,7 +275,7 @@ def nmap_scanning(scan_type: str, flags: list[str], targets: list[str], timeout:
 
         # add log
         log_history(log)
-
+        print(cmd)  # DEBUG
         return log
 
 
