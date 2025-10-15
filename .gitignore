@@ -1,3 +1,4 @@
 .env
 /dump
 model/__pycache__
+/run_logs

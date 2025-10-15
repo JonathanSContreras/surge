@@ -20,7 +20,6 @@ def xml_parse(xml_data):
     Parses nmap XML output into structured dictionary form.
     Handles missing fields gracefully.
     """
-    import xml.etree.ElementTree as ET
     network_config = {}
 
     try:
@@ -186,7 +185,7 @@ def xml_parse_v1(xml_input: str) -> dict:
 def log_history(entry):
     try:
         with open(LOG_FILE, "a", encoding="utf-8") as lf:
-            lf.write(json.dumps(entry) + "\n")
+            lf.write(entry + "\n")
     
     except Exception as e:
         pass
@@ -250,18 +249,28 @@ def nmap_scanning(scan_type: str, flags: list[str], targets: list[str], timeout:
             text=True, 
             timeout=timeout
         )
+        
+        # write the xml output to a .xml file and then link it in the "xml"
+        safe_timestamp = timestamp.replace(":", "_").replace(".", "_")  # '2025-10-15T12-45-59-442649'
+        file_path = f"./data/{safe_timestamp}_nmap.xml"
 
-        # # inside nmap_scanning after subprocess.run(...)
-        # logger.debug("Nmap command: %s", " ".join(cmd))
-        # logger.debug("Nmap returncode: %s", proc.returncode)
-        # logger.debug("Nmap stderr (truncated):\n%s", (proc.stderr or "")[:1000])
-        # logger.debug("Nmap stdout (truncated):\n%s", (proc.stdout or "")[:2000])
+        # ensure stdout is text
+        xml_output = proc.stdout if isinstance(proc.stdout, str) else proc.stdout.decode("utf-8")
+
+        # ROBUST CHECK ##
+        # print(os.path.isdir("../data"))
+        ####
+
+        with open(file_path, "w", encoding="utf-8") as f:
+            f.write(xml_output)
+        # with open(file_path, "w+", encoding="utf-8") as f:
+        #     f.write(proc.stdout)
 
         log = {
             "timestamp": timestamp,
             "command": cmd,
             "targets": targets,
-            "xml": proc.stdout,
+            "xml": file_path,
             "stderr": proc.stderr,
             "returncode": proc.returncode,
             "success": proc.returncode == 0,

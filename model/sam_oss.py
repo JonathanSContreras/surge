@@ -14,7 +14,7 @@ from langgraph.graph import StateGraph, END
 from langchain.schema import AIMessage, SystemMessage, HumanMessage
 
 # tools
-from tools import nmap_scanning, xml_parse
+from tools import nmap_scanning, xml_parse, xml_parse_v1
 
 # other imports
 from globals import TIMEOUT_VAL
@@ -113,6 +113,7 @@ def recon(state: AgentState) -> AgentState:
         # prompt LLM to ensure correct output
         llm_input = f"""
         You are an autonomous network reconnaissance specialist.
+        You MUST use the previous scan_type when responding unless explicitly changing strategy.
 
         Context summary:
         - Known hosts discovered so far: {len(discovered_hosts)}.
@@ -134,7 +135,7 @@ def recon(state: AgentState) -> AgentState:
         {{
         "flags": [string],          # example: ["-T4", "-sS", "--open"]
         "targets": [string],        # subnets or hosts to focus on
-        "scan_type": "low" | "medium" | "high",
+        "scan_type": {state["scan_type"]},
         "reason": "string",         # describe why the new strategy is chosen
         "max_runtime_s": int        # upper bound for how long this scan can run
         }}
@@ -161,13 +162,14 @@ def recon(state: AgentState) -> AgentState:
 
             repair_prompt = f"""
             You previously generated malformed or incomplete JSON. 
-            Reformat the following into a strictly valid JSON object only (no explanations, no code fences, no markdown, no extra text)
+            Reformat the following into a strictly valid JSON object only (no explanations, no code fences, no markdown, no extra text) using hte previous scan_type
+            Do not change scan_type under any circumstances.
             Ensure it matches exactly this schema:
 
             {{
             "flags": [string],  // list of flag strings
             "targets": {state["targets"]},   // exactly this list (do not change)
-            "scan_type": "low" | "medium" | "high" 
+            "scan_type": {state["scan_type"]}, 
             "reason": "string",
             "max_runtime_s": int
             }}
@@ -231,10 +233,14 @@ def recon(state: AgentState) -> AgentState:
         })
         aggregated_logs.append(log)
 
-        # parse nmap scan output
+        # parse nmap scan output (will parse xml file to dictionary)
+
+        # parsed = {}
+        # if log.get("xml"):
+        #     parsed = xml_parse(log["xml"])
         parsed = {}
         if log.get("xml"):
-            parsed = xml_parse(log["xml"])
+            parsed = xml_parse_v1(log["xml"])
 
         # detect new hosts
         hosts = set(parsed.keys()) - discovered_hosts

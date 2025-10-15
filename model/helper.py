@@ -68,7 +68,7 @@ def sanitize_flags_for_tier(flags: list[str], tier: str):
         return {"error": "~DISALLOWED SHELL/OPERATOR IN FLAGS"}
     
     allowed = config["allowed_flags"]
-    print(f"allowed flags for {tier}: {allowed}")
+    # print(f"allowed flags for {tier}: {allowed}")
 
     sanitized_flags = []
     for tok in flags:

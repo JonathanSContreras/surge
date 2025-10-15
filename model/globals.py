@@ -1,5 +1,5 @@
 TIMEOUT_VAL = 300
-LOG_FILE = "./utils/scan_history.json"
+LOG_FILE = "./utils/scan_history.txt"
 SANITIZATION_TIER_CONFIG= {
     "low": {  # only host discovery
         "allowed_flags": {"-sn", "-T0", "-T1", "-T2", "-T3", "-T4", "-Pn"},
