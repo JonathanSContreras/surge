@@ -17,7 +17,7 @@ from langchain.schema import AIMessage, SystemMessage, HumanMessage
 from tools import nmap_scanning, xml_parse, xml_parse_v1
 
 # other imports
-from globals import TIMEOUT_VAL
+from globals import TIMEOUT_VAL, SCANNING_DUMP_LOG
 from helper import extract_json
 import json
 import time
@@ -37,11 +37,11 @@ llm = ChatOpenAI(
 
 ## --- AGENTSTATE --- ##
 class AgentState(TypedDict):
-    scan_type: str  # e.g. "low"/"medium"/"high"
-    targets: list[str]  # e.g. ["10.10.1/25"]
-    recon_results: dict[str, Any]  # the output would be a json, raw_xml, scan_logs, etc
-    vuln_results: list[str]  # list of CVE vulnerabilities and its score
-    network_findings: str
+    scan_type: str  # e.g. "low"/"medium"/"high"  GIVEN BY USER
+    targets: list[str]  # e.g. ["10.10.1/25"]  GIVEN BY USER
+    recon_results: dict[str, Any]  # the output would be a json, raw_xml, scan_logs, etc  AFTER RECON AGENT RUNS
+    vuln_results: list[str]  # list of CVE vulnerabilities and its score    AFTER VULN AGENT RUNS
+    network_findings: str   # REPORT AGENT CHANGES THIS STATE
 
 ## --- AGENT PROMPTS --- ##
 RECON_SYSTEM_PROMPT = """
@@ -98,6 +98,9 @@ def recon(state: AgentState) -> AgentState:
     no_new_count = 0
     no_new_threshold = 4
 
+    with open(SCANNING_DUMP_LOG, "a") as file:
+        file.write(f"Stop variables defined for RECON AGENT:\n----------------\nmax iterations = {max_iterations}\nno_new_threshold = {no_new_threshold}")
+
     # load previous recon state if exists
     prev = state.get("recon_results", {})
     if prev:
@@ -109,6 +112,11 @@ def recon(state: AgentState) -> AgentState:
         iteration += 1
 
         print(f"\n--- ITERATION {iteration} [{time.strftime('%Y-%m-%d %H:%M:%S')}] ---")
+
+        # write to scan dump file
+        with open(SCANNING_DUMP_LOG, "a") as file:
+            file.write(f"\n--- ITERATION {iteration} [{time.strftime('%Y-%m-%d %H:%M:%S')}] ---")
+        ####
 
         # prompt LLM to ensure correct output
         llm_input = f"""
@@ -141,7 +149,6 @@ def recon(state: AgentState) -> AgentState:
         }}
         """
 
-
         # ask LLM for scan descision (gpt oss needs it in a chat message list form)
         raw_decision: AIMessage = llm.invoke([
             SystemMessage(content=RECON_SYSTEM_PROMPT),
@@ -151,14 +158,23 @@ def recon(state: AgentState) -> AgentState:
 
         raw_text = getattr(raw_decision, "content", str(raw_decision))
         print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] LLM raw output:\n{raw_text}")
+        
+        # write to scan dump file
+        with open(SCANNING_DUMP_LOG, "a") as file:
+            file.write(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] LLM raw output:\n{raw_text}")
+        ####
 
         # extract json (json = LLM response/output)
         decision = extract_json(raw_text, iteration)
 
         # --- ROBUST CHECK: fallback and reprompt LLM if the JSON is not found
         if not decision:
-            print("decision not good, reprompting")
             print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] No valid JSON, reprompting model to reformat output...")
+
+            # write to scan dump file
+            with open(SCANNING_DUMP_LOG, "a") as file:
+                file.write(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] No valid JSON, reprompting model to reformat output...")
+            ####
 
             repair_prompt = f"""
             You previously generated malformed or incomplete JSON. 
@@ -213,6 +229,7 @@ def recon(state: AgentState) -> AgentState:
         dec_targets = decision.get("targets", [])
         max_runtime = decision.get("max_runtime_s", TIMEOUT_VAL)
 
+
         if not isinstance(flags, list) or not isinstance(dec_targets, list):
             print(f"~INVALID DECISION: flags={flags}, targets={dec_targets}")
             no_new_count += 1
@@ -225,6 +242,12 @@ def recon(state: AgentState) -> AgentState:
 
         # run validated nmap scan
         print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Running Nmap scan: {dec_targets}")
+
+        # write to scan dump file
+        with open(SCANNING_DUMP_LOG, "a") as file:
+            file.write(f"Decision fields have been validated. [{time.strftime('%Y-%m-%d %H:%M:%S')}]\tRunning Nmap scan on {dec_targets} with flags: {flags}.")
+        ####
+
         log = nmap_scanning.invoke({
             "scan_type": decision.get("scan_type", state["scan_type"]),
             "flags": flags,
@@ -234,10 +257,6 @@ def recon(state: AgentState) -> AgentState:
         aggregated_logs.append(log)
 
         # parse nmap scan output (will parse xml file to dictionary)
-
-        # parsed = {}
-        # if log.get("xml"):
-        #     parsed = xml_parse(log["xml"])
         parsed = {}
         if log.get("xml"):
             parsed = xml_parse_v1(log["xml"])
@@ -246,10 +265,22 @@ def recon(state: AgentState) -> AgentState:
         hosts = set(parsed.keys()) - discovered_hosts
         if hosts:
             print(f"New hosts discovered: {hosts}")
+
+            # write to scan dump file
+            with open(SCANNING_DUMP_LOG, "a") as file:
+                file.write(f"New hosts discovered: {hosts}")
+            ####
+
             discovered_hosts.update(hosts)
             no_new_count = 0
         else:
             print("~No new hosts found.")
+
+            # write to scan dump file
+            with open(SCANNING_DUMP_LOG, "a") as file:
+                file.write(f"~NO NEW HOSTS DISCOVERED.")
+            ####
+
             no_new_count += 1
 
         # update agent state
@@ -262,23 +293,67 @@ def recon(state: AgentState) -> AgentState:
         }
 
         print(f"Hosts discovered so far: {state['recon_results']['discovered_hosts']}")
+        print(aggregated_logs)  # debug print (see what is inside)
+
+        # write to scan dump file
+        with open(SCANNING_DUMP_LOG, "a") as file:
+            file.write(f"Hosts discovered so far: {state['recon_results']['discovered_hosts']}")
+        ####
+
         time.sleep(1)
 
     print(f"Recon finished after {iteration} iterations.")
+
+    # write to scan dump file
+    with open(SCANNING_DUMP_LOG, "a") as file:
+        file.write(f"Recon finished after {iteration} iterations.")
+    ####
+
     return state
 
 
 
-def recon_analysis(state: AgentState) -> AgentState:
-    # takes state["recon_results"]["parsed_network"] and outputs a summary
+def recon_analysis(state: AgentState) -> AgentState:  # this will be a simple "here llm analyze this (no tools needed)"
+    """DOCSTRING HERE"""
+
+    # define what things the analysis agent will need to give a full analysis
+    recon_results = state["recon_results"]
+    logs = SCANNING_DUMP_LOG  # the agent will need to read this 
+    xml_file = state["recon_results"]["parsed_network"]  # FIND SOME WAY TO PULL THE XML FILE
+
+    # define the agent's prompt
+    analysis_prompt = f"""
+
+    """
+
+    # call the llm
+    result = llm.invoke([
+        SystemMessage(content=RECON_ANALYSIS_SYSTEM_PROMPT),
+        HumanMessage(content=analysis_prompt)
+    ])
+
+    # check if result answer is a string
+    is_string = isinstance(result, str)
+
+    # update agent state
+    if is_string:
+        state["network_findings"] = result
+    else: 
+        state["network_findings"] = str(result)
+
+    print("Recon analysis agent finished analysis and updated the state.")
+
     return state
+
 
 def vulnerability(state: AgentState) -> AgentState:
     return state
 
+
 def cvss_formatter(state: AgentState) -> AgentState:
     # this will call the XGBoost classifier and then output the vulnerability with its label (None, Low, Medium, High, Critical)
     return state
+
 
 def reporter(state: AgentState) -> AgentState:
     return state
@@ -312,4 +387,9 @@ if __name__ == "__main__":
     }
 
     results = sam.invoke(initial_state)
+    
+    # string print
+    print(results)
+
+    # json dump
     print(json.dumps(results, indent=2))
