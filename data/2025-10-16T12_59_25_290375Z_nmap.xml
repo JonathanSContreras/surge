@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE nmaprun>
+<?xml-stylesheet href="file:///C:/Program Files (x86)/Nmap/nmap.xsl" type="text/xsl"?>
+<!-- Nmap 7.98 scan initiated Thu Oct 16 12:59:25 2025 as: nmap -T4 -sn -oX - 10.10.0.0/255.255.0.0 -->
+<nmaprun scanner="nmap" args="nmap -T4 -sn -oX - 10.10.0.0/255.255.0.0" start="1760637565" startstr="Thu Oct 16 12:59:25 2025" version="7.98" xmloutputversion="1.05">
+<verbose level="0"/>
+<debugging level="0"/>
+<target specification="10.10.0.0/255.255.0.0" status="skipped" reason="invalid"/>
+<runstats><finished time="1760637565" timestr="Thu Oct 16 12:59:25 2025" summary="Nmap done at Thu Oct 16 12:59:25 2025; 0 IP addresses (0 hosts up) scanned in 0.01 seconds" elapsed="0.01" exit="success"/><hosts up="0" down="0" total="0"/>
+</runstats>
+</nmaprun>

@@ -14,7 +14,7 @@ from langgraph.graph import StateGraph, END
 from langchain.schema import AIMessage, SystemMessage
 
 # tools
-from tools import nmap_scanning, xml_parse
+from tools import nmap_scanning, xml_parse, xml_parse_v1
 
 # other imports
 from globals import TIMEOUT_VAL
@@ -56,7 +56,7 @@ You must ALWAYS respond in **pure JSON**.
 }
 
 ### RULES
-1. No markdown, no code blocks, no explanations.
+1. No markdown, no code blocks, no explanations, no code fences, JUST JSON.
 2. Do not include backticks, comments, or text outside the JSON.
 3. If uncertain, use defaults:
    - flags: []
@@ -129,8 +129,8 @@ def recon(state: AgentState) -> AgentState:
         Respond **only** with valid JSON in this exact schema:
         {{
         "flags": [string],          # example: ["-T4", "-sS", "--open"]
-        "targets": [string],        # subnets or hosts to focus on
-        "scan_type": "low" | "medium" | "high",
+        "targets": [string],        # subnets or hosts to focus on give in the initial state by the user
+        "scan_type": "low" | "medium" | "high",  # given by the user in the initial state
         "reason": "string",         # describe why the new strategy is chosen
         "max_runtime_s": int        # upper bound for how long this scan can run
         }}
@@ -155,11 +155,11 @@ def recon(state: AgentState) -> AgentState:
             print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] ⚠️ No valid JSON, reprompting model to reformat output...")
 
             repair_prompt = f"""
-                                Reformat the following text into a valid JSON object that matches:
+                                Reformat the following text into a valid JSON object that matches, DO NOT change the user inputted target IP and scan type:
                                 {{
                                 "flags": [],
-                                "targets": [],
-                                "scan_type": "low",
+                                "targets": {state["targets"]},
+                                "scan_type": {state["scan_type"]},
                                 "reason": "string",
                                 "max_runtime_s": 30
                                 }}
@@ -221,7 +221,7 @@ def recon(state: AgentState) -> AgentState:
         # --- STEP 6: Parse scan output ---
         parsed = {}
         if log.get("xml"):
-            parsed = xml_parse(log["xml"])
+            parsed = xml_parse_v1(log["xml"])
 
         # --- STEP 7: Detect new hosts ---
         hosts = set(parsed.keys()) - discovered_hosts
@@ -286,7 +286,7 @@ sam = workflow.compile()
 if __name__ == "__main__":
     initial_state = {
         "scan_type": "high",
-        "targets": ["10.10.162.0/24"],  # whole subnet scan
+        "targets": ["10.10.0.0/255.255.0.0"],  # whole subnet scan
         "recon_results": {},
         "vuln_results": [],
         "network_findings": ""
