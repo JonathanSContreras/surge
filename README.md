@@ -49,7 +49,7 @@ The tools used will be:
 The approach we are taking is a multi-agent system (MAS) where there is an agent for Reconnaissance, Vulnerability Identifying, Summary/Reporting Agent, and there will be subagents for Recon and Vulnerability whose's sole purpose would be to analyze the its parent's output.
 
 The process start with:
-1) Reconnaissance via the `nmap` tool.
+1) Reconnaissance via the `nmap` tool, where the agent is given full range of nmap to pick the best scan for the goal of full network discovery. 
 
 After reconnaissance the agent will make a Next Best Action decision from the following choices:
 - Reporting through log action and send to the dashboard.
