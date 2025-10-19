@@ -49,11 +49,37 @@ The application is modular, separating concerns across several components:
 	- Supports integration with CI/CD pipelines and security information and event management (SIEM) systems.
 
 ## Technologies and Tools
-**Programming Languages:** Python (for backend scanning, AI/ML modules), JavaScript/TypeScript (for frontend development)
-**Machine Learning Libraries:** TensorFlow, Scikit-learn, PyTorch (depending on the algorithm requirements)
-**Web Frameworks:** Flask or Django for the API, coupled with a modern JS framework for the frontend
-**Database:** PostgreSQL, MongoDB, or another preferred solution for storing scan results and historical data
-**Security Tools and Libraries:** Nmap (for network scanning), OpenVAS or similar for vulnerability templates, integrated with custom modules
+
+### Web Application Tech Stack
+
+**Core Framework**
+- **Next.js 15** - A React-based framework that provides server-side rendering, static site generation, and optimal performance out of the box. Chosen for its excellent developer experience, built-in optimization features, and seamless deployment capabilities.
+
+**Language & Type Safety**
+- **TypeScript 5** - Provides static typing and enhanced IDE support, reducing bugs and improving code maintainability. Essential for building a reliable security tool where type safety can prevent critical errors.
+
+**UI & Styling**
+- **React 19** - The latest version of React offers improved performance and modern features for building interactive user interfaces. Its component-based architecture makes it ideal for creating the complex dashboards and visualization components needed for security reporting.
+- **Tailwind CSS v4** - A utility-first CSS framework that enables rapid UI development with consistent design patterns. Chosen for its flexibility, performance, and ease of creating responsive, professional interfaces.
+
+**Development Tools**
+- **Turbopack** - Next.js's next-generation bundler that significantly speeds up development and build times, making the development workflow more efficient.
+- **ESLint 9** - Ensures code quality and consistency across the codebase through automated linting.
+
+**Backend & AI/ML Components**
+- **Programming Languages:** Python (for backend scanning, AI/ML modules)
+- **Machine Learning Libraries:** TensorFlow, Scikit-learn, PyTorch (depending on the algorithm requirements)
+- **Database:** PostgreSQL, MongoDB, or another preferred solution for storing scan results and historical data
+- **Security Tools and Libraries:** Nmap (for network scanning), OpenVAS or similar for vulnerability templates, integrated with custom modules
+
+### Why This Stack?
+
+This tech stack was chosen to balance performance, developer productivity, and user experience:
+- **Performance First:** Next.js with Turbopack and React 19 ensure the dashboard loads quickly and remains responsive even with large datasets from network scans.
+- **Type Safety:** TypeScript reduces runtime errors in a security-critical application where reliability is paramount.
+- **Modern UI/UX:** React and Tailwind enable building intuitive, professional interfaces that security professionals need for quick threat assessment.
+- **Scalability:** The modular architecture supports future expansion, API integrations, and real-time data updates.
+- **Developer Experience:** The combination of these tools provides excellent debugging, hot reloading, and a smooth development workflow, enabling faster iteration on security features.
 
 
 ## Contributing
