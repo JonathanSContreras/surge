@@ -380,7 +380,7 @@ sam = workflow.compile()
 if __name__ == "__main__":
     initial_state = {
         "scan_type": "high",
-        "targets": ["255.255.0.0/16"],  # whole subnet scan  ["10.10.162.0/24"]
+        "targets": ["10.10.0.0/16"],  # whole subnet scan  ["10.10.162.0/24"]
         "recon_results": {},
         "vuln_results": [],
         "network_findings": ""
