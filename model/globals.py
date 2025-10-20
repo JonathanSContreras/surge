@@ -1,11 +1,11 @@
-TIMEOUT_VAL = 2000
+TIMEOUT_VAL = 300
 LOG_FILE = "./utils/scan_history.txt"
 SCANNING_DUMP_LOG = "./utils/scan_dumps.txt"
 SANITIZATION_TIER_CONFIG= {
     "low": {  # only host discovery
         "allowed_flags": {"-sn", "-T0", "-T1", "-T2", "-T3", "-T4", "-Pn"},
         "max_port_range": 0,   # 0 indicates "no port scans allowed"
-        "max_runtime_s": 1800,
+        "max_runtime_s": 180,
         "allow_service_detection": False,
     },
     "medium": {  # limited port/service scans
@@ -17,7 +17,7 @@ SANITIZATION_TIER_CONFIG= {
             "-oX", "-oN", "-oG",                 # output formats
         },        
         "max_port_range": 1024,  # allow ports up to 1-1024 (or lists of ports within that)
-        "max_runtime_s": 1800,
+        "max_runtime_s": 500,
         "allow_service_detection": True,
     },
     "high": {  # "critical" / admin-approved — wide permissions

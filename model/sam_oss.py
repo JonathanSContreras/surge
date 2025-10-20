@@ -72,7 +72,51 @@ You must ALWAYS respond in **pure JSON**.
 """
 
 
-RECON_ANALYSIS_SYSTEM_PROMPT = """"""
+RECON_ANALYSIS_SYSTEM_PROMPT = """
+You are an autonomous **network reconnaissance analyst** in a modular agent system.
+
+### ROLE
+Your sole responsibility is to **analyze reconnaissance data** collected from previous Nmap scans,
+structured recon results, and scan history logs. You do **not** execute new scans yourself.
+You interpret data, detect meaningful patterns, and summarize findings clearly.
+
+### BEHAVIOR GUIDELINES
+- Always maintain a **technical and analytical tone**.
+- Never fabricate data or assume host details not provided.
+- Focus on **observable evidence** only (from parsed network maps, XML data, and logs).
+- If data is missing or incomplete, explicitly state that and continue reasoning conservatively.
+- Do **not** output raw JSON or XML — provide readable text sections instead.
+
+### OUTPUT FORMAT
+Your response must follow this exact structure:
+
+### Network Summary
+Describe the current network landscape, including:
+- Number of discovered hosts and their status (up/down)
+- General network size or range scanned
+- Overview of detected ports, protocols, and services
+
+### Key Observations
+Highlight important technical points such as:
+- Frequently seen open ports or recurring service fingerprints
+- Potentially sensitive or uncommon services (e.g., SSH, RDP, SNMP)
+- Hosts showing multiple open services or fingerprint inconsistencies
+- Any signs of virtual machines, routers, or IoT devices (if inferred)
+
+### Recommended Next Actions
+Provide actionable next-step recommendations:
+- Which hosts to prioritize for deeper enumeration
+- What Nmap flags or scan tiers to use next (e.g., "-sV", "-O", or top ports)
+- Suggestions for service validation or OS detection
+- If scans produced no data, suggest adaptive changes (e.g., timing, discovery method)
+
+### STYLE REQUIREMENTS
+- Concise, objective, and written for a cybersecurity engineer.
+- Avoid speculative or narrative language.
+- Each section should be at most 3–6 sentences.
+
+End of instructions.
+"""
 
 ## --- AGENT TOOL BINDING --- ##
 # recon_llm = llm.bind_tools([], system_prompt=RECON_SYSTEM_PROMPT, return_direct=True)  # return_direct tells the tool binding to return the AI's raw output
@@ -253,8 +297,8 @@ def recon(state: AgentState) -> AgentState:
             "scan_type": decision.get("scan_type", state["scan_type"]),
             "flags": flags,
             "targets": dec_targets,
-            # "timeout": min(max_runtime, TIMEOUT_VAL)
-            "timeout": 1000
+            "timeout": min(max_runtime, TIMEOUT_VAL)
+            # "timeout": 1000
         })
         aggregated_logs.append(log)
 
@@ -399,7 +443,7 @@ def recon_analysis(state: AgentState) -> AgentState:  # this will be a simple "h
     ])
 
     # check if result answer is a string
-    state["recon_results"] = str(result) if not isinstance(result, str) else result
+    state["recon_analysis"] = str(result) if not isinstance(result, str) else result
 
     print("Recon analysis agent finished analysis and updated the state.")
 
@@ -425,6 +469,7 @@ workflow.add_node("recon", recon)
 workflow.add_node("recon_analysis", recon_analysis)
 workflow.add_node("vulnerability", vulnerability)
 workflow.add_node("cvss_formatter", cvss_formatter)
+# workflow.add_node("vulnerability_classifier", "")
 workflow.add_node("supervisor", reporter)
 
 workflow.add_edge("recon", "recon_analysis")
@@ -456,9 +501,9 @@ if __name__ == "__main__":
     # json dump
     print(json.dumps(results, indent=2))
 
-    x = results["recon_results"].content
+    x = results["recon_analysis"].content
     print(x)
-    with open("recon_results.md", "a") as f:
+    with open("recon_results.md", "w+") as f:
         f.write(x)
 
     print(f"Code finished in {time.perf_counter()-start_time} seconds.")
