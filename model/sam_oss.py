@@ -40,6 +40,7 @@ class AgentState(TypedDict):
     scan_type: str  # e.g. "low"/"medium"/"high"  GIVEN BY USER
     targets: list[str]  # e.g. ["10.10.1/25"]  GIVEN BY USER
     recon_results: dict[str, Any]  # the output would be a json, raw_xml, scan_logs, etc  AFTER RECON AGENT RUNS
+    recon_analysis: str  # RECON ANALYSIS AGENT RUNS
     vuln_results: list[str]  # list of CVE vulnerabilities and its score    AFTER VULN AGENT RUNS
     network_findings: str   # REPORT AGENT CHANGES THIS STATE
 
@@ -252,7 +253,8 @@ def recon(state: AgentState) -> AgentState:
             "scan_type": decision.get("scan_type", state["scan_type"]),
             "flags": flags,
             "targets": dec_targets,
-            "timeout": min(max_runtime, TIMEOUT_VAL)
+            # "timeout": min(max_runtime, TIMEOUT_VAL)
+            "timeout": 1000
         })
         aggregated_logs.append(log)
 
@@ -314,7 +316,41 @@ def recon(state: AgentState) -> AgentState:
 
 
 def recon_analysis(state: AgentState) -> AgentState:  # this will be a simple "here llm analyze this (no tools needed)"
-    """DOCSTRING HERE"""
+    """
+    Perform high-level reconnaissance analysis using LLM reasoning.
+
+    This agent reviews previous Nmap scan results, historical scan logs, 
+    and parsed XML output to generate a concise but structured summary 
+    of the network environment. The goal is to interpret findings, 
+    identify patterns, and suggest next steps for further investigation.
+
+    Parameters
+    ----------
+    state : AgentState
+        The current pipeline state dictionary. Expected keys include:
+        - "recon_results": dict containing structured results of prior scans,
+          including any parsed XML summaries.
+        - "recon_results.parsed_network": structured data or a path to the
+          parsed XML network map.
+    
+    Returns
+    -------
+    AgentState
+        The updated state object with a new key "network_findings" containing
+        the LLM-generated textual analysis.
+    
+    Notes
+    -----
+    - This function does not run any active scanning; it only performs
+      passive analysis of existing data.
+    - LLM responses are stringified for consistency and stored under
+      state["network_findings"].
+    - The LLM should interpret logs and recon data to:
+        • Summarize discovered hosts, ports, and services
+        • Highlight anomalies or noteworthy findings
+        • Suggest next scan strategies or validation steps
+    """
+
 
     # define what things the analysis agent will need to give a full analysis
     recon_results = state["recon_results"]
@@ -323,8 +359,38 @@ def recon_analysis(state: AgentState) -> AgentState:  # this will be a simple "h
 
     # define the agent's prompt
     analysis_prompt = f"""
+    You are a network reconnaissance analyst.
 
+    Below are the inputs for your analysis:
+    -------------------------
+    SCAN LOG SUMMARY:
+    {logs}
+
+    PARSED NETWORK MAP (from Nmap XML):
+    {xml_file}
+
+    STRUCTURED RECON RESULTS:
+    {json.dumps(recon_results, indent=2)}
+    -------------------------
+
+    TASK:
+    1. Provide a concise technical summary of the current network.
+    2. Identify key hosts, open ports, and service fingerprints.
+    3. Describe potential next recon steps (e.g., higher-tier scans, 
+       service enumeration, OS detection, or validation scans).
+    4. Mention any anomalies or inconsistencies in scan results.
+    
+    Format your answer as:
+    ### Network Summary
+    (text)
+
+    ### Key Observations
+    (text)
+
+    ### Recommended Next Actions
+    (text)
     """
+
 
     # call the llm
     result = llm.invoke([
@@ -333,13 +399,7 @@ def recon_analysis(state: AgentState) -> AgentState:  # this will be a simple "h
     ])
 
     # check if result answer is a string
-    is_string = isinstance(result, str)
-
-    # update agent state
-    if is_string:
-        state["network_findings"] = result
-    else: 
-        state["network_findings"] = str(result)
+    state["recon_results"] = str(result) if not isinstance(result, str) else result
 
     print("Recon analysis agent finished analysis and updated the state.")
 
@@ -378,10 +438,12 @@ workflow.set_entry_point("recon")
 sam = workflow.compile()
 
 if __name__ == "__main__":
+    start_time = time.perf_counter()
     initial_state = {
         "scan_type": "high",
-        "targets": ["10.10.0.0/16"],  # whole subnet scan  ["10.10.162.0/24"]
+        "targets": ["10.10.162.0/24"],  # whole subnet scan  ["10.10.162.0/24"]
         "recon_results": {},
+        "recon_analysis": "",
         "vuln_results": [],
         "network_findings": ""
     }
@@ -393,3 +455,10 @@ if __name__ == "__main__":
 
     # json dump
     print(json.dumps(results, indent=2))
+
+    x = results["recon_results"].content
+    print(x)
+    with open("recon_results.md", "a") as f:
+        f.write(x)
+
+    print(f"Code finished in {time.perf_counter()-start_time} seconds.")
