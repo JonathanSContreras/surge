@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE nmaprun>
+<?xml-stylesheet href="file:///C:/Program Files (x86)/Nmap/nmap.xsl" type="text/xsl"?>
+<!-- Nmap 7.98 scan initiated Tue Oct 21 10:38:00 2025 as: nmap -sn -T4 -oX - 10.10.162.0/24 -->
+<nmaprun scanner="nmap" args="nmap -sn -T4 -oX - 10.10.162.0/24" start="1761061080" startstr="Tue Oct 21 10:38:00 2025" version="7.98" xmloutputversion="1.05">
+<verbose level="0"/>
+<debugging level="0"/>
+<host><status state="up" reason="arp-response" reason_ttl="0"/>
+<address addr="10.10.162.98" addrtype="ipv4"/>
+<address addr="66:9D:6F:44:AE:93" addrtype="mac"/>
+<hostnames>
+</hostnames>
+<times srtt="148000" rttvar="130250" to="669000"/>
+</host>
+<host><status state="up" reason="arp-response" reason_ttl="0"/>
+<address addr="10.10.162.163" addrtype="ipv4"/>
+<address addr="76:FE:CE:0D:94:F9" addrtype="mac"/>
+<hostnames>
+</hostnames>
+<times srtt="89750" rttvar="98250" to="482750"/>
+</host>
+<host><status state="up" reason="arp-response" reason_ttl="0"/>
+<address addr="10.10.162.236" addrtype="ipv4"/>
+<address addr="AE:6D:AD:A8:49:4B" addrtype="mac"/>
+<hostnames>
+</hostnames>
+<times srtt="39761" rttvar="45581" to="222085"/>
+</host>
+<runstats><finished time="1761061087" timestr="Tue Oct 21 10:38:07 2025" summary="Nmap done at Tue Oct 21 10:38:07 2025; 256 IP addresses (3 hosts up) scanned in 6.91 seconds" elapsed="6.91" exit="success"/><hosts up="3" down="253" total="256"/>
+</runstats>
+</nmaprun>

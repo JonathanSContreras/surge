@@ -82,7 +82,7 @@ def sanitize_flags_for_tier(flags: list[str], tier: str):
                 sanitized_flags.append(tok)
             continue
 
-                # allow output flags
+        # allow output flags
         if tok in ("-oX", "-oX-"):
             sanitized_flags.append(tok)
             continue
@@ -93,9 +93,10 @@ def sanitize_flags_for_tier(flags: list[str], tier: str):
                 sanitized_flags.append(tok)
             continue
 
-        # otherwise, only keep if allowed
-        if tok in allowed:
-            sanitized_flags.append(tok)
+        # otherwise, only keep if allowed (for low and medium scans)
+        if tier != "high": 
+            if tok in allowed:
+                sanitized_flags.append(tok)
     
     # validate port ranges if applicable
     max_port_range = config["max_port_range"]

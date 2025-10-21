@@ -438,7 +438,8 @@ if __name__ == "__main__":
 
     x = results["recon_analysis"]
     print("recon analysis print:", x)
+    print(type(x))
     with open("recon_results.txt", "w+") as f:
-        f.write(x["content"])
+        f.write(x)
 
     print(f"Code finished in {time.perf_counter()-start_time} seconds.")
