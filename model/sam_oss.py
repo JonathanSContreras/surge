@@ -14,10 +14,10 @@ from langgraph.graph import StateGraph, END
 from langchain.schema import AIMessage, SystemMessage, HumanMessage
 
 # tools
-from tools import nmap_scanning, xml_parse, xml_parse_v1
+from tools import nmap_scanning, xml_parse
 
 # other imports
-from globals import TIMEOUT_VAL, SCANNING_DUMP_LOG
+from globals import TIMEOUT_VAL, SCANNING_DUMP_LOG, SANITIZATION_TIER_CONFIG
 from helper import extract_json
 import json
 import time
@@ -45,78 +45,8 @@ class AgentState(TypedDict):
     network_findings: str   # REPORT AGENT CHANGES THIS STATE
 
 ## --- AGENT PROMPTS --- ##
-RECON_SYSTEM_PROMPT = """
-You are an autonomous network reconnaissance agent. 
-Your ONLY task is to decide the next network scan operation. 
-You must ALWAYS respond in **pure JSON**.
+from agentic_prompts import RECON_AGENT_SYSTEM_PROMPT, RECON_ANALYSIS_SYSTEM_PROMPT
 
-### REQUIRED OUTPUT FORMAT
-{
-  "flags": [string],
-  "targets": [string],
-  "scan_type": "low" | "medium" | "high",
-  "reason": "string",
-  "max_runtime_s": int
-}
-
-### RULES
-1. No markdown, no code blocks, no explanations.
-2. Do not include backticks, comments, or text outside the JSON.
-3. If uncertain, use defaults:
-   - flags: []
-   - targets: from the input["targets"]
-   - scan_type: "low"
-   - reason: "default safe scan"
-   - max_runtime_s: 30
-4. Always return exactly one JSON object.
-"""
-
-
-RECON_ANALYSIS_SYSTEM_PROMPT = """
-You are an autonomous **network reconnaissance analyst** in a modular agent system.
-
-### ROLE
-Your sole responsibility is to **analyze reconnaissance data** collected from previous Nmap scans,
-structured recon results, and scan history logs. You do **not** execute new scans yourself.
-You interpret data, detect meaningful patterns, and summarize findings clearly.
-
-### BEHAVIOR GUIDELINES
-- Always maintain a **technical and analytical tone**.
-- Never fabricate data or assume host details not provided.
-- Focus on **observable evidence** only (from parsed network maps, XML data, and logs).
-- If data is missing or incomplete, explicitly state that and continue reasoning conservatively.
-- Do **not** output raw JSON or XML — provide readable text sections instead.
-
-### OUTPUT FORMAT
-Your response must follow this exact structure:
-
-### Network Summary
-Describe the current network landscape, including:
-- Number of discovered hosts and their status (up/down)
-- General network size or range scanned
-- Overview of detected ports, protocols, and services
-
-### Key Observations
-Highlight important technical points such as:
-- Frequently seen open ports or recurring service fingerprints
-- Potentially sensitive or uncommon services (e.g., SSH, RDP, SNMP)
-- Hosts showing multiple open services or fingerprint inconsistencies
-- Any signs of virtual machines, routers, or IoT devices (if inferred)
-
-### Recommended Next Actions
-Provide actionable next-step recommendations:
-- Which hosts to prioritize for deeper enumeration
-- What Nmap flags or scan tiers to use next (e.g., "-sV", "-O", or top ports)
-- Suggestions for service validation or OS detection
-- If scans produced no data, suggest adaptive changes (e.g., timing, discovery method)
-
-### STYLE REQUIREMENTS
-- Concise, objective, and written for a cybersecurity engineer.
-- Avoid speculative or narrative language.
-- Each section should be at most 3–6 sentences.
-
-End of instructions.
-"""
 
 ## --- AGENT TOOL BINDING --- ##
 # recon_llm = llm.bind_tools([], system_prompt=RECON_SYSTEM_PROMPT, return_direct=True)  # return_direct tells the tool binding to return the AI's raw output
@@ -173,8 +103,10 @@ def recon(state: AgentState) -> AgentState:
         - Total scan iterations completed: {len(aggregated_logs)}.
         - Active targets under analysis: {', '.join(state['targets'])}.
 
-        If no new hosts or open ports have been found after 2 iterations, 
-        switch to a **different scanning strategy** automatically. 
+        If no new hosts or open ports have been found after 2 iterations, propose and
+        switch to a **different scanning strategy** (change timing, port-range, or discovery method) automatically. 
+        Otherwise favor narrow scans that maximize useful info (like banner scanning, service enum, OS detection, etc).
+
         You may adjust parameters such as:
         - Port range (`-p`), e.g. limit to 1–1024 or top 1000 ports
         - Timing template (`-T`), e.g. T3 for normal or T5 for fast scans
@@ -182,7 +114,8 @@ def recon(state: AgentState) -> AgentState:
         - Parallelism and retries (`--max-retries`, `--min-rate`, etc.)
 
         Your goal is to produce a JSON decision that adapts dynamically 
-        to scan results and previous outcomes.
+        to scan results and previous outcomes NO REPETITION GATHERING OF INFORMATION.
+        You have access to all nmap flags, based on the scan type, the nmap command will be sanitized based on this configuration {SANITIZATION_TIER_CONFIG}.
 
         Respond **only** with valid JSON in this exact schema:
         {{
@@ -196,7 +129,7 @@ def recon(state: AgentState) -> AgentState:
 
         # ask LLM for scan descision (gpt oss needs it in a chat message list form)
         raw_decision: AIMessage = llm.invoke([
-            SystemMessage(content=RECON_SYSTEM_PROMPT),
+            SystemMessage(content=RECON_AGENT_SYSTEM_PROMPT),
             HumanMessage(content=json.dumps(llm_input))
              
         ])
@@ -222,31 +155,33 @@ def recon(state: AgentState) -> AgentState:
             ####
 
             repair_prompt = f"""
-            You previously generated malformed or incomplete JSON. 
-            Reformat the following into a strictly valid JSON object only (no explanations, no code fences, no markdown, no extra text) using hte previous scan_type
-            Do not change scan_type under any circumstances.
-            Ensure it matches exactly this schema:
+            You previously generated malformed or incomplete JSON.
+            Reformat the following into a single, strictly valid JSON object only — no explanations, no markdown, no code fences, and no extra text.
+
+            Rules:
+            1. Preserve the existing value of "scan_type" — do not modify it under any circumstances.
+            2. The output must follow exactly this schema:
 
             {{
-            "flags": [string],  // list of flag strings
-            "targets": {state["targets"]},   // exactly this list (do not change)
-            "scan_type": {state["scan_type"]}, 
+            "flags": [string],             // list of flag strings
+            "targets": {state["targets"]}, // use this exact list (do not alter)
+            "scan_type": {state["scan_type"]},
             "reason": "string",
             "max_runtime_s": int
             }}
 
             Context:
-            - Preferred scan_type (from user/state): "{state['scan_type']}"
-            - If you cannot decide, use the preferred scan_type above.
-            - Do not include any fields beyond the five shown.
-            - Do not use code fences. Output a single valid JSON object only.
+            - Preferred scan_type (from state): "{state['scan_type']}"
+            - If uncertain, always use this preferred value.
+            - Do not include any extra fields, comments, or formatting.
+            - Output one valid JSON object only.
 
             Text to reformat:
             {raw_text}
             """
-
+            
             repaired = llm.invoke([
-                SystemMessage(content=RECON_SYSTEM_PROMPT),
+                SystemMessage(content=RECON_AGENT_SYSTEM_PROMPT),
                 HumanMessage(content=repair_prompt)
             ])
 
@@ -305,7 +240,7 @@ def recon(state: AgentState) -> AgentState:
         # parse nmap scan output (will parse xml file to dictionary)
         parsed = {}
         if log.get("xml"):
-            parsed = xml_parse_v1(log["xml"])
+            parsed = xml_parse(log["xml"])
 
         # detect new hosts
         hosts = set(parsed.keys()) - discovered_hosts
@@ -399,7 +334,7 @@ def recon_analysis(state: AgentState) -> AgentState:  # this will be a simple "h
     # define what things the analysis agent will need to give a full analysis
     recon_results = state["recon_results"]
     logs = SCANNING_DUMP_LOG  # the agent will need to read this 
-    xml_file = state["recon_results"]["parsed_network"]  # FIND SOME WAY TO PULL THE XML FILE
+    xml_file = state["recon_results"]["parsed_network"] 
 
     # define the agent's prompt
     analysis_prompt = f"""
@@ -501,9 +436,9 @@ if __name__ == "__main__":
     # json dump
     print(json.dumps(results, indent=2))
 
-    x = results["recon_analysis"].content
-    print(x)
-    with open("recon_results.md", "w+") as f:
-        f.write(x)
+    x = results["recon_analysis"]
+    print("recon analysis print:", x)
+    with open("recon_results.txt", "w+") as f:
+        f.write(x["content"])
 
     print(f"Code finished in {time.perf_counter()-start_time} seconds.")

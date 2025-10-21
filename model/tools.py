@@ -9,7 +9,6 @@ import subprocess
 import os
 import datetime
 import time
-import json
 import shlex
 from helper import sanitize_flags_for_tier
 from globals import TIMEOUT_VAL, LOG_FILE  # configuration file
@@ -21,17 +20,33 @@ def xml_parse(xml_data):
     Handles missing fields gracefully.
     """
     network_config = {}
-
-    try:
-        root = ET.fromstring(xml_data)
-    except ET.ParseError:
-        print("⚠️ XML parsing error: malformed data")
+    
+    # nothing in the xml file
+    if not xml_data:
         return {}
+    
+    # get the xml_ouput (either string or XML file)
+    try:
+        if os.path.exists(xml_data):
+            tree = ET.parse(xml_data)
+            root = tree.getroot()
+        else:
+            s = xml_data.strip()
+
+            if not (s.startswith("<")):  # check if the string is XML looking
+                return {"error": "~INPUT DOES NOT APPEAR TO BE XML"}
+            
+            root = ET.fromstring(s)
+
+    except ET.ParseError as pe:
+        return {"error": f"~ISSUE PARSING ELEMENTTREE: {pe}"}
+    except Exception as e:
+        return {"error": f"~UNEXPECTED ERROR PARSING XML: {e}"}
 
     for host in root.findall("host"):
         host_addr = None
         host_name = None
-        port_lst = []  # ✅ Always initialize this
+        port_lst = [] 
 
         # --- Extract address ---
         addr_elem = host.find("address")
@@ -66,7 +81,7 @@ def xml_parse(xml_data):
         if host_addr:
             network_config[host_addr] = {
                 "hostname": host_name or "unknown",
-                "ports": port_lst,  # ✅ Safe even if empty
+                "ports": port_lst, 
             }
 
     return network_config
