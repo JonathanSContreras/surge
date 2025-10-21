@@ -11,7 +11,7 @@ import datetime
 import time
 import shlex
 from helper import sanitize_flags_for_tier
-from globals import TIMEOUT_VAL, LOG_FILE  # configuration file
+from globals import TIMEOUT_VAL, SCANNING_DUMP_LOG  # configuration file
 
 ## --- RECON METHOD/TOOLS --- ##
 def xml_parse(xml_data):
@@ -198,11 +198,14 @@ def xml_parse_v1(xml_input: str) -> dict:
     return network
 
 def log_history(entry):
+    print(os.path.exists(SCANNING_DUMP_LOG))
     try:
-        with open(LOG_FILE, "a", encoding="utf-8") as lf:
+        with open(SCANNING_DUMP_LOG, "a") as lf:
+            print("WRITING TO DUMP LOG in tools.py")
             lf.write(entry + "\n")
     
     except Exception as e:
+        print("Failed to write to dump in tools.py")
         pass
 
 @tool

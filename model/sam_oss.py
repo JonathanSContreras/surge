@@ -110,7 +110,7 @@ def recon(state: AgentState) -> AgentState:
         You may adjust parameters such as:
         - Port range (`-p`), e.g. limit to 1–1024 or top 1000 ports
         - Timing template (`-T`), e.g. T3 for normal or T5 for fast scans
-        - Discovery methods (`-sn`, `-Pn`, `-sS`, `-sU`)
+        - Discovery methods (`-sn`, `-Pn`, `-sS`, `-sU`, etc.)
         - Parallelism and retries (`--max-retries`, `--min-rate`, etc.)
 
         Your goal is to produce a JSON decision that adapts dynamically 
@@ -139,7 +139,8 @@ def recon(state: AgentState) -> AgentState:
         
         # write to scan dump file
         with open(SCANNING_DUMP_LOG, "a") as file:
-            file.write(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] LLM raw output:\n{raw_text}")
+            print("WRITING TO DUMP LOG in sam_oss.py")
+            file.write(f"\n[{time.strftime('%Y-%m-%d %H:%M:%S')}] LLM raw output:\n{raw_text}")
         ####
 
         # extract json (json = LLM response/output)
@@ -151,7 +152,7 @@ def recon(state: AgentState) -> AgentState:
 
             # write to scan dump file
             with open(SCANNING_DUMP_LOG, "a") as file:
-                file.write(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] No valid JSON, reprompting model to reformat output...")
+                file.write(f"\n[{time.strftime('%Y-%m-%d %H:%M:%S')}] No valid JSON, reprompting model to reformat output...")
             ####
 
             repair_prompt = f"""
@@ -209,7 +210,6 @@ def recon(state: AgentState) -> AgentState:
         dec_targets = decision.get("targets", [])
         max_runtime = decision.get("max_runtime_s", TIMEOUT_VAL)
 
-
         if not isinstance(flags, list) or not isinstance(dec_targets, list):
             print(f"~INVALID DECISION: flags={flags}, targets={dec_targets}")
             no_new_count += 1
@@ -225,7 +225,7 @@ def recon(state: AgentState) -> AgentState:
 
         # write to scan dump file
         with open(SCANNING_DUMP_LOG, "a") as file:
-            file.write(f"Decision fields have been validated. [{time.strftime('%Y-%m-%d %H:%M:%S')}]\tRunning Nmap scan on {dec_targets} with flags: {flags}.")
+            file.write(f"\nDecision fields have been validated. [{time.strftime('%Y-%m-%d %H:%M:%S')}]\tRunning Nmap scan on {dec_targets} with flags: {flags}.")
         ####
 
         log = nmap_scanning.invoke({
@@ -249,7 +249,7 @@ def recon(state: AgentState) -> AgentState:
 
             # write to scan dump file
             with open(SCANNING_DUMP_LOG, "a") as file:
-                file.write(f"New hosts discovered: {hosts}")
+                file.write(f"\nNew hosts discovered: {hosts}")
             ####
 
             discovered_hosts.update(hosts)
@@ -259,7 +259,7 @@ def recon(state: AgentState) -> AgentState:
 
             # write to scan dump file
             with open(SCANNING_DUMP_LOG, "a") as file:
-                file.write(f"~NO NEW HOSTS DISCOVERED.")
+                file.write(f"\n~NO NEW HOSTS DISCOVERED.")
             ####
 
             no_new_count += 1
@@ -278,7 +278,7 @@ def recon(state: AgentState) -> AgentState:
 
         # write to scan dump file
         with open(SCANNING_DUMP_LOG, "a") as file:
-            file.write(f"Hosts discovered so far: {state['recon_results']['discovered_hosts']}")
+            file.write(f"\nHosts discovered so far: {state['recon_results']['discovered_hosts']}\n{aggregated_logs}")
         ####
 
         time.sleep(1)
@@ -378,7 +378,16 @@ def recon_analysis(state: AgentState) -> AgentState:  # this will be a simple "h
     ])
 
     # check if result answer is a string
-    state["recon_analysis"] = str(result) if not isinstance(result, str) else result
+    print(type(result))
+    result = AIMessage(result) if not isinstance(result, AIMessage) else result
+    state["recon_analysis"] = result.content
+
+    # write the analysis into a txt file
+    target_ip = "".join(state["targets"])
+    target_ip = target_ip.replace("/", "_")
+    target_ip = target_ip.replace(".", "_")
+    with open(f"./output/{target_ip}_recon_analysis.txt", "w") as f:
+        f.write(result.content)
 
     print("Recon analysis agent finished analysis and updated the state.")
 
@@ -436,10 +445,10 @@ if __name__ == "__main__":
     # json dump
     print(json.dumps(results, indent=2))
 
-    x = results["recon_analysis"]
-    print("recon analysis print:", x)
-    print(type(x))
-    with open("recon_results.txt", "w+") as f:
-        f.write(x)
+    # x = results["recon_analysis"].content
+    # print("recon analysis print:", x)
+    # print(type(x))
+    # with open("recon_results.txt", "w+") as f:
+    #     f.write(x)
 
     print(f"Code finished in {time.perf_counter()-start_time} seconds.")

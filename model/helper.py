@@ -26,6 +26,7 @@ def _extract_port_expressions(flags: list[str]) -> list[str]:
         i += 1
     return port_exprs
 
+
 def _validate_port_expr(expr: str, max_port: int) -> bool:
     """
     Returns True if all ports in the expression are within range.
@@ -48,6 +49,7 @@ def _validate_port_expr(expr: str, max_port: int) -> bool:
             if port < 0 or port > max_port:
                 return False
     return True
+
 
 def sanitize_flags_for_tier(flags: list[str], tier: str):
     """

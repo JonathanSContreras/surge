@@ -2,49 +2,38 @@ Stop variables defined for RECON AGENT:
 ----------------
 max iterations = 8
 no_new_threshold = 4
---- ITERATION 1 [2025-10-21 10:22:54] ---[2025-10-21 10:24:03] LLM raw output:
-{"flags": ["-sn", "-T4"], "targets": ["10.10.162.0/24"], "scan_type": "low", "reason": "Initial fast host discovery in the target subnet.", "max_runtime_s": 180}Decision fields have been validated. [2025-10-21 10:24:03]	Running Nmap scan on ['10.10.162.0/24'] with flags: ['-sn', '-T4'].New hosts discovered: {'10.10.162.163', '10.10.162.98', '10.10.162.236'}Hosts discovered so far: ['10.10.162.163', '10.10.162.98', '10.10.162.236']
---- ITERATION 2 [2025-10-21 10:24:10] ---[2025-10-21 10:24:52] LLM raw output:
-{
-  "flags": ["-sn", "-T4"],
-  "targets": ["10.10.162.0/24"],
-  "scan_type": "low",
-  "reason": "No new hosts or open ports found after two iterations, switching to fast host discovery for the subnet.",
-  "max_runtime_s": 180
-}Decision fields have been validated. [2025-10-21 10:24:52]	Running Nmap scan on ['10.10.162.0/24'] with flags: ['-sn', '-T4'].~NO NEW HOSTS DISCOVERED.Hosts discovered so far: ['10.10.162.163', '10.10.162.98', '10.10.162.236']
---- ITERATION 3 [2025-10-21 10:24:59] ---[2025-10-21 10:25:43] LLM raw output:
-{
-  "flags": ["-sS", "--top-ports", "1000"],
-  "targets": ["10.10.162.0/24"],
-  "scan_type": "medium",
-  "reason": "Narrowing down to top 1000 ports for efficient service discovery after no new hosts found in previous iterations.",
-  "max_runtime_s": 900
-}Decision fields have been validated. [2025-10-21 10:25:43]	Running Nmap scan on ['10.10.162.0/24'] with flags: ['-sS', '--top-ports', '1000'].~NO NEW HOSTS DISCOVERED.Hosts discovered so far: ['10.10.162.163', '10.10.162.98', '10.10.162.236']
---- ITERATION 4 [2025-10-21 10:25:51] ---[2025-10-21 10:26:34] LLM raw output:
-{
-  "flags": ["-sS", "--top-ports", "1000"],
-  "targets": ["10.10.162.0/24"],
-  "scan_type": "medium",
-  "reason": "Narrowing down to top 1000 ports for efficient service detection after no new hosts found in previous iterations.",
-  "max_runtime_s": 900
-}Decision fields have been validated. [2025-10-21 10:26:34]	Running Nmap scan on ['10.10.162.0/24'] with flags: ['-sS', '--top-ports', '1000'].~NO NEW HOSTS DISCOVERED.Hosts discovered so far: ['10.10.162.163', '10.10.162.98', '10.10.162.236']
---- ITERATION 5 [2025-10-21 10:26:43] ---[2025-10-21 10:27:27] LLM raw output:
-{
-  "flags": ["-sS", "--top-ports", "1000"],
-  "targets": ["10.10.162.0/24"],
-  "scan_type": "medium",
-  "reason": "Narrowing down to top 1000 ports for efficient service detection after no new hosts found in previous iterations.",
-  "max_runtime_s": 900
-}Decision fields have been validated. [2025-10-21 10:27:27]	Running Nmap scan on ['10.10.162.0/24'] with flags: ['-sS', '--top-ports', '1000'].~NO NEW HOSTS DISCOVERED.Hosts discovered so far: ['10.10.162.163', '10.10.162.98', '10.10.162.236']Recon finished after 5 iterations.Stop variables defined for RECON AGENT:
-----------------
-max iterations = 8
-no_new_threshold = 4
---- ITERATION 1 [2025-10-21 10:36:07] ---[2025-10-21 10:37:15] LLM raw output:
-{"flags": ["-sn", "-T4"], "targets": ["10.10.162.0/24"], "scan_type": "low", "reason": "initial fast host discovery", "max_runtime_s": 180}Decision fields have been validated. [2025-10-21 10:37:15]	Running Nmap scan on ['10.10.162.0/24'] with flags: ['-sn', '-T4'].New hosts discovered: {'10.10.162.163', '10.10.162.236', '10.10.162.98'}Hosts discovered so far: ['10.10.162.163', '10.10.162.236', '10.10.162.98']
---- ITERATION 2 [2025-10-21 10:37:21] ---[2025-10-21 10:38:00] LLM raw output:
-{"flags": ["-sn", "-T4"], "targets": ["10.10.162.0/24"], "scan_type": "low", "reason": "Initial fast host discovery to identify active hosts in the subnet.", "max_runtime_s": 180}Decision fields have been validated. [2025-10-21 10:38:00]	Running Nmap scan on ['10.10.162.0/24'] with flags: ['-sn', '-T4'].~NO NEW HOSTS DISCOVERED.Hosts discovered so far: ['10.10.162.163', '10.10.162.236', '10.10.162.98']
---- ITERATION 3 [2025-10-21 10:38:08] ---[2025-10-21 10:38:50] LLM raw output:
-{"flags": ["-sS", "--top-ports", "1000"], "targets": ["10.10.162.0/24"], "scan_type": "medium", "reason": "Narrowing down to top 1000 ports for efficient service discovery after initial host scans", "max_runtime_s": 900}Decision fields have been validated. [2025-10-21 10:38:50]	Running Nmap scan on ['10.10.162.0/24'] with flags: ['-sS', '--top-ports', '1000'].~NO NEW HOSTS DISCOVERED.Hosts discovered so far: ['10.10.162.163', '10.10.162.236', '10.10.162.98']
---- ITERATION 4 [2025-10-21 10:38:58] ---[2025-10-21 10:39:39] LLM raw output:
-{"flags": ["-sS", "--top-ports", "1000"], "targets": ["10.10.162.0/24"], "scan_type": "medium", "reason": "Narrowing down to top 1000 ports for efficient service discovery after initial host scans", "max_runtime_s": 900}Decision fields have been validated. [2025-10-21 10:39:39]	Running Nmap scan on ['10.10.162.0/24'] with flags: ['-sS', '--top-ports', '1000'].~NO NEW HOSTS DISCOVERED.Hosts discovered so far: ['10.10.162.163', '10.10.162.236', '10.10.162.98']
---- ITERATION 5 [2025-10-21 10:44:40] ---
+--- ITERATION 1 [2025-10-21 18:08:09] ---
+[2025-10-21 18:09:14] LLM raw output:
+{"flags": ["-sn", "-T4"], "targets": ["10.10.162.0/24"], "scan_type": "low", "reason": "initial fast host discovery", "max_runtime_s": 180}
+Decision fields have been validated. [2025-10-21 18:09:14]	Running Nmap scan on ['10.10.162.0/24'] with flags: ['-sn', '-T4'].
+New hosts discovered: {'10.10.162.157', '10.10.162.163', '10.10.162.236', '10.10.162.210', '10.10.162.98'}
+Hosts discovered so far: ['10.10.162.157', '10.10.162.163', '10.10.162.236', '10.10.162.210', '10.10.162.98']
+[{'timestamp': '2025-10-21T18:09:14.743556Z', 'command': ['nmap', '-sn', '-T4', '-oX', '-', '10.10.162.0/24'], 'targets': ['10.10.162.0/24'], 'xml': './data/2025-10-21T18_09_14_743556Z_nmap.xml', 'stderr': '', 'returncode': 0, 'success': True, 'max_runtime_s': 6.45}]
+--- ITERATION 2 [2025-10-21 18:09:22] ---
+[2025-10-21 18:10:05] LLM raw output:
+{"flags": ["-sS", "--top-ports", "1000", "-T4"], "targets": ["10.10.162.0/24"], "scan_type": "medium", "reason": "Narrowing down to top 1000 ports for efficient service discovery after initial host scan", "max_runtime_s": 900}
+Decision fields have been validated. [2025-10-21 18:10:05]	Running Nmap scan on ['10.10.162.0/24'] with flags: ['-sS', '--top-ports', '1000', '-T4'].
+~NO NEW HOSTS DISCOVERED.
+Hosts discovered so far: ['10.10.162.157', '10.10.162.163', '10.10.162.236', '10.10.162.210', '10.10.162.98']
+[{'timestamp': '2025-10-21T18:09:14.743556Z', 'command': ['nmap', '-sn', '-T4', '-oX', '-', '10.10.162.0/24'], 'targets': ['10.10.162.0/24'], 'xml': './data/2025-10-21T18_09_14_743556Z_nmap.xml', 'stderr': '', 'returncode': 0, 'success': True, 'max_runtime_s': 6.45}, {'timestamp': '2025-10-21T18:10:05.317754Z', 'command': ['nmap', '-sS', '--top-ports', '1000', '-T4', '-oX', '-', '10.10.162.0/24'], 'targets': ['10.10.162.0/24'], 'xml': './data/2025-10-21T18_10_05_317754Z_nmap.xml', 'stderr': '', 'returncode': 0, 'success': True, 'max_runtime_s': 7.92}]
+--- ITERATION 3 [2025-10-21 18:10:14] ---
+[2025-10-21 18:10:56] LLM raw output:
+{"flags": ["-sS", "--top-ports", "1000", "-T4"], "targets": ["10.10.162.0/24"], "scan_type": "medium", "reason": "Narrowing down to top 1000 ports for efficient service discovery after initial host scans", "max_runtime_s": 900}
+Decision fields have been validated. [2025-10-21 18:10:56]	Running Nmap scan on ['10.10.162.0/24'] with flags: ['-sS', '--top-ports', '1000', '-T4'].
+~NO NEW HOSTS DISCOVERED.
+Hosts discovered so far: ['10.10.162.157', '10.10.162.163', '10.10.162.236', '10.10.162.210', '10.10.162.98']
+[{'timestamp': '2025-10-21T18:09:14.743556Z', 'command': ['nmap', '-sn', '-T4', '-oX', '-', '10.10.162.0/24'], 'targets': ['10.10.162.0/24'], 'xml': './data/2025-10-21T18_09_14_743556Z_nmap.xml', 'stderr': '', 'returncode': 0, 'success': True, 'max_runtime_s': 6.45}, {'timestamp': '2025-10-21T18:10:05.317754Z', 'command': ['nmap', '-sS', '--top-ports', '1000', '-T4', '-oX', '-', '10.10.162.0/24'], 'targets': ['10.10.162.0/24'], 'xml': './data/2025-10-21T18_10_05_317754Z_nmap.xml', 'stderr': '', 'returncode': 0, 'success': True, 'max_runtime_s': 7.92}, {'timestamp': '2025-10-21T18:10:56.824544Z', 'command': ['nmap', '-sS', '--top-ports', '1000', '-T4', '-oX', '-', '10.10.162.0/24'], 'targets': ['10.10.162.0/24'], 'xml': './data/2025-10-21T18_10_56_824544Z_nmap.xml', 'stderr': '', 'returncode': 0, 'success': True, 'max_runtime_s': 10.56}]
+--- ITERATION 4 [2025-10-21 18:11:08] ---
+[2025-10-21 18:11:51] LLM raw output:
+{"flags": ["-sS", "--top-ports", "1000", "-T4"], "targets": ["10.10.162.0/24"], "scan_type": "medium", "reason": "Narrowing down to top 1000 ports for efficient service discovery after initial host scan", "max_runtime_s": 900}
+Decision fields have been validated. [2025-10-21 18:11:51]	Running Nmap scan on ['10.10.162.0/24'] with flags: ['-sS', '--top-ports', '1000', '-T4'].
+~NO NEW HOSTS DISCOVERED.
+Hosts discovered so far: ['10.10.162.157', '10.10.162.163', '10.10.162.236', '10.10.162.210', '10.10.162.98']
+[{'timestamp': '2025-10-21T18:09:14.743556Z', 'command': ['nmap', '-sn', '-T4', '-oX', '-', '10.10.162.0/24'], 'targets': ['10.10.162.0/24'], 'xml': './data/2025-10-21T18_09_14_743556Z_nmap.xml', 'stderr': '', 'returncode': 0, 'success': True, 'max_runtime_s': 6.45}, {'timestamp': '2025-10-21T18:10:05.317754Z', 'command': ['nmap', '-sS', '--top-ports', '1000', '-T4', '-oX', '-', '10.10.162.0/24'], 'targets': ['10.10.162.0/24'], 'xml': './data/2025-10-21T18_10_05_317754Z_nmap.xml', 'stderr': '', 'returncode': 0, 'success': True, 'max_runtime_s': 7.92}, {'timestamp': '2025-10-21T18:10:56.824544Z', 'command': ['nmap', '-sS', '--top-ports', '1000', '-T4', '-oX', '-', '10.10.162.0/24'], 'targets': ['10.10.162.0/24'], 'xml': './data/2025-10-21T18_10_56_824544Z_nmap.xml', 'stderr': '', 'returncode': 0, 'success': True, 'max_runtime_s': 10.56}, {'timestamp': '2025-10-21T18:11:51.252304Z', 'command': ['nmap', '-sS', '--top-ports', '1000', '-T4', '-oX', '-', '10.10.162.0/24'], 'targets': ['10.10.162.0/24'], 'xml': './data/2025-10-21T18_11_51_252304Z_nmap.xml', 'stderr': '', 'returncode': 0, 'success': True, 'max_runtime_s': 8.67}]
+--- ITERATION 5 [2025-10-21 18:12:00] ---
+[2025-10-21 18:12:42] LLM raw output:
+{"flags": ["-sS", "--top-ports", "1000"], "targets": ["10.10.162.0/24"], "scan_type": "medium", "reason": "Narrowing down to top 1000 ports for efficient service discovery", "max_runtime_s": 900}
+Decision fields have been validated. [2025-10-21 18:12:42]	Running Nmap scan on ['10.10.162.0/24'] with flags: ['-sS', '--top-ports', '1000'].
+~NO NEW HOSTS DISCOVERED.
+Hosts discovered so far: ['10.10.162.157', '10.10.162.163', '10.10.162.236', '10.10.162.210', '10.10.162.98']
+[{'timestamp': '2025-10-21T18:09:14.743556Z', 'command': ['nmap', '-sn', '-T4', '-oX', '-', '10.10.162.0/24'], 'targets': ['10.10.162.0/24'], 'xml': './data/2025-10-21T18_09_14_743556Z_nmap.xml', 'stderr': '', 'returncode': 0, 'success': True, 'max_runtime_s': 6.45}, {'timestamp': '2025-10-21T18:10:05.317754Z', 'command': ['nmap', '-sS', '--top-ports', '1000', '-T4', '-oX', '-', '10.10.162.0/24'], 'targets': ['10.10.162.0/24'], 'xml': './data/2025-10-21T18_10_05_317754Z_nmap.xml', 'stderr': '', 'returncode': 0, 'success': True, 'max_runtime_s': 7.92}, {'timestamp': '2025-10-21T18:10:56.824544Z', 'command': ['nmap', '-sS', '--top-ports', '1000', '-T4', '-oX', '-', '10.10.162.0/24'], 'targets': ['10.10.162.0/24'], 'xml': './data/2025-10-21T18_10_56_824544Z_nmap.xml', 'stderr': '', 'returncode': 0, 'success': True, 'max_runtime_s': 10.56}, {'timestamp': '2025-10-21T18:11:51.252304Z', 'command': ['nmap', '-sS', '--top-ports', '1000', '-T4', '-oX', '-', '10.10.162.0/24'], 'targets': ['10.10.162.0/24'], 'xml': './data/2025-10-21T18_11_51_252304Z_nmap.xml', 'stderr': '', 'returncode': 0, 'success': True, 'max_runtime_s': 8.67}, {'timestamp': '2025-10-21T18:12:42.392981Z', 'command': ['nmap', '-sS', '--top-ports', '1000', '-oX', '-', '10.10.162.0/24'], 'targets': ['10.10.162.0/24'], 'xml': './data/2025-10-21T18_12_42_392981Z_nmap.xml', 'stderr': '', 'returncode': 0, 'success': True, 'max_runtime_s': 8.26}]Recon finished after 5 iterations.

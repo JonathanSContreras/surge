@@ -1,5 +1,4 @@
 TIMEOUT_VAL = 300
-LOG_FILE = "./utils/scan_history.txt"
 SCANNING_DUMP_LOG = "./utils/scan_dumps.txt"
 SANITIZATION_TIER_CONFIG= {
     "low": {  # only host discovery
@@ -15,7 +14,7 @@ SANITIZATION_TIER_CONFIG= {
             "-T0", "-T1", "-T2", "-T3", "-T4",  # timing templates
             "-p", "--open", "--top-ports",  # limited port scans and focusing
             "--version-intensity", "--version-all", "--version-light",  # version servicing tuning
-            "--osscan-guess", "--traceroute",  # OS/traceroute
+            "--osscan-guess", "--traceroute", "-O",  # OS/traceroute
             "-oX", "-oN", "-oG",                 # output formats
             "--reason", "--dns-servers", "--send-ip", "-6"  # safe options
 
@@ -36,7 +35,7 @@ SANITIZATION_TIER_CONFIG= {
             # version/service tuning
             "--version-intensity", "--version-all", "--version-light",
             # scripts & advanced
-            "--script", "--script-args", "--script-trace",
+            "--script", "--script-args", "--script-trace", "vuln",
             # outputs
             "-oX", "-oN", "-oG", "-oA",
             # performance tuning
