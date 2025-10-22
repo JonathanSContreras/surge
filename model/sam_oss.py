@@ -14,11 +14,11 @@ from langgraph.graph import StateGraph, END
 from langchain.schema import AIMessage, SystemMessage, HumanMessage
 
 # tools
-from tools import nmap_scanning, xml_parse
+from tools import nmap_scanning, xml_parse, xml_parse_v1
 
 # other imports
 from globals import TIMEOUT_VAL, SCANNING_DUMP_LOG, SANITIZATION_TIER_CONFIG
-from helper import extract_json
+from helper import extract_json, summarize_recon_results
 import json
 import time
 import datetime
@@ -93,38 +93,54 @@ def recon(state: AgentState) -> AgentState:
             file.write(f"\n--- ITERATION {iteration} [{time.strftime('%Y-%m-%d %H:%M:%S')}] ---")
         ####
 
+        # summary = summarize_recon_results(state["recon_results"])
+        #         - Previously found open ports: {summary["open_ports_count"]}
+        # - Previously found services with versions: {summary["service_count"]}
+        # - Previously found OS fingerprints: {summary["os_fingerprint_count"]}
+
         # prompt LLM to ensure correct output
         llm_input = f"""
         You are an autonomous network reconnaissance specialist.
         You MUST use the previous scan_type when responding unless explicitly changing strategy.
+        You MUST produce only JSON in the specified schema, no explanations, code fences, or extra text.
 
-        Context summary:
-        - Known hosts discovered so far: {len(discovered_hosts)}.
-        - Total scan iterations completed: {len(aggregated_logs)}.
-        - Active targets under analysis: {', '.join(state['targets'])}.
+        ### Context summary
+        - Known hosts discovered so far: {len(discovered_hosts)}
+        - Total scan iterations completed: {len(aggregated_logs)}
+        - Active targets under analysis: {', '.join(state['targets'])}
+        - Last scan_type: {state['scan_type']}
 
-        If no new hosts or open ports have been found after 2 iterations, propose and
-        switch to a **different scanning strategy** (change timing, port-range, or discovery method) automatically. 
-        Otherwise favor narrow scans that maximize useful info (like banner scanning, service enum, OS detection, etc).
 
-        You may adjust parameters such as:
-        - Port range (`-p`), e.g. limit to 1–1024 or top 1000 ports
-        - Timing template (`-T`), e.g. T3 for normal or T5 for fast scans
-        - Discovery methods (`-sn`, `-Pn`, `-sS`, `-sU`, etc.)
-        - Parallelism and retries (`--max-retries`, `--min-rate`, etc.)
+        ### Adaptive Scanning Rules
+        1. **Low scans**: Host discovery only (`-sn`). Use for new subnets or fallback scans.
+        2. **Medium scans**: Targeted port/service enumeration (`-sS`, `-sV`, `-O`). Collect banners, OS info, and light scripts (`-sC`).
+        3. **High scans**: Aggressive, deep scans (`-A`, `--script vuln`, `-O`, `-sV`, full port range). Collect all metadata, vulnerability info, and OS fingerprints.
 
-        Your goal is to produce a JSON decision that adapts dynamically 
-        to scan results and previous outcomes NO REPETITION GATHERING OF INFORMATION.
-        You have access to all nmap flags, based on the scan type, the nmap command will be sanitized based on this configuration {SANITIZATION_TIER_CONFIG}.
+        - Escalate automatically if new hosts or services are discovered and metadata is incomplete.
+        - Switch strategies automatically if no new hosts or open ports are found after 2 iterations.
+        - Always prefer narrow incremental scans first, and avoid repeating the same scan on unchanged hosts.
+        - Adjust timing (`-T`), port ranges (`-p`, `--top-ports`), and protocols (`-sS`, `-sU`) according to scan_type.
+        - When in high scans, always include at least one vuln script (`--script vuln` or other default nmap scripts) and metadata flags (`-O`, `--traceroute`, `--reason`).
 
-        Respond **only** with valid JSON in this exact schema:
+        ### Output Requirements
+        - `flags`: nmap flags appropriate to scan_type
+        - `targets`: hosts or CIDRs to focus on
+        - `scan_type`: maintain current scan_type unless escalating
+        - `reason`: concise rationale for this scan decision
+        - `max_runtime_s`: upper limit for scan duration
+        - `escalation`: "none", "service_scan", or "deep_scan"
+
+        ### JSON Schema Example
         {{
-        "flags": [string],          # example: ["-T4", "-sS", "--open"]
-        "targets": [string],        # subnets or hosts to focus on
-        "scan_type": {state["scan_type"]},
-        "reason": "string",         # describe why the new strategy is chosen
-        "max_runtime_s": int        # upper bound for how long this scan can run
+        "flags": [string],
+        "targets": [string],
+        "scan_type": "{state['scan_type']}",
+        "reason": "string",
+        "max_runtime_s": int,
+        "escalation": "none" | "service_scan" | "deep_scan"
         }}
+
+        Respond **only** with valid JSON matching this schema.
         """
 
         # ask LLM for scan descision (gpt oss needs it in a chat message list form)
@@ -240,7 +256,7 @@ def recon(state: AgentState) -> AgentState:
         # parse nmap scan output (will parse xml file to dictionary)
         parsed = {}
         if log.get("xml"):
-            parsed = xml_parse(log["xml"])
+            parsed = xml_parse_v1(log["xml"])
 
         # detect new hosts
         hosts = set(parsed.keys()) - discovered_hosts
@@ -333,8 +349,13 @@ def recon_analysis(state: AgentState) -> AgentState:  # this will be a simple "h
 
     # define what things the analysis agent will need to give a full analysis
     recon_results = state["recon_results"]
-    logs = SCANNING_DUMP_LOG  # the agent will need to read this 
     xml_file = state["recon_results"]["parsed_network"] 
+
+    print(xml_file)
+
+    # read text file and put in logs variable
+    with open(SCANNING_DUMP_LOG, "r") as log_file:
+        logs = log_file.read()
 
     # define the agent's prompt
     analysis_prompt = f"""

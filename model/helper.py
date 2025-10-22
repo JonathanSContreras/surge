@@ -55,102 +55,118 @@ def sanitize_flags_for_tier(flags: list[str], tier: str):
     """
     Validate and sanitize tokenized flag list based on the tier requested.
     Returns a sanitized list of tokens OR {"error": "MESSAGE"}
-
-    Args:
-        flags: List of flags from nmap command
-        tier: user inputed string, either "low", "medium", "high"
     """
     config = SANITIZATION_TIER_CONFIG.get(tier)
     if config is None:
         return {"error": f"unknown tier value: {tier}"}
-    
+
     # check for metacharacters
     combined_tokens = " ".join(flags)
     if any(m in combined_tokens for m in METACHARACTERS):
         return {"error": "~DISALLOWED SHELL/OPERATOR IN FLAGS"}
-    
+
     allowed = config["allowed_flags"]
-    # print(f"allowed flags for {tier}: {allowed}")
+    max_port_range = config["max_port_range"]
 
     sanitized_flags = []
-    for tok in flags:
+    i = 0
+    while i < len(flags):
+        tok = flags[i]
+
+        # keep positional tokens only if they are script args handled below,
+        # otherwise positional tokens are suspicious (likely user error)
         if not tok.startswith("-"):
+            # treat bare tokens as possible script names only if previous token was --script (handled below)
+            # otherwise, keep them — they might be legitimate (some flags accept bare args)
             sanitized_flags.append(tok)
+            i += 1
             continue
 
-        # timing flags
-        if tok.startswith("-T"):
-            if any(t.startswith("-T") for t in allowed):
-                sanitized_flags.append(tok)
-            continue
-
-        # allow output flags
-        if tok in ("-oX", "-oX-"):
+        # Timing flags like -T4
+        if tok.startswith("-T") and any(t.startswith("-T") for t in allowed):
             sanitized_flags.append(tok)
+            i += 1
             continue
 
-        # allow port flags if tier allows
-        if tok.startswith("-p"):
-            if "-p" in allowed:
-                sanitized_flags.append(tok)
+        # Output flags: accept -oX and -oN and allow a following "-" or file path
+        if tok in ("-oX", "-oN", "-oG", "-oA"):
+            sanitized_flags.append(tok)
+            # include next token if it exists and is not another flag (e.g., '-' or filename)
+            if i + 1 < len(flags) and not flags[i+1].startswith("-"):
+                sanitized_flags.append(flags[i+1])
+                i += 2
+            else:
+                i += 1
             continue
 
-        # otherwise, only keep if allowed (for low and medium scans)
-        if tier != "high": 
-            if tok in allowed:
-                sanitized_flags.append(tok)
-    
-    # validate port ranges if applicable
-    max_port_range = config["max_port_range"]
-    port_exprs = _extract_port_expressions(sanitized_flags)
-    if port_exprs:
-        valid_ports = []
-        for expr in port_exprs:
-            if max_port_range == 0:
-                continue  # skip port expressions entirely
+        # -p forms
+        if tok == "-p":
+            # keep the -p only if allowed and next token is a port expr within range
+            if "-p" in allowed and i + 1 < len(flags) and _validate_port_expr(flags[i+1], max_port_range):
+                sanitized_flags.append("-p")
+                sanitized_flags.append(flags[i+1])
+            # skip the port and its arg otherwise
+            i += 2
+            continue
+        if tok.startswith("-p") and "-p" in allowed:
+            expr = tok[2:]
             if _validate_port_expr(expr, max_port_range):
-                valid_ports.append(expr)
-        # replace original port expressions with validated ones
-        sanitized_flags = [f for f in sanitized_flags if not f.startswith("-p")] + valid_ports
+                sanitized_flags.append(tok)
+            i += 1
+            continue
+        if tok.startswith("-p") and "-p" not in allowed:
+            # discard any -p forms when not allowed
+            i += 1
+            continue
 
-    # ensure XML output is requested
-    if "-oX" not in sanitized_flags:
+        # --script handling (support both "--script name" and "--script=name")
+        if tok.startswith("--script"):
+            if "--script" not in allowed:
+                # script usage not allowed for this tier
+                i += 1
+                continue
+
+            # case: --script=name
+            if "=" in tok:
+                sanitized_flags.append(tok)
+                i += 1
+                continue
+
+            # case: --script <name>
+            if i + 1 < len(flags) and not flags[i+1].startswith("-"):
+                sanitized_flags.append(tok)
+                sanitized_flags.append(flags[i+1])
+                i += 2
+                continue
+            else:
+                # standalone --script with no argument: drop it
+                i += 1
+                continue
+
+        # generic allowed-flag check (applies to all tiers)
+        if tok in allowed:
+            sanitized_flags.append(tok)
+            i += 1
+            continue
+
+        # allow flags that start with allowed prefixes (e.g., --version-*)
+        if any(tok.startswith(pref) for pref in allowed if pref.endswith("-") or pref.endswith("_")):
+            sanitized_flags.append(tok)
+            i += 1
+            continue
+
+        # if we reach here, token is not allowed — drop it
+        i += 1
+
+    # After token loop: normalize port expressions if you prefer unified format
+    # (your earlier code replaced -p tokens with exprs; here we keep "-p" and its arg)
+
+    # ensure XML output is requested; if not, add "-oX -"
+    has_oX = any(x == "-oX" or x.startswith("-oX") for x in sanitized_flags)
+    if not has_oX:
         sanitized_flags.extend(["-oX", "-"])
 
     return sanitized_flags
-
-    # for tok in flags: # instead of not running, strip the flag
-        
-    #     if not tok.startswith("-"):
-    #         continue
-    #     if tok.startswith("-T"):
-    #         if not any(t.startswith("-T") for t in allowed):
-    #             return {"error": f"timing template {tok} not allowed for tier {tier}"}
-    #         continue
-    #     if tok in ("-oX", "-oX-"):
-    #         continue
-    #     if tok.startswith("-p"):
-    #         if "-p" not in allowed:
-    #             return {"error": "port scans not allowed for this tier"}
-    #         continue
-    #     if tok not in allowed:
-    #         return {"error": f"flag '{tok}' not allowed for tier {tier}"}
-
-    # # validate port ranges
-    # max_port_range = config["max_port_range"]
-    # port_exprs = _extract_port_expressions(flags)
-    # if port_exprs:
-    #     if max_port_range == 0:
-    #         return {"error": "port scans are disabled for this tier"}
-    #     for expr in port_exprs:
-    #         if not _validate_port_expr(expr, max_port_range):
-    #             return {"error": f"port expression '{expr}' exceeds max allowed port {max_port_range}"}
-
-    # # # ensure -oX - is defined
-    # # if "-oX" not in flags:
-    # #     flags.extend(["-oX", "-"])
-
-    # return flags
 
 
 ## --- JSON FUNCTIONS -- ##
@@ -172,3 +188,26 @@ def extract_json(raw_text: str, iteration: int) -> dict:
     except json.JSONDecodeError as e:
         print(f"[{datetime.datetime.now()}] ⚠️ Invalid JSON at iteration {iteration}: {e}")
         return {}
+
+
+## --- RECON AID METHOD -- ##
+def summarize_recon_results(recon_results: dict) -> dict:
+    """Return counts for LLM prompt from raw recon results."""
+    open_ports = 0
+    service_count = 0
+    os_fingerprint_count = 0
+    discovered_hosts = set()
+
+    for host, data in recon_results.items():
+        discovered_hosts.add(host)
+        ports = data.get("ports", [])
+        open_ports += sum(1 for p in ports if p.get("state") == "open")
+        service_count += sum(1 for p in ports if p.get("service_version"))
+        if data.get("os"):
+            os_fingerprint_count += 1
+
+    return {
+        "open_ports_count": open_ports,
+        "service_count": service_count,
+        "os_fingerprint_count": os_fingerprint_count,
+    }

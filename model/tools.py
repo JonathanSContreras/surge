@@ -87,115 +87,93 @@ def xml_parse(xml_data):
     return network_config
 
 
-def xml_parse_v1(xml_input: str) -> dict:
+def xml_parse_v1(xml_data):
     """
-    Reads a either an XML file or a string XML output and parses it storing network information. 
-    Returns the nmap command used and a dictionary of important network components.
+    Parses Nmap XML output into a structured dictionary.
+    Handles missing fields and multiple addresses/hostnames.
+    """
+    network_config = {}
 
-    ARGS
-        xml_input: nmap scan .xml output
-    """
-    if not xml_input:
+    if not xml_data:
         return {}
-    
-    # get the xml_ouput (either string or XML file)
+
+    # Parse XML (from file or string)
     try:
-        if os.path.exists(xml_input):
-            tree = ET.parse(xml_input)
+        if os.path.exists(xml_data):
+            tree = ET.parse(xml_data)
             root = tree.getroot()
         else:
-            s = xml_input.strip()
-
-            if not (s.startswith("<")):  # check if the string is XML looking
+            s = xml_data.strip()
+            if not s.startswith("<"):
                 return {"error": "~INPUT DOES NOT APPEAR TO BE XML"}
-            
             root = ET.fromstring(s)
-
     except ET.ParseError as pe:
         return {"error": f"~ISSUE PARSING ELEMENTTREE: {pe}"}
     except Exception as e:
         return {"error": f"~UNEXPECTED ERROR PARSING XML: {e}"}
 
-    # loop over root children and their sub attributes
-    # network info will be housed in a dictionary
-    network = {}
-    for child in root: 
-        network_config = {}
+    # Iterate over each host
+    for host in root.findall("host"):
+        addresses = []
+        hostnames = []
 
-        # skip over none host elements
-        if child.tag != "host":
-            continue
+        # --- Extract addresses ---
+        for addr_elem in host.findall("address"):
+            addr = addr_elem.attrib.get("addr")
+            addrtype = addr_elem.attrib.get("addrtype")
+            if addr:
+                addresses.append({"addr": addr, "type": addrtype or "unknown"})
 
-        # pull all IP hosts found (up/down)
-        addr = child.findall("address")  # might not be universal (can have ipv4/mac)
-        ip_addr = None
-        mac_addr = None
-        for a in addr:
-            # store ipv4 as the main key
-            if a.attrib["addrtype"] == "ipv4":
-                ip_addr = a.attrib["addr"]
+        # --- Extract hostnames ---
+        for hostname_elem in host.findall("hostnames/hostname"):
+            name = hostname_elem.attrib.get("name")
+            if name:
+                hostnames.append(name)
 
-            # if a mac address exists store it
-            if a.attrib["addrtype"] == "mac":
-                # store other address types
-                mac_addr = a.attrib["addr"]
-                vendor = a.attrib.get("vendor", None)
-                network_config["address"] = {"mac_addr" : mac_addr, "vendor": vendor}
+        # --- Extract ports ---
+        ports_list = []
+        ports_elem = host.find("ports")
+        if ports_elem is not None:
+            for port in ports_elem.findall("port"):
+                port_data = {
+                    "port": port.attrib.get("portid"),
+                    "protocol": port.attrib.get("protocol"),
+                }
 
-        # use mac as main key if ipv4 not available
-        if not ip_addr and mac_addr is not None:
-            print("~NO IPV4 VALUE USING MAC INSTEAD")
-            ip_addr = mac_addr
-            
-        # find host's state
-        status = child.find("status").attrib["state"]
-        if status != "up":  # host is down
-            network_config["os"] = None
-            network_config["state"] = None
-            network_config["hostname"] = None
-            network_config["ports"] = None
-        else:   # host is up
-            # find IP hostname (might contain multiple or none)
-            hostname_root = child.find("hostnames")
-            if hostname_root is not None:
-                hostname_list = []
-                for host in hostname_root:
-                    hostname_list.append(host.attrib) 
-            else:
-                hostname_list = None
+                # Extract state
+                state_elem = port.find("state")
+                if state_elem is not None:
+                    port_data.update({
+                        "state": state_elem.attrib.get("state", "unknown"),
+                        "reason": state_elem.attrib.get("reason", "unknown"),
+                        "reason_ttl": state_elem.attrib.get("reason_ttl", "unknown"),
+                    })
+                else:
+                    port_data.update({"state": "unknown", "reason": None, "reason_ttl": None})
 
-            # find IP OS (either single or multiple)
-            os_root = child.find("os")
-            if os_root is not None:
-                osmatch = os_root.findall("osmatch")
-                os_lst = []
-                for o in osmatch:
-                    os_pred = o.attrib
-                    os_lst.append(os_pred)
-                network_config["os"] = os_lst
-            else: 
-                network_config["os"] = None
+                # Extract service
+                service_elem = port.find("service")
+                if service_elem is not None:
+                    port_data.update({
+                        "service": service_elem.attrib.get("name", "unknown"),
+                        "product": service_elem.attrib.get("product"),
+                        "version": service_elem.attrib.get("version"),
+                        "extrainfo": service_elem.attrib.get("extrainfo")
+                    })
+                else:
+                    port_data.update({"service": "unknown", "product": None, "version": None, "extrainfo": None})
 
-            network_config["state"] = status 
-            network_config["hostname"] = hostname_list  # store list of hostnames if contains multiple
+                ports_list.append(port_data)
 
-            # find IP open ports
-            port_root = child.find("ports")
-            if port_root is not None:
-                port_lst = []
-                for port in port_root.findall("port"):
-                    port_data = dict(port.attrib)
-                    for child in port:
-                        if child.tag in ("state", "service"):
-                            port_data.update(child.attrib)
-                    port_lst.append(port_data)
+        # --- Assign to all addresses ---
+        for addr in addresses:
+            network_config[addr["addr"]] = {
+                "addr_type": addr["type"],
+                "hostnames": hostnames or ["unknown"],
+                "ports": ports_list
+            }
 
-            network_config["ports"] = port_lst
-
-        # add the host into the dictionary
-        network[ip_addr] = network_config
-
-    return network
+    return network_config
 
 def log_history(entry):
     print(os.path.exists(SCANNING_DUMP_LOG))

@@ -1,0 +1,8 @@
+### Network Summary
+The network consists of five discovered hosts within the 10.10.162.0/24 range, with varying port statuses and services. The most notable open ports include SSH on 22/tcp, HTTP on 80/tcp, HTTPS on 443/tcp, VNC on 5900/tcp, and TCPwrapped on 62078/tcp.
+
+### Key Observations
+Hosts 10.10.162.163 and 10.10.162.210 have multiple open services: SSH, HTTP, HTTPS, and VNC respectively. Host 10.10.162.157 and 10.10.162.236 both run TCPwrapped on port 62078/tcp. Additionally, host 10.10.162.163 has a filtered domain service (port 53/tcp).
+
+### Recommended Next Actions
+Prioritize deeper enumeration of hosts with multiple open services, specifically 10.10.162.163 and 10.10.162.210. Use Nmap flags such as `-sC` for default scripts or `-p-` to scan all ports on these hosts. Conduct OS detection with `-O` and service version detection with `-sV` to gather more detailed information about the services running on open ports.
