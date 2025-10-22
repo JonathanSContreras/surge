@@ -15,7 +15,7 @@ REQUIRED JSON schema (exact keys; types must match):
   "targets": ["CIDR or IP strings"],      // list of targets
   "scan_type": "low" | "medium" | "high",
   "reason": "<short human-readable rationale>",
-  "max_runtime_s": <integer seconds>,
+  "max_runtime_s": <integer seconds>,  // based on the flags give and ADEQUATE amount of time for the scan to not timeout
   "escalation": "none" | "service_scan" | "deep_scan"
 }
 

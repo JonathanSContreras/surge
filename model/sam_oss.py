@@ -127,7 +127,7 @@ def recon(state: AgentState) -> AgentState:
         - `targets`: hosts or CIDRs to focus on
         - `scan_type`: maintain current scan_type unless escalating
         - `reason`: concise rationale for this scan decision
-        - `max_runtime_s`: upper limit for scan duration
+        - `max_runtime_s`: upper limit for scan duration, based on the flags you provide give a resonable amount of time to scan
         - `escalation`: "none", "service_scan", or "deep_scan"
 
         ### JSON Schema Example
@@ -248,8 +248,8 @@ def recon(state: AgentState) -> AgentState:
             "scan_type": decision.get("scan_type", state["scan_type"]),
             "flags": flags,
             "targets": dec_targets,
-            "timeout": min(max_runtime, TIMEOUT_VAL)
-            # "timeout": 1000
+            # "timeout": min(max_runtime, TIMEOUT_VAL)  # THE max_runtime VALUE THE AGENT IS GIVING IS TO SMALL (making all in-depth scans have timed out)
+            "timeout": 1500
         })
         aggregated_logs.append(log)
 
@@ -309,7 +309,6 @@ def recon(state: AgentState) -> AgentState:
     return state
 
 
-
 def recon_analysis(state: AgentState) -> AgentState:  # this will be a simple "here llm analyze this (no tools needed)"
     """
     Perform high-level reconnaissance analysis using LLM reasoning.
@@ -351,11 +350,12 @@ def recon_analysis(state: AgentState) -> AgentState:  # this will be a simple "h
     recon_results = state["recon_results"]
     xml_file = state["recon_results"]["parsed_network"] 
 
-    print(xml_file)
-
     # read text file and put in logs variable
     with open(SCANNING_DUMP_LOG, "r") as log_file:
         logs = log_file.read()
+
+    print(xml_file)
+    print(logs)
 
     # define the agent's prompt
     analysis_prompt = f"""
@@ -374,23 +374,22 @@ def recon_analysis(state: AgentState) -> AgentState:  # this will be a simple "h
     -------------------------
 
     TASK:
-    1. Provide a concise technical summary of the current network.
-    2. Identify key hosts, open ports, and service fingerprints.
+    1. Provide a detailed technical summary of the current network.
+    2. Identify key hosts, open ports, service fingerprints, and any other important information.
     3. Describe potential next recon steps (e.g., higher-tier scans, 
        service enumeration, OS detection, or validation scans).
     4. Mention any anomalies or inconsistencies in scan results.
     
     Format your answer as:
-    ### Network Summary
+    Network Summary:
     (text)
 
-    ### Key Observations
+    Key Observations:
     (text)
 
-    ### Recommended Next Actions
+    Recommended Next Actions:
     (text)
     """
-
 
     # call the llm
     result = llm.invoke([
@@ -472,4 +471,6 @@ if __name__ == "__main__":
     # with open("recon_results.txt", "w+") as f:
     #     f.write(x)
 
-    print(f"Code finished in {time.perf_counter()-start_time} seconds.")
+    time_in_minutes = (time.perf_counter()-start_time) / 60
+
+    print(f"Code finished in {time_in_minutes} minutes.")

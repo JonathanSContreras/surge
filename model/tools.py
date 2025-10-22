@@ -10,6 +10,7 @@ import os
 import datetime
 import time
 import shlex
+import re
 from helper import sanitize_flags_for_tier
 from globals import TIMEOUT_VAL, SCANNING_DUMP_LOG  # configuration file
 
@@ -180,11 +181,49 @@ def log_history(entry):
     try:
         with open(SCANNING_DUMP_LOG, "a") as lf:
             print("WRITING TO DUMP LOG in tools.py")
-            lf.write(entry + "\n")
+            lf.write(entry)
+            lf.write("\n")
     
     except Exception as e:
-        print("Failed to write to dump in tools.py")
+        print(f"Failed to write to dump in tools.py -> {e}")
         pass
+
+def store_xml_to_folder(target: list, scan_output: str, xml_file: str) -> str:   # this will take all of the xml files generated and store it in a folder
+    """
+    Creates a directory named after the given target (if it doesn't already exist)
+    and stores an XML file in that directory.
+
+    Parameters
+    ----------
+    target : list
+        List of strings that represent the target identifier (e.g., hostnames or file parts).
+    scan_output : str
+        The XML content to be written to the file.
+    xml_file : str
+        The name of the XML file (should include `.xml` extension).
+
+    Returns
+    -------
+    str
+        The path to the directory where the file was saved.
+    """
+    # create directory
+    target_as_string = "".join(target)
+    target_name = re.sub(r"[^A-Za-z0-9_-]", "_", "".join(target))
+    directory_name = f"./{target_name}"
+
+    # make directory and add xml file into it
+    os.makedirs(directory_name, exist_ok=True)
+    new_xml_path = f"{directory_name}/{xml_file}"
+
+    with open(new_xml_path, "w", encoding="utf-8") as f:
+        f.write(scan_output)
+
+    print("Successfully saved .xml file to folder.")
+
+    return directory_name
+
+    
 
 @tool
 def nmap_scanning(scan_type: str, flags: list[str], targets: list[str], timeout: int = TIMEOUT_VAL) -> dict:
@@ -196,7 +235,7 @@ def nmap_scanning(scan_type: str, flags: list[str], targets: list[str], timeout:
         "timestamp": ISO timestamp,
         "command": [...],
         "targets": [...],
-        "xml": "<xml string>",
+        "xml": xml_folder_path as a string,
         "stderr": "...",
         "returncode": 0,
         "success": true/false,
@@ -246,27 +285,22 @@ def nmap_scanning(scan_type: str, flags: list[str], targets: list[str], timeout:
             timeout=timeout
         )
         
-        # write the xml output to a .xml file and then link it in the "xml"
+        # write the xml output to a .xml file store it in a folder
         safe_timestamp = timestamp.replace(":", "_").replace(".", "_")  # '2025-10-15T12-45-59-442649'
-        file_path = f"./data/{safe_timestamp}_nmap.xml"
+        file_path = f"{safe_timestamp}_nmap.xml"
 
         # ensure stdout is text
         xml_output = proc.stdout if isinstance(proc.stdout, str) else proc.stdout.decode("utf-8")
 
-        # ROBUST CHECK ##
-        # print(os.path.isdir("../data"))
-        ####
+        # link that folder name to the "xml" key
+        folder_path = store_xml_to_folder(targets, xml_output, file_path)
 
-        with open(file_path, "w", encoding="utf-8") as f:
-            f.write(xml_output)
-        # with open(file_path, "w+", encoding="utf-8") as f:
-        #     f.write(proc.stdout)
 
         log = {
             "timestamp": timestamp,
             "command": cmd,
             "targets": targets,
-            "xml": file_path,
+            "xml": folder_path,
             "stderr": proc.stderr,
             "returncode": proc.returncode,
             "success": proc.returncode == 0,

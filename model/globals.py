@@ -1,4 +1,4 @@
-TIMEOUT_VAL = 600
+TIMEOUT_VAL = 2000
 SCANNING_DUMP_LOG = "./utils/scan_dumps.txt"
 SANITIZATION_TIER_CONFIG = {
     "low": {  # Host discovery only
