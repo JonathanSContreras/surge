@@ -176,17 +176,17 @@ def xml_parse_v1(xml_data):
 
     return network_config
 
-def log_history(entry):
-    print(os.path.exists(SCANNING_DUMP_LOG))
-    try:
-        with open(SCANNING_DUMP_LOG, "a") as lf:
-            print("WRITING TO DUMP LOG in tools.py")
-            lf.write(entry)
-            lf.write("\n")
+# def log_history(entry):
+#     print(os.path.exists(SCANNING_DUMP_LOG))
+#     try:
+#         with open(SCANNING_DUMP_LOG, "a") as lf:
+#             print("WRITING TO DUMP LOG in tools.py")
+#             lf.write(entry)
+#             lf.write("\n")
     
-    except Exception as e:
-        print(f"Failed to write to dump in tools.py -> {e}")
-        pass
+#     except Exception as e:
+#         print(f"Failed to write to dump in tools.py -> {e}")
+#         pass
 
 def store_xml_to_folder(target: list, scan_output: str, xml_file: str) -> str:   # this will take all of the xml files generated and store it in a folder
     """
@@ -208,7 +208,7 @@ def store_xml_to_folder(target: list, scan_output: str, xml_file: str) -> str:  
         The path to the directory where the file was saved.
     """
     # create directory
-    target_as_string = "".join(target)
+    # target_as_string = "".join(target)
     target_name = re.sub(r"[^A-Za-z0-9_-]", "_", "".join(target))
     directory_name = f"./{target_name}"
 
@@ -295,7 +295,6 @@ def nmap_scanning(scan_type: str, flags: list[str], targets: list[str], timeout:
         # link that folder name to the "xml" key
         folder_path = store_xml_to_folder(targets, xml_output, file_path)
 
-
         log = {
             "timestamp": timestamp,
             "command": cmd,
@@ -308,7 +307,7 @@ def nmap_scanning(scan_type: str, flags: list[str], targets: list[str], timeout:
         }
 
         # add log
-        log_history(log)
+        # log_history(log)
         return log
     except subprocess.TimeoutExpired:
         log = {
@@ -323,9 +322,20 @@ def nmap_scanning(scan_type: str, flags: list[str], targets: list[str], timeout:
         }
 
         # add log
-        log_history(log)
+        # log_history(log)
         return log
 
 
 ## --- VULNERABILITY TOOLS --- ##
-# use openvas
+# use openvas, nmap vuln scan, nmap fingerprint
+@tool 
+def nmap_vuln_scan():  # ?
+    pass 
+
+@tool
+def cve_identification():
+    pass
+
+@tool
+def cve_search():
+    pass

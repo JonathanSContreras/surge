@@ -22,6 +22,7 @@ from helper import extract_json, summarize_recon_results
 import json
 import time
 import datetime
+import re
 
 ## --- LLM DEFINTION --- ##
 load_dotenv()
@@ -45,7 +46,7 @@ class AgentState(TypedDict):
     network_findings: str   # REPORT AGENT CHANGES THIS STATE
 
 ## --- AGENT PROMPTS --- ##
-from agentic_prompts import RECON_AGENT_SYSTEM_PROMPT, RECON_ANALYSIS_SYSTEM_PROMPT
+from agentic_prompts import RECON_AGENT_SYSTEM_PROMPT, RECON_ANALYSIS_SYSTEM_PROMPT, VULN_AGENT_SYSTEM_PROMPT
 
 
 ## --- AGENT TOOL BINDING --- ##
@@ -255,8 +256,9 @@ def recon(state: AgentState) -> AgentState:
 
         # parse nmap scan output (will parse xml file to dictionary)
         parsed = {}
+        print(log.get("xml"))
         if log.get("xml"):
-            parsed = xml_parse_v1(log["xml"])
+            parsed = xml_parse_v1(log["xml"])  # get into the 
 
         # detect new hosts
         hosts = set(parsed.keys()) - discovered_hosts
@@ -290,11 +292,11 @@ def recon(state: AgentState) -> AgentState:
         }
 
         print(f"Hosts discovered so far: {state['recon_results']['discovered_hosts']}")
-        print(aggregated_logs)  # debug print (see what is inside)
+        print("aggregated logs:", aggregated_logs)  # debug print (see what is inside)
 
         # write to scan dump file
         with open(SCANNING_DUMP_LOG, "a") as file:
-            file.write(f"\nHosts discovered so far: {state['recon_results']['discovered_hosts']}\n{aggregated_logs}")
+            file.write(f"\nHosts discovered so far: {state['recon_results']['discovered_hosts']}\n{aggregated_logs}\n{str(parsed)}")
         ####
 
         time.sleep(1)
@@ -414,7 +416,50 @@ def recon_analysis(state: AgentState) -> AgentState:  # this will be a simple "h
     return state
 
 
-def vulnerability(state: AgentState) -> AgentState:
+def vulnerability(state: AgentState) -> AgentState:  # DOES NOT TOUCH THE NETWORK
+    """"""
+
+    # define the xml folder it needs to parse
+    target = re.sub(r"[^A-Za-z0-9_-]", "_", "".join(target))
+    xml_scan_folder = f"./{target}"
+
+
+
+    vuln_llm_prompt = f"""
+    Analyze the following network scan data,
+    {json.dumps(state["recon_results"], indent=2)}.
+
+    And all .XML files from the initial reconaissance, formatted to all be strings for ease of understanding.
+
+    For each product or service, search the CIRCL CVE API 
+    and return a summarized vulnerability dataset in this format (below is an example):
+
+    [
+    {{
+        "host": "192.168.1.10",
+        "product": "Apache httpd",
+        "version": "2.4.57",
+        "cve": [
+        {{
+            "id": "CVE-2023-12345",
+            "summary": "Remote code execution in mod_proxy",
+            "cvss": 8.2
+        }}
+        ]
+    }}
+    ]
+    """
+
+    # call the llm
+    vuln_result = llm.invoke([
+        SystemMessage(content=VULN_AGENT_SYSTEM_PROMPT),
+        HumanMessage(content=vuln_llm_prompt)
+    ])
+
+    # define the result as an AIMessage and update the state
+    vuln_result = AIMessage(vuln_result) if not isinstance(vuln_result, AIMessage) else vuln_result
+    state["vuln_results"] = vuln_result
+
     return state
 
 

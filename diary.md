@@ -36,3 +36,11 @@ $$START -> RECON -> RECON ANALYSIS -> END$$
 - BIG CHANGES:
     - instead of pushing an error that has any disallowed flags, it instead takes those flags out
     - changed the xml log output (from putting the raw file to outputting it to a .xml file and calling the path in the log)
+
+**10/22**
+- recon agent -> recon analysis agent is working 
+- I am pushing for more aggressive scans which is making all the scans time out (NOT SCANNING NO OUTPUT)
+    - I want the recon agent to be the ONLY agent that touches the 
+- NEED TO DO: make the recon analysis agent read through the xml folder
+    - possibly make a method that takes the target and makes it a folder
+- starting to work on vulnerability agent
