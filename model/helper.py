@@ -409,8 +409,10 @@ def store_xml_to_folder(target: list, scan_output: str, xml_file: str) -> str:  
 
     return directory_name
 
-def all_xml_output_to_txt(target_file: str):
+def all_xml_output_to_txt(target_file: str) -> str:
     """
+    Takes all xml content from the scan folder and outputs it to a txt file.
+    Returns the string path value.
     """
     xml_folder = target_file
 
@@ -432,6 +434,8 @@ def all_xml_output_to_txt(target_file: str):
     with open(f"{xml_folder}/xml_content.txt", "w") as c:
         c.write(content)
         print("SUCCESSFULLY WROTE ALL CONTENT TO A TXT")
+
+    return 
 
 
 ## --- RECON ANALYZER HELPER METHOD -- ##

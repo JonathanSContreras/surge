@@ -40,6 +40,7 @@ class AgentState(TypedDict):
     scan_type: str  # e.g. "low"/"medium"/"high"  GIVEN BY USER
     targets: list[str]  # e.g. ["10.10.1/25"]  GIVEN BY USER
     recon_results: dict[str, Any]  # the output would be a json, raw_xml, scan_logs, etc  AFTER RECON AGENT RUNS
+    all_xml_content: str
     recon_analysis: str  # RECON ANALYSIS AGENT RUNS
     vuln_results: list[str]  # list of CVE vulnerabilities and its score    AFTER VULN AGENT RUNS
     network_findings: str   # REPORT AGENT CHANGES THIS STATE
@@ -304,7 +305,10 @@ def recon(state: AgentState) -> AgentState:
 
     # after recon agent ends run all xml content into a txt file
     xml_dir = state["recon_results"]["xml"]
-    all_xml_output_to_txt(xml_dir)
+    xml_content = all_xml_output_to_txt(xml_dir)
+
+    with open(xml_content, "r") as f:
+        state["all_xml_content"] += f.read()
 
     return state
 
@@ -353,9 +357,10 @@ def recon_analysis(state: AgentState) -> AgentState:  # this will be a simple "h
         logs = log_file.read()
 
     # all xml output (already outputted in a file)
-    xml_output_path = f"{state["recon_results"]["xml"]}/xml_content.txt"
-    with open(xml_output_path, "r") as f:
-        xml_file = f.read()
+    xml_file = state["all_xml_content"]
+    # xml_output_path = f"{state["recon_results"]["xml"]}/xml_content.txt"
+    # with open(xml_output_path, "r") as f:
+    #     xml_file = f.read()
 
     print(xml_file)
     print(logs)
@@ -426,7 +431,8 @@ def vulnerability(state: AgentState) -> AgentState:  # DOES NOT TOUCH THE NETWOR
     Analyze the following network scan data,
     {json.dumps(state["recon_results"], indent=2)}.
 
-    And all .XML files from the initial reconaissance, formatted to all be strings for ease of understanding.
+    And all .XML file content from the initial reconaissance, formatted to all be strings for ease of understanding,
+    {state["all_xml_content"]}
 
     For each product or service, search the CIRCL CVE API 
     and return a summarized vulnerability dataset in this format (below is an example):
@@ -494,6 +500,7 @@ if __name__ == "__main__":
         "scan_type": "high",
         "targets": ["10.10.162.0/24"],  # whole subnet scan  ["10.10.162.0/24"]
         "recon_results": {},
+        "all_xml_content": "",
         "recon_analysis": "",
         "vuln_results": [],
         "network_findings": ""
