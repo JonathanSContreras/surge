@@ -17,12 +17,11 @@ from langchain.schema import AIMessage, SystemMessage, HumanMessage
 from tools import nmap_scanning
 
 # other imports
-from globals import TIMEOUT_VAL, SCANNING_DUMP_LOG, SANITIZATION_TIER_CONFIG
+from globals import TIMEOUT_VAL, SCANNING_DUMP_LOG
 from helper import extract_json, summarize_recon_results, xml_parse_v1, all_xml_output_to_txt, target_to_proper_file_name
 import json
 import time
 import datetime
-import re
 
 ## --- LLM DEFINTION --- ##
 load_dotenv()
@@ -251,9 +250,9 @@ def recon(state: AgentState) -> AgentState:
 
         # parse nmap scan output (will parse xml file to dictionary)  THIS IS AN ISSUE (the xml content is now the folder name)
         parsed = {}
-        print(log.get("xml"))
-        if log.get("xml"):
-            parsed = xml_parse_v1(log["xml"])  # get into the 
+        print(log.get("xml_file"))
+        if log.get("xml_file"):
+            parsed = xml_parse_v1(log["xml_file"])  # get into the 
 
         # detect new hosts
         hosts = set(parsed.keys()) - discovered_hosts
