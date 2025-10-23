@@ -1,13 +1,17 @@
 import os
 
 xml_folder = "./10_10_162_0_24"
-xml_list = (os.listdir(xml_folder))
+xml_list = sorted(f for f in os.listdir(xml_folder) if f.endswith(".xml"))
 content = ""
 
 for xml in xml_list:
-    print(xml)
-    print(os.path.exists(f"{xml_folder}/{xml}"))
-    with open(f"{xml_folder}/{xml}", "r", encoding="utf-8", errors="ignore") as f:
-        content += f.read()
+    xml_path = os.path.join(xml_folder, xml)
+    if os.path.isfile(xml_path):
+        with open(xml_path, "r", encoding="utf-8", errors="ignore") as file:
+            data = file.read()
+            content += data
+            content += "\n<---- END OF XML CONTENT ---->\n"
 
-print(content)
+
+with open(f"{xml_folder}/xml_content.txt", "w") as c:
+    c.write(content)

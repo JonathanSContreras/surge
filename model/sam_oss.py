@@ -14,11 +14,11 @@ from langgraph.graph import StateGraph, END
 from langchain.schema import AIMessage, SystemMessage, HumanMessage
 
 # tools
-from tools import nmap_scanning, xml_parse, xml_parse_v1
+from tools import nmap_scanning
 
 # other imports
 from globals import TIMEOUT_VAL, SCANNING_DUMP_LOG, SANITIZATION_TIER_CONFIG
-from helper import extract_json, summarize_recon_results
+from helper import extract_json, summarize_recon_results, xml_parse_v1, all_xml_output_to_txt, target_to_proper_file_name
 import json
 import time
 import datetime
@@ -93,11 +93,6 @@ def recon(state: AgentState) -> AgentState:
         with open(SCANNING_DUMP_LOG, "a") as file:
             file.write(f"\n--- ITERATION {iteration} [{time.strftime('%Y-%m-%d %H:%M:%S')}] ---")
         ####
-
-        # summary = summarize_recon_results(state["recon_results"])
-        #         - Previously found open ports: {summary["open_ports_count"]}
-        # - Previously found services with versions: {summary["service_count"]}
-        # - Previously found OS fingerprints: {summary["os_fingerprint_count"]}
 
         # prompt LLM to ensure correct output
         llm_input = f"""
@@ -254,7 +249,7 @@ def recon(state: AgentState) -> AgentState:
         })
         aggregated_logs.append(log)
 
-        # parse nmap scan output (will parse xml file to dictionary)
+        # parse nmap scan output (will parse xml file to dictionary)  THIS IS AN ISSUE (the xml content is now the folder name)
         parsed = {}
         print(log.get("xml"))
         if log.get("xml"):
@@ -308,6 +303,10 @@ def recon(state: AgentState) -> AgentState:
         file.write(f"Recon finished after {iteration} iterations.")
     ####
 
+    # after recon agent ends run all xml content into a txt file
+    xml_dir = state["recon_results"]["xml"]
+    all_xml_output_to_txt(xml_dir)
+
     return state
 
 
@@ -347,14 +346,17 @@ def recon_analysis(state: AgentState) -> AgentState:  # this will be a simple "h
         • Suggest next scan strategies or validation steps
     """
 
-
-    # define what things the analysis agent will need to give a full analysis
+    # define what things the analysis agent will need to give for a full analysis
     recon_results = state["recon_results"]
-    xml_file = state["recon_results"]["parsed_network"] 
 
     # read text file and put in logs variable
     with open(SCANNING_DUMP_LOG, "r") as log_file:
         logs = log_file.read()
+
+    # all xml output (already outputted in a file)
+    xml_output_path = f"{state["recon_results"]["xml"]}/xml_content.txt"
+    with open(xml_output_path, "r") as f:
+        xml_file = f.read()
 
     print(xml_file)
     print(logs)
@@ -405,9 +407,7 @@ def recon_analysis(state: AgentState) -> AgentState:  # this will be a simple "h
     state["recon_analysis"] = result.content
 
     # write the analysis into a txt file
-    target_ip = "".join(state["targets"])
-    target_ip = target_ip.replace("/", "_")
-    target_ip = target_ip.replace(".", "_")
+    target_ip = target_to_proper_file_name(state["targets"])
     with open(f"./output/{target_ip}_recon_analysis.txt", "w") as f:
         f.write(result.content)
 
@@ -419,9 +419,7 @@ def recon_analysis(state: AgentState) -> AgentState:  # this will be a simple "h
 def vulnerability(state: AgentState) -> AgentState:  # DOES NOT TOUCH THE NETWORK
     """"""
 
-    # define the xml folder it needs to parse
-    target = re.sub(r"[^A-Za-z0-9_-]", "_", "".join(target))
-    xml_scan_folder = f"./{target}"
+    # define the xml content file it needs to parse
 
 
 

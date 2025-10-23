@@ -1,11 +1,13 @@
 """
 @author: Brianna Hinds
-Description: Helper functions for the agentic model.
+Description: Helper functions for the agents.
 """
 from globals import SANITIZATION_TIER_CONFIG, METACHARACTERS
 import re
 import json
 import datetime
+import xml.etree.ElementTree as ET
+import os
 
 ## --- SANITIZATION METHODS --- ##
 def _extract_port_expressions(flags: list[str]) -> list[str]:
@@ -188,9 +190,251 @@ def extract_json(raw_text: str, iteration: int) -> dict:
     except json.JSONDecodeError as e:
         print(f"[{datetime.datetime.now()}] ⚠️ Invalid JSON at iteration {iteration}: {e}")
         return {}
+    
+
+## --- RECON AGENT HELPER METHODS --- ##
+def target_to_proper_file_name(target: list):
+    """
+    Takes the scan target list and turns it into a valid file name.
+    """
+    valid_file_name = re.sub(r"[^A-Za-z0-9_-]", "_", "".join(target))
+
+    return valid_file_name
 
 
-## --- RECON AID METHOD -- ##
+def xml_parse(xml_data):
+    """
+    Parses nmap XML output into structured dictionary form.
+    Handles missing fields gracefully.
+    """
+    network_config = {}
+    
+    # nothing in the xml file
+    if not xml_data:
+        return {}
+    
+    # get the xml_ouput (either string or XML file)
+    try:
+        if os.path.exists(xml_data):
+            tree = ET.parse(xml_data)
+            root = tree.getroot()
+        else:
+            s = xml_data.strip()
+
+            if not (s.startswith("<")):  # check if the string is XML looking
+                return {"error": "~INPUT DOES NOT APPEAR TO BE XML"}
+            
+            root = ET.fromstring(s)
+
+    except ET.ParseError as pe:
+        return {"error": f"~ISSUE PARSING ELEMENTTREE: {pe}"}
+    except Exception as e:
+        return {"error": f"~UNEXPECTED ERROR PARSING XML: {e}"}
+
+    for host in root.findall("host"):
+        host_addr = None
+        host_name = None
+        port_lst = [] 
+
+        # --- Extract address ---
+        addr_elem = host.find("address")
+        if addr_elem is not None:
+            host_addr = addr_elem.attrib.get("addr")
+
+        # --- Extract hostname (optional) ---
+        hostnames_elem = host.find("hostnames/hostname")
+        if hostnames_elem is not None:
+            host_name = hostnames_elem.attrib.get("name")
+
+        # --- Extract ports (if any) ---
+        ports_elem = host.find("ports")
+        if ports_elem is not None:
+            for port in ports_elem.findall("port"):
+                port_id = port.attrib.get("portid")
+                protocol = port.attrib.get("protocol")
+                state_elem = port.find("state")
+                service_elem = port.find("service")
+
+                state = state_elem.attrib.get("state") if state_elem is not None else "unknown"
+                service = service_elem.attrib.get("name") if service_elem is not None else "unknown"
+
+                port_lst.append({
+                    "port": port_id,
+                    "protocol": protocol,
+                    "state": state,
+                    "service": service
+                })
+
+        # --- Store host summary ---
+        if host_addr:
+            network_config[host_addr] = {
+                "hostname": host_name or "unknown",
+                "ports": port_lst, 
+            }
+
+    return network_config
+
+
+def xml_parse_v1(xml_data):
+    """
+    Parses Nmap XML output into a structured dictionary.
+    Handles missing fields and multiple addresses/hostnames.
+    """
+    network_config = {}
+
+    if not xml_data:
+        return {}
+
+    # Parse XML (from file or string)
+    try:
+        if os.path.exists(xml_data):
+            tree = ET.parse(xml_data)
+            root = tree.getroot()
+        else:
+            s = xml_data.strip()
+            if not s.startswith("<"):
+                return {"error": "~INPUT DOES NOT APPEAR TO BE XML"}
+            root = ET.fromstring(s)
+    except ET.ParseError as pe:
+        return {"error": f"~ISSUE PARSING ELEMENTTREE: {pe}"}
+    except Exception as e:
+        return {"error": f"~UNEXPECTED ERROR PARSING XML: {e}"}
+
+    # Iterate over each host
+    for host in root.findall("host"):
+        addresses = []
+        hostnames = []
+
+        # --- Extract addresses ---
+        for addr_elem in host.findall("address"):
+            addr = addr_elem.attrib.get("addr")
+            addrtype = addr_elem.attrib.get("addrtype")
+            if addr:
+                addresses.append({"addr": addr, "type": addrtype or "unknown"})
+
+        # --- Extract hostnames ---
+        for hostname_elem in host.findall("hostnames/hostname"):
+            name = hostname_elem.attrib.get("name")
+            if name:
+                hostnames.append(name)
+
+        # --- Extract ports ---
+        ports_list = []
+        ports_elem = host.find("ports")
+        if ports_elem is not None:
+            for port in ports_elem.findall("port"):
+                port_data = {
+                    "port": port.attrib.get("portid"),
+                    "protocol": port.attrib.get("protocol"),
+                }
+
+                # Extract state
+                state_elem = port.find("state")
+                if state_elem is not None:
+                    port_data.update({
+                        "state": state_elem.attrib.get("state", "unknown"),
+                        "reason": state_elem.attrib.get("reason", "unknown"),
+                        "reason_ttl": state_elem.attrib.get("reason_ttl", "unknown"),
+                    })
+                else:
+                    port_data.update({"state": "unknown", "reason": None, "reason_ttl": None})
+
+                # Extract service
+                service_elem = port.find("service")
+                if service_elem is not None:
+                    port_data.update({
+                        "service": service_elem.attrib.get("name", "unknown"),
+                        "product": service_elem.attrib.get("product"),
+                        "version": service_elem.attrib.get("version"),
+                        "extrainfo": service_elem.attrib.get("extrainfo")
+                    })
+                else:
+                    port_data.update({"service": "unknown", "product": None, "version": None, "extrainfo": None})
+
+                ports_list.append(port_data)
+
+        # --- Assign to all addresses ---
+        for addr in addresses:
+            network_config[addr["addr"]] = {
+                "addr_type": addr["type"],
+                "hostnames": hostnames or ["unknown"],
+                "ports": ports_list
+            }
+
+    return network_config
+
+# def log_history(entry):
+#     print(os.path.exists(SCANNING_DUMP_LOG))
+#     try:
+#         with open(SCANNING_DUMP_LOG, "a") as lf:
+#             print("WRITING TO DUMP LOG in tools.py")
+#             lf.write(entry)
+#             lf.write("\n")
+    
+#     except Exception as e:
+#         print(f"Failed to write to dump in tools.py -> {e}")
+#         pass
+
+def store_xml_to_folder(target: list, scan_output: str, xml_file: str) -> str:   # this will take all of the xml files generated and store it in a folder
+    """
+    Creates a directory named after the given target (if it doesn't already exist)
+    and stores an XML file in that directory.
+
+    Parameters
+    ----------
+    target : list
+        List of strings that represent the target identifier (e.g., hostnames or file parts).
+    scan_output : str
+        The XML content to be written to the file.
+    xml_file : str
+        The name of the XML file (should include `.xml` extension).
+
+    Returns
+    -------
+    str
+        The path to the directory where the file was saved.
+    """
+    # create directory
+    target_name = target_to_proper_file_name(target)
+    directory_name = f"./{target_name}"
+
+    # make directory and add xml file into it
+    os.makedirs(directory_name, exist_ok=True)
+    new_xml_path = f"{directory_name}/{xml_file}"
+
+    with open(new_xml_path, "w", encoding="utf-8") as f:
+        f.write(scan_output)
+
+    print(f"Successfully saved .xml file to folder {directory_name}.")
+
+    return directory_name
+
+def all_xml_output_to_txt(target_file: str):
+    """
+    """
+    xml_folder = target_file
+
+    # pull the folder name (the target value passes as a proper file string)
+    xml_list = sorted(f for f in os.listdir(xml_folder) if f.endswith(".xml"))
+    content = ""  # define an empty content variable
+
+    # go through each xml file and get its content
+    for xml in xml_list:
+        xml_path = os.path.join(xml_folder, xml)  # ./TARGET/XML PATH
+        if os.path.isfile(xml_path):
+            with open(xml_path, "r", encoding="utf-8", errors="ignore") as f:
+                data = f.read()
+                content += data
+                content += "\n < --- END OF XML CONTENT --- > \n"
+                print("SUCCESSFULLY RETRIEVED ALL XML CONTENT")
+
+    # add the content to a txt file (used later for the recon analysis and vulnerability agent)
+    with open(f"{xml_folder}/xml_content.txt", "w") as c:
+        c.write(content)
+        print("SUCCESSFULLY WROTE ALL CONTENT TO A TXT")
+
+
+## --- RECON ANALYZER HELPER METHOD -- ##
 def summarize_recon_results(recon_results: dict) -> dict:
     """Return counts for LLM prompt from raw recon results."""
     open_ports = 0
@@ -211,3 +455,8 @@ def summarize_recon_results(recon_results: dict) -> dict:
         "service_count": service_count,
         "os_fingerprint_count": os_fingerprint_count,
     }
+
+
+## --- VULNERABILITY AGENT HELPER FUNCTIONS --- ##
+
+
