@@ -420,38 +420,84 @@ def recon_analysis(state: AgentState) -> AgentState:  # this will be a simple "h
     return state
 
 
-def vulnerability(state: AgentState) -> AgentState:  # DOES NOT TOUCH THE NETWORK
-    """"""
+def vulnerability(state: AgentState) -> AgentState:
+    """
+    Analyze reconnaissance data and identify known vulnerabilities.
 
-    # define the xml content file it needs to parse
+    This function takes the agent's current state, including:
+      - `state["recon_results"]`: structured output from prior network/service scans
+      - `state["all_xml_content"]`: raw stringified XML data from recon tools (e.g., Nmap)
+
+    It constructs a vulnerability-analysis prompt and queries the LLM (or a local CVE lookup system)
+    to generate a summarized vulnerability dataset for each discovered host and service.
+
+    Expected output format in `state["vuln_results"]`:
+        [
+            {
+                "host": "192.168.1.10",
+                "product": "Apache httpd",
+                "version": "2.4.57",
+                "cve": [
+                    {
+                        "id": "CVE-2023-12345",
+                        "summary": "Remote code execution in mod_proxy"
+                    }
+                ]
+            },
+            ...
+        ]
+
+    Notes:
+      - This function **must not perform any external network calls** (e.g., to NVD or CVE APIs).
+        If external data is needed, it should come from a preloaded local database or an offline index.
+      - The LLM may summarize or format CVE data, but the CVE identifiers and descriptions should
+        originate from authoritative CVE datasets (e.g., NVD, OSV, MITRE).
+      - The function updates the agent state in place and returns it.
+
+    Returns:
+        AgentState: Updated state containing `vuln_results`.
+    """
 
 
+    # CAN EITHER PROMPT TO DO THE CVSS SCORE OR NOT (CLASSIFIER WILL DO THAT)
 
     vuln_llm_prompt = f"""
-    Analyze the following network scan data,
-    {json.dumps(state["recon_results"], indent=2)}.
+    You are a vulnerability analysis expert.
 
-    And all .XML file content from the initial reconaissance, formatted to all be strings for ease of understanding,
+    Given the following reconnaissance data and service information, analyze potential vulnerabilities:
+
+    Reconnaissance results:
+    {json.dumps(state["recon_results"], indent=2)}
+
+    Raw XML scan data (stringified for readability):
     {state["all_xml_content"]}
 
-    For each product or service, search the CIRCL CVE API 
-    and return a summarized vulnerability dataset in this format (below is an example):
+    Your task:
+    1. For each discovered host and service, identify known vulnerabilities (CVEs) from authoritative datasets (e.g., NVD, MITRE, OSV) that match the product and version.
+    2. If CVE lookup data is unavailable, leave the CVE list empty rather than speculating.
+    3. Do not estimate CVSS scores — just include CVE IDs and concise summaries.
+    4. Format your response as a valid JSON array matching the schema below exactly:
 
     [
     {{
-        "host": "192.168.1.10",
-        "product": "Apache httpd",
-        "version": "2.4.57",
+        "host": "<IP or hostname>",
+        "product": "<product name>",
+        "version": "<version string>",
         "cve": [
         {{
-            "id": "CVE-2023-12345",
-            "summary": "Remote code execution in mod_proxy",
-            "cvss": 8.2
+            "id": "<CVE-YYYY-NNNNN>",
+            "summary": "<short English summary>"
         }}
         ]
     }}
     ]
+
+    Ensure:
+    - Use double quotes for all keys and values (valid JSON).
+    - If no vulnerabilities are found, output `"cve": []` for that product.
+    - Do not add extra commentary or explanation outside the JSON.
     """
+
 
     # call the llm
     vuln_result = llm.invoke([
@@ -466,12 +512,17 @@ def vulnerability(state: AgentState) -> AgentState:  # DOES NOT TOUCH THE NETWOR
     return state
 
 
-def cvss_formatter(state: AgentState) -> AgentState:
+def cvss_data_formatter(state: AgentState) -> AgentState:
+    # will format the vulnerability results to the proper format so the XGBoost classifier does not break
+    return state
+
+def cvss_scoring(state: AgentState) -> AgentState:
     # this will call the XGBoost classifier and then output the vulnerability with its label (None, Low, Medium, High, Critical)
     return state
 
-
 def reporter(state: AgentState) -> AgentState:
+    """"""
+
     return state
 
 
@@ -480,15 +531,15 @@ workflow = StateGraph(AgentState)
 workflow.add_node("recon", recon)
 workflow.add_node("recon_analysis", recon_analysis)
 workflow.add_node("vulnerability", vulnerability)
-workflow.add_node("cvss_formatter", cvss_formatter)
-# workflow.add_node("vulnerability_classifier", "")
+workflow.add_node("cvss_data_formatter", cvss_data_formatter) 
+workflow.add_node("cvss_scorer", cvss_scoring) 
 workflow.add_node("supervisor", reporter)
 
 workflow.add_edge("recon", "recon_analysis")
 workflow.add_edge("recon_analysis", END)  # TEST EDGE
 # workflow.add_edge("recon_analysis", "supervisor")
 # workflow.add_edge("recon", "vulnerability")
-# workflow.add_edge("vulnerability", "cvss_formatter")
+# workflow.add_edge("vulnerability", "cvss_data_formatter")
 # workflow.add_edge("cvss_formatter", "supervisor")
 workflow.set_entry_point("recon")
 
@@ -513,12 +564,6 @@ if __name__ == "__main__":
 
     # json dump
     print(json.dumps(results, indent=2))
-
-    # x = results["recon_analysis"].content
-    # print("recon analysis print:", x)
-    # print(type(x))
-    # with open("recon_results.txt", "w+") as f:
-    #     f.write(x)
 
     time_in_minutes = (time.perf_counter()-start_time) / 60
 
