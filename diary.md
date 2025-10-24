@@ -22,6 +22,7 @@ $$START -> RECON -> RECON ANALYSIS -> END$$
 - decided to define a tiered sanitization for the nmap commands
 - got it running but the gemini LLM is asking for user input (i.e. "Would you like to initiate a scan?")
 
+### October
 **10/14**
 - got the recon agent fully running without having to ask for confirmation (used chatgpt)
 - connected to a switch and was able to discover the switch and jonathan's device (192.163.2.0/24 and "low" scan)
@@ -44,3 +45,9 @@ $$START -> RECON -> RECON ANALYSIS -> END$$
 - NEED TO DO: make the recon analysis agent read through the xml folder
     - possibly make a method that takes the target and makes it a folder
 - starting to work on vulnerability agent
+
+**10/23**
+- worked on the data passing, made a folder to store all xml files created per run
+- added a new state object (xml_content) that has all content from all xml files as a string so the recon analysis and vulnerabilty agent can look over
+- when it comes to building a toolkit i want the recon agent to ONLY have access to the network
+    - possible tools: 'scapy', 'pyshark'
