@@ -51,3 +51,6 @@ $$START -> RECON -> RECON ANALYSIS -> END$$
 - added a new state object (xml_content) that has all content from all xml files as a string so the recon analysis and vulnerabilty agent can look over
 - when it comes to building a toolkit i want the recon agent to ONLY have access to the network
     - possible tools: 'scapy', 'pyshark'
+- the vulnerability agent will take the xml_content state and possibly the recon results to create CVE type data
+- MY GOAL: have the barebone agentic workflow done before Thanksgiving
+- MY CURRENT ISSUES: find the sweet spot to declare a scan timeout, i need ti do aggressive recon scans to get everything but it takes long
