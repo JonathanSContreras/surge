@@ -4,7 +4,7 @@ Overview:
 An agentic network tool that has capabilities, network feedback capabilities, networking mapping, vulnerability scans, exploitation tool, and a vulnerability classifier. The brain of the agent will follow MITRE ATTACK strategies and workflows.
 
 The tools used will be:
-- OpenAI gpt-oss (free-weight LLM) (might use Claude)
+- OpenAI gpt-oss on HCU server
 - LangGraph (the agent/workflow)
     - LangGraph gives us more control because this is a non-linear task
 - LangSmith for analyzing the agents, making sure there is no hallucinations.
