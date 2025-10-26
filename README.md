@@ -50,6 +50,8 @@ The approach we are taking is a multi-agent system (MAS) where there is an agent
 
 The process start with:
 1) Reconnaissance via the `nmap` tool, where the agent is given full range of nmap to pick the best scan for the goal of full network discovery. 
+*might have more recon tools
+
 
 After reconnaissance the agent will make a Next Best Action decision from the following choices:
 - Reporting through log action and send to the dashboard.
