@@ -1,7 +1,7 @@
 # Agentic Network Analysis
 ## Network Exploration
 Overview: 
-An agentic network tool that has capabilities, network feedback capabilities, networking mapping, vulnerability scans, exploitation tool, and a vulnerability classifier. The brain of the agent will follow MITRE ATTACK strategies and workflows.
+A multi-agentic network tool that has network discovery capabilities, where it will analyze a network is has authorized access to. This recon agent (workflow start) will attempt to get as much information as possible about the network, open devices, ports, OS, vulnerabilities, etc. After the recon agent runs, its output will get passed to other agents to label pinpoints in the targeted network. The brain of the agent will follow MITRE ATTACK strategies and workflows.
 
 The tools used will be:
 - OpenAI gpt-oss on HCU server
@@ -9,9 +9,9 @@ The tools used will be:
     - LangGraph gives us more control because this is a non-linear task
 - LangSmith for analyzing the agents, making sure there is no hallucinations.
 - Python for method definitions (nmap, explotations, etc.)
-- PyTorch
+- PyTorch and ML Models
     - network mapping (GNN)
-    - vulnerability classification
+    - vulnerability classification  (XGBoost)
 - Next.js for dashboard
     - deployed on Vercel
     - uses custom API routes to access the agent
@@ -49,26 +49,19 @@ The tools used will be:
 The approach we are taking is a multi-agent system (MAS) where there is an agent for Reconnaissance, Vulnerability Identifying, Summary/Reporting Agent, and there will be subagents for Recon and Vulnerability whose's sole purpose would be to analyze the its parent's output.
 
 The process start with:
-1) Reconnaissance via the `nmap` tool, where the agent is given full range of nmap to pick the best scan for the goal of full network discovery. 
-*might have more recon tools
+#### Recon Agent
+Reconnaissance via the `nmap` tool, where the agent is given full range of nmap to pick the best scan for the goal of full network discovery. 
+*might have more recon tools. It will also have access to the `PYTHON LIBRARY` so that it can figure out other possible network information. -> All outputs gets pushed to **Recon Analysis** agent.
 
+#### Vulnerability Agent
+Network vulnerability is a important role in identifying weaknesses in an organization's network. So this agent will be responible for taking the recon output and identifying what vulnerabilities are on the network in CVE format. -> This output then gets passed to a CVE formatter agent so the XGBoost model can run without breaking.
 
-After reconnaissance the agent will make a Next Best Action decision from the following choices:
-- Reporting through log action and send to the dashboard.
-- Port scanning (either stealthy, decoy, aggressive)
-- OS Scanner
-- Service enumerator
-- Vulnerability Detection Scan (`nmap`) and then transition into `OpenVAS`/`Nikto`
-- Prioritization which will sort vulnerabilities based on CVSS score
-- Exploitation via `Metasploit`, this will be controlled. It will either run real exploits or pseudo-exploits.
+#### Vulnerability Classifier Agent
+This agent will explicitly call a `XGBoost` model method, where each identified vulnerability gets a score and then labeled None/Low/Medium/High/Critical.
 
-When it comes to exploitation, the agent will exploit a vulnerability based on a vulnerability score (CVSS) if it is a high vulnerability score then the agent will exploit those first. Or there might be a EPSS score that determines what to exploit. The agent will know what is deemed as vulnerable through a classifier, from the CVE database which data will be pulled from the `NVD API` and will be stored locally in a `Postgres` so the agent can search quickly. In the end this will be used to rank vulnerabilities and explain patches.
+#### Reporter
+This agent is fully responible for taking all outputs from all agents (except the Recon Agent) and writes out a detailed report for the organization. There will be two different types of outputted reports, (1) a very detailed, high-level analysis of all findings, this will be read by a SOC member or CIDO and can be understood by them. (2) A detailed analysis of issues in Layman's terms, so someone like a non-technical CIDO or a non-technical manager can understand the organization's network issues.
 
-For the `EPSS` score, that process will either be pulled from first.org (as a Python library `epss-api`) or created ourselves. 
-
-The vulnerability classifier will be built via PyTorch model classifying an identified vulnerability as None/Low/Medium/High/Critical
-
-LangChain will wrap `nmap`, `nikto`, `OpenVAS`, `Metasploit`, etc. into the `Tool()` method so the LLM can call them in sequence.
 
 ### Dashboard
-The dashboard built via `next.js` will contain graphs that are normally on a vulnerability dashboard but it will also include the GNN graph that was created and will dynmaically show/callout areas of the network the agent deemed as "risky". The graph view will be done through `D3.js` or `Cyroscape.js`.
+The dashboard built via `React` will contain graphs that are normally on a vulnerability dashboard but it will also include the GNN graph that was created and will dynmaically show/callout areas of the network the agent deemed as "risky". The graph view will be done through `D3.js`.
