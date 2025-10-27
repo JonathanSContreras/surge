@@ -1,5 +1,6 @@
 TIMEOUT_VAL = 2000
 SCANNING_DUMP_LOG = "./utils/scan_dumps.txt"
+VULN_CLASSIFICATION_TRAINING_DATA = "./data/merged_cve.csv"
 SANITIZATION_TIER_CONFIG = {
     "low": {  # Host discovery only
         "allowed_flags": {

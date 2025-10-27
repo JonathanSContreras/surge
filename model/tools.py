@@ -9,7 +9,14 @@ import datetime
 import time
 import shlex
 from helper import sanitize_flags_for_tier, store_xml_to_folder
-from globals import TIMEOUT_VAL, SCANNING_DUMP_LOG  # configuration file
+from globals import TIMEOUT_VAL, VULN_CLASSIFICATION_TRAINING_DATA
+import requests
+import pandas as pd
+from sklearn.preprocessing import OneHotEncoder
+from sentence_transformers import SentenceTransformer
+from sklearn.feature_extraction.text import TfidfVectorizer
+from xgboost import XGBRegressor
+from sklearn.model_selection import train_test_split
 
 ## --- RECON METHOD/TOOLS --- ##
 @tool
@@ -116,16 +123,87 @@ def nmap_scanning(scan_type: str, flags: list[str], targets: list[str], timeout:
         return log
 
 
-## --- VULNERABILITY TOOLS --- ##
-# use openvas, nmap vuln scan, nmap fingerprint
-@tool 
-def nmap_vuln_scan():  # ?
-    pass 
+## --- VULNERABILITY TOOLS --- ##   NEED TO GET MORE INFO THROUG RECON: socket library, portscanner library, banner grabs (https://medium.com/offensive-security-walk-throughs/creating-a-vulnerability-scanner-in-python-b5b59817b38d)
+@tool
+def cve_search(product: str, vendor: str="") -> list:
+    """Fetch top 5 CVE's for a given product from CIRCL."""
 
+    base_url = f"https://cve.circl.lu/api/search/{product}"
+    url = f"{base_url}/{vendor}/{product}" if vendor else f"{base_url}/{product}"
+    try:
+        response = requests.get(url, timeout=10)
+        if response.status_code == 200:
+            data = response.json()
+            return [
+                {"id": item["id"], "summary": item["summary"]}
+                for item in data.get("data", [])[:10]
+            ]        
+        return {"error": f"Failed to fetch CVEs for {product}"}
+
+    except Exception as e:
+        return {"error": str(e)}
+        
 @tool
 def cve_identification():
     pass
 
-@tool
-def cve_search():
-    pass
+
+## --- VULNERABILITY CLASSIFIER METHODS --- ##
+def xgboost_data_cleaning(df, catgy_cols:list, summary_col:str):
+    cve_data = df.copy()
+
+    # fill na categorical columns as "UNKNOWN"
+    catgy_cols = ["access_authentication", "access_complexity", "access_vector", "impact_availability", "impact_confidentiality", "impact_integrity"]
+    cve_data[catgy_cols] = cve_data[catgy_cols].fillna("UNKNOWN")
+
+    # one hot encode categorical columns
+    ohe = OneHotEncoder(handle_unknown="ignore", sparse_output=False).set_output(transform="pandas")
+    catgy_encode = ohe.fit_transform(cve_data[catgy_cols])
+
+    # combine data
+    cve_data = pd.concat([cve_data, catgy_encode], axis=1)
+    cve_data.drop(columns=catgy_cols, inplace=True)
+
+    # vectorize summary field (SBERT)
+    model = SentenceTransformer("all-MiniLM-L6-v2") 
+    embeddings = model.encode(cve_data[summary_col])
+    embeddings_df = pd.DataFrame(
+        embeddings,
+        columns=[f"SBERT_summary_{i}" for i in range(embeddings.shape[1])]
+    )
+
+    merged_cve_data = pd.concat([cve_data.drop(columns=["summary"]), embeddings_df], axis=1)
+
+    # vectorize cve name field
+    tfidf_name = TfidfVectorizer(max_features=50, stop_words="english")
+    cwe_name_feat = tfidf_name.fit_transform(cve_data["cwe_name"])
+    name_feat_df = pd.DataFrame(
+        cwe_name_feat.toarray(),
+        columns=[f"tfidf_name_{i}" for i in range(cwe_name_feat.shape[1])]
+    )
+
+    # combine data
+    merged_cve_data = pd.concat([cve_data.drop(columns=["cwe_name"]), name_feat_df], axis=1)
+    merged_cve_data.head()
+
+    # combine data
+    merged_cve_data = pd.concat([cve_data.drop(columns=["cwe_name"]), name_feat_df], axis=1)
+    # merged_cve_data.head()
+
+    return merged_cve_data
+
+def cvss_scorer(prediction_vals):
+    testing_data = pd.read_csv(VULN_CLASSIFICATION_TRAINING_DATA)
+    X = testing_data.drop(columns="cvss")
+    X = X.select_dtypes(exclude="object")
+    y = testing_data["cvss"]
+
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+
+    model = XGBRegressor()
+    model.fit(X_train, y_train)
+
+    predict = model.predict(prediction_vals)
+    print(f"Prediction score: {predict}")
+
+    return predict
