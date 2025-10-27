@@ -14,7 +14,7 @@ from langgraph.graph import StateGraph, END
 from langchain.schema import AIMessage, SystemMessage, HumanMessage
 
 # tools
-from tools import nmap_scanning
+from tools import nmap_scanning, cve_search, xgboost_data_cleaning, cvss_scorer
 
 # other imports
 from globals import TIMEOUT_VAL, SCANNING_DUMP_LOG
@@ -22,6 +22,7 @@ from helper import extract_json, summarize_recon_results, xml_parse_v1, all_xml_
 import json
 import time
 import datetime
+import pandas as pd
 
 ## --- LLM DEFINTION --- ##
 load_dotenv()
@@ -46,11 +47,11 @@ class AgentState(TypedDict):
     network_findings: str   # REPORT AGENT CHANGES THIS STATE
 
 ## --- AGENT PROMPTS --- ##
-from agentic_prompts import RECON_AGENT_SYSTEM_PROMPT, RECON_ANALYSIS_SYSTEM_PROMPT, VULN_AGENT_SYSTEM_PROMPT
+from agentic_prompts import RECON_AGENT_SYSTEM_PROMPT, RECON_ANALYSIS_SYSTEM_PROMPT, VULN_AGENT_SYSTEM_PROMPT, VULN_FORMATTING_SYSTEM_PROMPT, REPORTER_SYSTEM_PROMPT
 
 
 ## --- AGENT TOOL BINDING --- ##
-# recon_llm = llm.bind_tools([], system_prompt=RECON_SYSTEM_PROMPT, return_direct=True)  # return_direct tells the tool binding to return the AI's raw output
+vuln_llm_w_tool = llm.bind_tools([cve_search], system_prompt=VULN_AGENT_SYSTEM_PROMPT, return_direct=True)  # return_direct tells the tool binding to return the AI's raw output
 
 
 ## --- AGENT DEFINITIONS --- ##
@@ -462,35 +463,37 @@ def vulnerability(state: AgentState) -> AgentState:
     # CAN EITHER PROMPT TO DO THE CVSS SCORE OR NOT (CLASSIFIER WILL DO THAT)
 
     vuln_llm_prompt = f"""
-    You are a vulnerability analysis expert.
+    You are a vulnerability analysis expert with access to the `cve_search` tool.
 
-    Given the following reconnaissance data and service information, analyze potential vulnerabilities:
+    Use it to find real CVE data for products discovered in network reconnaissance.
+    Only use the tool when product or service information is available.
 
-    Reconnaissance results:
-    {json.dumps(state["recon_results"], indent=2)}
+    Reconnaissance data:
+    {json.dumps(state.get("recon_results", {}), indent=2)}
 
-    Raw XML scan data (stringified for readability):
-    {state["all_xml_content"]}
+    Nmap XML (for version and banner references):
+    {state.get("all_xml_content", "")[:10000]}
 
-    Your task:
-    1. For each discovered host and service, identify known vulnerabilities (CVEs) from authoritative datasets (e.g., NVD, MITRE, OSV) that match the product and version.
-    2. If CVE lookup data is unavailable, leave the CVE list empty rather than speculating.
-    3. Do not estimate CVSS scores — just include CVE IDs and concise summaries.
-    4. Format your response as a valid JSON array matching the schema below exactly:
-
-    [
-    {{
-        "host": "<IP or hostname>",
-        "product": "<product name>",
-        "version": "<version string>",
-        "cve": [
-        {{
-            "id": "<CVE-YYYY-NNNNN>",
-            "summary": "<short English summary>"
-        }}
+    Steps:
+        1. Extract product and version info for each host/service.
+        2. For each, use `cve_search(product)` or `cve_search(product, vendor)` to look up real CVEs.
+        3. Build a JSON array exactly like this:
+        [
+            {{
+                "host": "<IP>",
+                "product": "<product name>",
+                "version": "<version>",
+                "cve": [
+                    {{
+                        "id": "<CVE-YYYY-NNNNN>",
+                        "summary": "<short English summary>"
+                    }}
+                ]
+            }}
         ]
-    }}
-    ]
+        - If no CVEs found, include an empty list for "cve".
+        - Do not invent vulnerabilities.
+        
 
     Ensure:
     - Use double quotes for all keys and values (valid JSON).
@@ -500,8 +503,7 @@ def vulnerability(state: AgentState) -> AgentState:
 
 
     # call the llm
-    vuln_result = llm.invoke([
-        SystemMessage(content=VULN_AGENT_SYSTEM_PROMPT),
+    vuln_result = vuln_llm_w_tool.invoke([
         HumanMessage(content=vuln_llm_prompt)
     ])
 
@@ -517,11 +519,110 @@ def cvss_data_formatter(state: AgentState) -> AgentState:
     return state
 
 def cvss_scoring(state: AgentState) -> AgentState:
+    """"""
     # this will call the XGBoost classifier and then output the vulnerability with its label (None, Low, Medium, High, Critical)
+
+    vuln_data = state["vuln_results"]
+
+    cwe = vuln_data["cwe_code"] 
+    cwe_name = vuln_data["cwe_name"],
+    summary = vuln_data["summary"],
+    acces_auth = vuln_data["access_authentication"]
+    acces_complex = vuln_data["access_complexity"]
+    acces_vec = vuln_data["access_vector"]
+    impa_avail = vuln_data["impact_availability"]
+    impa_confid = vuln_data["impact_confidentiality"]
+    impa_integ = vuln_data["impact_integrity"]
+
+    vuln_df = pd.DataFrame(
+        [cwe, cwe_name, summary, acces_auth, acces_complex, acces_vec, impa_avail, impa_confid, impa_confid]
+    )
+    print(vuln_df.head())
+    categy_cols = ["access_authentication", "access_complexity", "access_vector", "impact_availability", "impact_confidentiality", "impact_integrity"]
+    cve_data = xgboost_data_cleaning(vuln_df, categy_cols, "summary")
+
+    # will need to take the formatted data and output a score
+    vulnerability_score = cvss_scorer(cve_data)
+
+    print(vulnerability_score)
+
+    state["vuln_scoring"] = vulnerability_score
+
     return state
 
-def reporter(state: AgentState) -> AgentState:
+def reporter(state: AgentState) -> AgentState:  # takes all output from all 
     """"""
+
+    # define all data to take in
+    recon_agent_results = state.get("recon_results", {})
+    recon_analysis_results = state.get("recon_analysis", "")
+    xml_data = state.get("all_xml_content", "")[:10000]
+    vuln_agent_results = state.get("vuln_results", [])
+    vuln_scoring_results = state.get("vuln_scoring", {})
+
+    reporter_prompt = f"""
+    You are given the combined outputs of all prior agents in a network vulnerability assessment workflow.
+
+    Data Inputs:
+
+    ### Reconnaissance Data
+    {json.dumps(recon_agent_results, indent=2)}
+
+    ### Reconnaissance Analysis
+    {recon_analysis_results}
+
+    ### Raw XML Data (first 10,000 chars)
+    {xml_data}
+
+    ### Vulnerability Agent Results
+    {json.dumps(vuln_agent_results, indent=2)}
+
+    ### Vulnerability Scoring Results
+    {json.dumps(vuln_scoring_results, indent=2)}
+
+    ---
+
+    Your Task:
+
+    1. Generate a **complete Network Vulnerability Assessment Report** in markdown.
+    2. Include these main sections in order:
+
+    - **Executive Summary (Layman’s Terms)** – Non-technical overview of network health and risks.
+    - **Executive Risk Score Block** – Provide a concise summary table or bullet list including:
+        - Overall Risk Level (High/Medium/Low)
+        - Number of Critical Assets Affected
+        - Number of Exploitable Services
+        - Top 5 CVEs or vulnerabilities
+    - **Technical Summary** – Hosts, OS, ports, and services discovered.
+    - **Vulnerability Findings** – Enumerate vulnerabilities per host/service with CVEs, severity, and descriptions.
+    - **Risk and Impact Analysis** – Aggregate findings and highlight highest priority risks.
+    - **Remediation and Recommendations** – Actionable steps for mitigation.
+    - **Appendix** – Optional tables or summaries of raw CVE or scan data.
+
+    3. Ensure:
+    - Professional, confident, and factual tone.
+    - Correlate vulnerabilities to hosts/services clearly.
+    - Executive Risk Score Block is prominently placed at the top for immediate comprehension.
+    - Markdown formatting, tables, and bullet lists for readability.
+    - No speculation — only summarize what is in the data.
+    4. End with a one-paragraph **Final Summary** highlighting overall network risk posture and suggested next steps.
+    """
+
+    results = llm.invoke([
+        SystemMessage(content=REPORTER_SYSTEM_PROMPT),
+        HumanMessage(content=reporter_prompt)
+    ])
+
+    # check if result answer is a string
+    result = AIMessage(result) if not isinstance(result, AIMessage) else result
+    state["network_findings"] = result.content
+
+    # write the analysis into a txt file
+    target_ip = target_to_proper_file_name(state["targets"])
+    with open(f"./output/{target_ip}_final_report.txt", "w") as f:
+        f.write(result.content)
+
+    print("Reporter agent finished writing and updated the state.")
 
     return state
 
