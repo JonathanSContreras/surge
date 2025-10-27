@@ -2,3 +2,4 @@
 /dump
 model/__pycache__
 /run_logs
+data/merged_cve.csv
