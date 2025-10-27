@@ -1,5 +1,3 @@
-import { ScrollArea } from "./ui/scroll-area";
-import { Badge } from "./ui/badge";
 import { motion } from "motion/react";
 import { Bot, AlertTriangle, Info, CheckCircle } from "lucide-react";
 
@@ -104,7 +102,7 @@ export function AgentFeedback() {
       </div>
 
       {/* Feedback List */}
-      <ScrollArea className="flex-1">
+      <div className="flex-1">
         <div className="p-3 space-y-3">
           {mockFeedback.map((item, idx) => {
             const config = getSeverityConfig(item.severity);
@@ -131,8 +129,7 @@ export function AgentFeedback() {
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-2">
-                      <Badge
-                        variant="outline"
+                      <div
                         className="uppercase text-xs px-2 py-0.5 border-0"
                         style={{
                           background: `${config.color}20`,
@@ -140,7 +137,7 @@ export function AgentFeedback() {
                         }}
                       >
                         {item.severity}
-                      </Badge>
+                      </div>
                       <span className="text-xs text-[#B0B0B0]">{item.timestamp}</span>
                     </div>
                     <p className="text-sm text-white leading-relaxed">{item.message}</p>
@@ -150,7 +147,7 @@ export function AgentFeedback() {
             );
           })}
         </div>
-      </ScrollArea>
+      </div>
     </div>
   );
 }

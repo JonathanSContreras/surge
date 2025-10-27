@@ -1,6 +1,6 @@
+'use client';
+
 import { Search, Shield, AlertTriangle, AlertCircle } from "lucide-react";
-import { Input } from "./ui/input";
-import { ScrollArea } from "./ui/scroll-area";
 import { motion } from "motion/react";
 import { useState } from "react";
 
@@ -57,7 +57,7 @@ export function DeviceList() {
         <h3 className="text-white mb-3 uppercase tracking-wide">Network Devices</h3>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#B0B0B0]" />
-          <Input
+          <input
             placeholder="Search by IP or hostname..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -67,7 +67,7 @@ export function DeviceList() {
       </div>
 
       {/* Device List */}
-      <ScrollArea className="flex-1">
+      <div className="flex-1">
         <div className="p-2">
           {filteredDevices.map((device, idx) => (
             <motion.div
@@ -133,7 +133,7 @@ export function DeviceList() {
             </motion.div>
           ))}
         </div>
-      </ScrollArea>
+      </div>
     </div>
   );
 }

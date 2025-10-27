@@ -1,3 +1,5 @@
+'use client';
+
 import { useState } from "react";
 import { SummaryCard } from "../_components/SummaryCard";
 import { NetworkGraph } from "../_components/NetworkGraph";
@@ -5,7 +7,7 @@ import { DeviceList } from "../_components/DeviceList";
 import { AgentFeedback } from "../_components/AgentFeedback";
 import { Server, Shield, Activity, Target, ToggleRight, ToggleLeft } from "lucide-react";
 
-export function Dashboard() {
+export default function Dashboard() {
   const [liveMode, setLiveMode] = useState(true);
 
   return (
@@ -57,15 +59,16 @@ export function Dashboard() {
               <p className="text-sm text-[#B0B0B0]">GNN-based visualization</p>
             </div>
             <div className="flex items-center gap-3 px-4 py-2 rounded-lg bg-white/5 border border-white/10">
-              <Label htmlFor="live-mode" className="text-sm text-[#B0B0B0]">
-                {liveMode ? "Live Mode" : "Presentation Mode"}
-              </Label>
-              <Switch
-                id="live-mode"
-                checked={liveMode}
-                onCheckedChange={setLiveMode}
-              />
-            </div>
+                {/* <Label htmlFor="live-mode" className="text-sm text-[#B0B0B0]">
+                  {liveMode ? "Live Mode" : "Presentation Mode"}
+                </Label>
+                <Switch
+                  id="live-mode"
+                  checked={liveMode}
+                  onCheckedChange={setLiveMode}
+                />
+                */}
+              </div>
           </div>
           <div className="flex-1">
             <NetworkGraph liveMode={liveMode} />
