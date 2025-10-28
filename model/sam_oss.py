@@ -36,14 +36,39 @@ llm = ChatOpenAI(
     top_p=1 # makes the model model deterministic
 )
 
+class CVEEntry(TypedDict, total=False):
+    cve_id: str
+    mod_date: str
+    pub_date: str
+    cvss: float
+    cwe_code: str
+    cwe_name: str
+    summary: str
+    access_authentication: str
+    access_complexity: str
+    access_vector: str
+    impact_availability: str
+    impact_confidentiality: str
+    impact_integrity: str
+
 ## --- AGENTSTATE --- ##
 class AgentState(TypedDict):
+
+    ## INPUTS 
     scan_type: str  # e.g. "low"/"medium"/"high"  GIVEN BY USER
-    targets: list[str]  # e.g. ["10.10.1/25"]  GIVEN BY USER
+    targets: list[str]  # e.g. ["10.10.160.0/24"]  GIVEN BY USER
+
+    ## RECON DATA
     recon_results: dict[str, Any]  # the output would be a json, raw_xml, scan_logs, etc  AFTER RECON AGENT RUNS
     all_xml_content: str
     recon_analysis: str  # RECON ANALYSIS AGENT RUNS
-    vuln_results: list[str]  # list of CVE vulnerabilities and its score    AFTER VULN AGENT RUNS
+
+    ## VULNERABILITY DATA
+    vuln_raw_results: list[str]  # list of CVE vulnerabilities and its score    AFTER VULN AGENT RUNS
+    vuln_formatted_results: list[CVEEntry]
+    vuln_scoring: dict[str, Any]
+
+    ## FINAL OUTPUT
     network_findings: str   # REPORT AGENT CHANGES THIS STATE
 
 ## --- AGENT PROMPTS --- ##
@@ -509,20 +534,64 @@ def vulnerability(state: AgentState) -> AgentState:
 
     # define the result as an AIMessage and update the state
     vuln_result = AIMessage(vuln_result) if not isinstance(vuln_result, AIMessage) else vuln_result
-    state["vuln_results"] = vuln_result
+    state["vuln_raw_results"] = vuln_result.content
 
     return state
 
 
 def cvss_data_formatter(state: AgentState) -> AgentState:
     # will format the vulnerability results to the proper format so the XGBoost classifier does not break
+
+    data_formater_prompt = f"""
+    Below is raw vulnerability analysis output. Your task is to cleanly normalize it.
+
+    ### Raw Input:
+    {json.dumps(state.get("vuln_raw_results", []), indent=2)}
+
+    ### Expected Output Format (Strict JSON):
+
+    [
+      {{
+        "cve_id": "CVE-2023-12345",
+        "mod_date": "2023-07-10 15:00:00",
+        "pub_date": "2023-06-12 10:00:00",
+        "cvss": 7.5,
+        "cwe_code": "89",
+        "cwe_name": "Improper Neutralization of Special Elements used in an SQL Command ('SQL Injection')",
+        "summary": "SQL injection vulnerability in example software allows remote code execution.",
+        "access_authentication": "None",
+        "access_complexity": "Low",
+        "access_vector": "Network",
+        "impact_availability": "Partial",
+        "impact_confidentiality": "Complete",
+        "impact_integrity": "Complete"
+      }}
+    ]
+
+    ### Instructions:
+    - Output must be **valid JSON** (a list of objects).
+    - Each object must include all keys shown above.
+    - Use null for missing or unknown values.
+    - Ensure all field names match exactly.
+    - Do not include markdown, commentary, or any explanations outside of the JSON.
+    """
+
+    result = llm.invoke([
+        SystemMessage(content=data_formater_prompt),
+        HumanMessage(content=VULN_FORMATTING_SYSTEM_PROMPT)
+    ])
+
+    # check if result answer is a string
+    result = AIMessage(result) if not isinstance(result, AIMessage) else result
+    state["vuln_formatted_results"] = result.content
+
     return state
 
 def cvss_scoring(state: AgentState) -> AgentState:
     """"""
     # this will call the XGBoost classifier and then output the vulnerability with its label (None, Low, Medium, High, Critical)
 
-    vuln_data = state["vuln_results"]
+    vuln_data = state["vuln_formatted_results"]
 
     cwe = vuln_data["cwe_code"] 
     cwe_name = vuln_data["cwe_name"],
@@ -535,7 +604,7 @@ def cvss_scoring(state: AgentState) -> AgentState:
     impa_integ = vuln_data["impact_integrity"]
 
     vuln_df = pd.DataFrame(
-        [cwe, cwe_name, summary, acces_auth, acces_complex, acces_vec, impa_avail, impa_confid, impa_confid]
+        [cwe, cwe_name, summary, acces_auth, acces_complex, acces_vec, impa_avail, impa_confid, impa_confid, impa_integ]
     )
     print(vuln_df.head())
     categy_cols = ["access_authentication", "access_complexity", "access_vector", "impact_availability", "impact_confidentiality", "impact_integrity"]
@@ -550,14 +619,14 @@ def cvss_scoring(state: AgentState) -> AgentState:
 
     return state
 
-def reporter(state: AgentState) -> AgentState:  # takes all output from all 
+def reporter(state: AgentState) -> AgentState:  # takes all output from all agents
     """"""
 
     # define all data to take in
     recon_agent_results = state.get("recon_results", {})
     recon_analysis_results = state.get("recon_analysis", "")
     xml_data = state.get("all_xml_content", "")[:10000]
-    vuln_agent_results = state.get("vuln_results", [])
+    vuln_agent_results = state.get("vuln_formatted_results", [])
     vuln_scoring_results = state.get("vuln_scoring", {})
 
     reporter_prompt = f"""
@@ -608,7 +677,7 @@ def reporter(state: AgentState) -> AgentState:  # takes all output from all
     4. End with a one-paragraph **Final Summary** highlighting overall network risk posture and suggested next steps.
     """
 
-    results = llm.invoke([
+    result = llm.invoke([
         SystemMessage(content=REPORTER_SYSTEM_PROMPT),
         HumanMessage(content=reporter_prompt)
     ])
@@ -637,11 +706,12 @@ workflow.add_node("cvss_scorer", cvss_scoring)
 workflow.add_node("supervisor", reporter)
 
 workflow.add_edge("recon", "recon_analysis")
-workflow.add_edge("recon_analysis", END)  # TEST EDGE
-# workflow.add_edge("recon_analysis", "supervisor")
-# workflow.add_edge("recon", "vulnerability")
-# workflow.add_edge("vulnerability", "cvss_data_formatter")
-# workflow.add_edge("cvss_formatter", "supervisor")
+# workflow.add_edge("recon_analysis", END)  # TEST EDGE
+workflow.add_edge("recon_analysis", "supervisor")
+workflow.add_edge("recon", "vulnerability")
+workflow.add_edge("vulnerability", "cvss_data_formatter")
+workflow.add_edge("cvss_data_formatter", "cvss_scorer")
+workflow.add_edge("cvss_scorer", "supervisor")
 workflow.set_entry_point("recon")
 
 sam = workflow.compile()
@@ -654,9 +724,14 @@ if __name__ == "__main__":
         "recon_results": {},
         "all_xml_content": "",
         "recon_analysis": "",
-        "vuln_results": [],
+        "vuln_raw_results": [],
+        "vuln_formatted_results": [],
+        "vuln_scoring": {},
         "network_findings": ""
     }
+
+    ## FINAL OUTPUT
+    network_findings: str   # REPORT AGENT CHANGES THIS STATE
 
     results = sam.invoke(initial_state)
     
