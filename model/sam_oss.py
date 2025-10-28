@@ -536,13 +536,18 @@ def vulnerability(state: AgentState) -> AgentState:
     vuln_result = AIMessage(vuln_result) if not isinstance(vuln_result, AIMessage) else vuln_result
     state["vuln_raw_results"] = vuln_result.content
 
+    print("Vulnerability agent has ran and updated the state.")
+
     return state
 
 
 def cvss_data_formatter(state: AgentState) -> AgentState:
     # will format the vulnerability results to the proper format so the XGBoost classifier does not break
+    """
+    Normalizes vulnerability results into standardized CVEEntry format for ML models.
+    """
 
-    data_formater_prompt = f"""
+    data_formatter_prompt = f"""
     Below is raw vulnerability analysis output. Your task is to cleanly normalize it.
 
     ### Raw Input:
@@ -577,7 +582,7 @@ def cvss_data_formatter(state: AgentState) -> AgentState:
     """
 
     result = llm.invoke([
-        SystemMessage(content=data_formater_prompt),
+        SystemMessage(content=data_formatter_prompt),
         HumanMessage(content=VULN_FORMATTING_SYSTEM_PROMPT)
     ])
 
@@ -585,11 +590,14 @@ def cvss_data_formatter(state: AgentState) -> AgentState:
     result = AIMessage(result) if not isinstance(result, AIMessage) else result
     state["vuln_formatted_results"] = result.content
 
+    print("CVSS data formatter has been updated and the state has also been updated.")
+
     return state
 
 def cvss_scoring(state: AgentState) -> AgentState:
-    """"""
-    # this will call the XGBoost classifier and then output the vulnerability with its label (None, Low, Medium, High, Critical)
+    """
+    Calls the XGBoost classifier model and outputs the vulnerability with its label.
+    """
 
     vuln_data = state["vuln_formatted_results"]
 
@@ -617,10 +625,14 @@ def cvss_scoring(state: AgentState) -> AgentState:
 
     state["vuln_scoring"] = vulnerability_score
 
+    print("CVSS scoring agent has completed running and the state is updated.")
+
     return state
 
 def reporter(state: AgentState) -> AgentState:  # takes all output from all agents
-    """"""
+    """
+    Takes ALL data from the AgentState, and defines a final network analysis report of all findings. 
+    """
 
     # define all data to take in
     recon_agent_results = state.get("recon_results", {})
@@ -712,6 +724,8 @@ workflow.add_edge("recon", "vulnerability")
 workflow.add_edge("vulnerability", "cvss_data_formatter")
 workflow.add_edge("cvss_data_formatter", "cvss_scorer")
 workflow.add_edge("cvss_scorer", "supervisor")
+workflow.add_edge("supervisor", END)
+
 workflow.set_entry_point("recon")
 
 sam = workflow.compile()
