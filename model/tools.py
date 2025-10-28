@@ -143,9 +143,9 @@ def cve_search(product: str, vendor: str="") -> list:
     except Exception as e:
         return {"error": str(e)}
         
-@tool
-def cve_identification():
-    pass
+# @tool
+# def cve_identification():
+#     pass
 
 
 ## --- VULNERABILITY CLASSIFIER METHODS --- ##
