@@ -617,11 +617,12 @@ def cvss_scoring(state: AgentState) -> AgentState:
     print(vuln_df.head())
     categy_cols = ["access_authentication", "access_complexity", "access_vector", "impact_availability", "impact_confidentiality", "impact_integrity"]
     cve_data = xgboost_data_cleaning(vuln_df, categy_cols, "summary")
+    print("cve_data output:", cve_data)
 
     # will need to take the formatted data and output a score
     vulnerability_score = cvss_scorer(cve_data)
 
-    print(vulnerability_score)
+    print("vulnerability score:", vulnerability_score)
 
     state["vuln_scoring"] = vulnerability_score
 
