@@ -1,67 +1,61 @@
-# Agentic Network Analysis
-## Network Exploration
-Overview: 
-A multi-agentic network tool that has network discovery capabilities, where it will analyze a network is has authorized access to. This recon agent (workflow start) will attempt to get as much information as possible about the network, open devices, ports, OS, vulnerabilities, etc. After the recon agent runs, its output will get passed to other agents to label pinpoints in the targeted network. The brain of the agent will follow MITRE ATTACK strategies and workflows.
-
-The tools used will be:
-- OpenAI gpt-oss on HCU server
-- LangGraph (the agent/workflow)
-    - LangGraph gives us more control because this is a non-linear task
-- LangSmith for analyzing the agents, making sure there is no hallucinations.
-- Python for method definitions (nmap, explotations, etc.)
-- PyTorch and ML Models
-    - network mapping (GNN)
-    - vulnerability classification  (XGBoost)
-- Next.js for dashboard
-    - deployed on Vercel
-    - uses custom API routes to access the agent
+# Senior Project: Multi-Agentic Network Analysis Tool
+### Brianna Hinds - MAS Creator/Data Visualizer, Jonathan Contreras - Dashboard Creator, Taurean Muhammad and Sean Moning - Simulator Network Creator and MAS Cyber System Analyzer
 
 ## Folder Structure:
 ```
-./Surge
+./Surge Project Folder
 │   README.md
-│   main.py
+|   .gitignore  
 │    
-├───data  # test data for model or function tests
+├───data  # contains data that helps with functions, output of network scan, CVE training data
 │       nmap_output.xml  # might change to be name of scan
+|       ...
 │ 
 ├───model  # agentic model
-│       sam.py
-│       toolkit.py
+|       agentic_prompts.py  # global file that contains ALL system prompts for each agent
+|       globals.py  # global variables
+|       helper.py  # helper functions used with the agentic workflow
+│       sam.py  # the "main.py" file
+│       tools.py  # houses all @tool methods for the agentic workflow
 │ 
-├───notebooks  # Jupyter Notebooks for functionality testing
-│       nmap_gnn.ipynb
+├───notebooks  # Jupyter Notebooks for functionality model testing
+│       vuln_classifier.ipynb  # finalized CVSS classifier (uses XGB model)
+|       vuln_xgb.ipynb  # testing of the XGB model
+|       xlm_to_networkx.ipynb  #  parses an XML file and turns it into a networkx graph
 │ 
-├───output  # model/function outputs
-│       xml_to_networkx.png
+├───output  # dump of all model/test run outputs (images, text files, etc.)
+│       ...
 │ 
 ├───src  # function definitions
 │       xml_to_network.py
 │       
 └───utils  # utility files
-        imports.py  # MIGHT DELETE
-        log.json
+        research.md  # brain dump of things to research through the project
+        scan_dumps.txt  # scan dump, the reporting agent uses this to build its knowledge base
 ```
----
+
+## Project Overview
+This repo contains the build of a multi-agentic network tool that has network discovery and network analysis capabilities, where it will analyze a network that it has *strict* access to.
 
 ## Functionality Breakdown
-### Agents
-The approach we are taking is a multi-agent system (MAS) where there is an agent for Reconnaissance, Vulnerability Identifying, Summary/Reporting Agent, and there will be subagents for Recon and Vulnerability whose's sole purpose would be to analyze the its parent's output.
+The full agentic flow can be classified as a multi-agentic system (MAS) where there is an agent for Reconnaissance, Vulnerability Identification,Data Formatting, Summary/Reporting, and there are also subagents (children) for Recon and Vulnerability whose *sole* purpose would be to analyze its parent's output.
 
-The process start with:
+**The process starts with:**
 #### Recon Agent
-Reconnaissance via the `nmap` tool, where the agent is given full range of nmap to pick the best scan for the goal of full network discovery. 
-*might have more recon tools. It will also have access to the `PYTHON LIBRARY` so that it can figure out other possible network information. -> All outputs gets pushed to **Recon Analysis** agent.
+Reconnaisaance via the `nmap` tool, where the agent is given full range of `nmap` to pick the best scan to complete the goal of full network discovery. Full network discovery is hard to tell in when connected to a specific WiFi, so to ensure that there is that *full* network discovery we have setup a simulated network cabinet where we know what exactly is in the network. All outputs and knowledge this agent finds will get pushed to its child `Recon Analysis Agent`.
 
 #### Vulnerability Agent
-Network vulnerability is a important role in identifying weaknesses in an organization's network. So this agent will be responible for taking the recon output and identifying what vulnerabilities are on the network in CVE format. -> This output then gets passed to a CVE formatter agent so the XGBoost model can run without breaking.
+Network vulnerability is a very important role in identifying weaknesses in an organization's network. This agent will be solely responsible for taking the recon output and identifying what areas, devices, etc. is vulnerable in a CVE format. 
+*This output then gets passed to a CVE formatter agent so that XGBoost model can run without breaking.*
 
 #### Vulnerability Classifier Agent
-This agent will explicitly call a `XGBoost` model method, where each identified vulnerability gets a score and then labeled None/Low/Medium/High/Critical.
+This agent will exclusively call a `XGBoost` model method from the `tools.py` file called `cvss_scorer()`. Each identified vulnerability gets a score and then based on that value (from 0 to 10) will get one of the following labels: None/Low/Medium/High/Critical.
 
-#### Reporter
-This agent is fully responible for taking all outputs from all agents (except the Recon Agent) and writes out a detailed report for the organization. There will be two different types of outputted reports, (1) a very detailed, high-level analysis of all findings, this will be read by a SOC member or CIDO and can be understood by them. (2) A detailed analysis of issues in Layman's terms, so someone like a non-technical CIDO or a non-technical manager can understand the organization's network issues.
+#### Reporter Agent
+This agent is fully responsible for taking all outputs from all agents (except the Recon Agent) and writes out a detailed report for the organization. There will be two different types of outputted reports, (1) a very detailed, high-level analysis of all findings, this will be read by a SOC member or CIDO and can be understood by them. (2) A detailed analysis of issues in Layman's terms, so someone like a non-technical CIDO or a non-technical manager can understand the organization's network issues.
 
 
 ### Dashboard
+#### UNDER - CONSTRUCTION (Jonathan's Job)
 The dashboard built via `React` will contain graphs that are normally on a vulnerability dashboard but it will also include the GNN graph that was created and will dynmaically show/callout areas of the network the agent deemed as "risky". The graph view will be done through `D3.js`.
+*End goal of the dashboard is to have the backend be integrated with my Python agentic code, all on the HCU server.*

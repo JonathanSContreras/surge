@@ -1,13 +1,13 @@
 """
 @author: Brianna Hinds
-Description: Agentic System Build
+Description: Agentic System Build  (~main.py)
 """
 
 ## --- LIBRARIES --- ##
 import os
 from dotenv import load_dotenv
 
-# Agentic libraries
+# agentic libraries
 from typing import TypedDict, Any
 from langchain_openai import ChatOpenAI
 from langgraph.graph import StateGraph, END
@@ -31,7 +31,7 @@ print(BASE_URL)
 llm = ChatOpenAI(
     model="qwen2.5:14b",
     base_url=BASE_URL,
-    api_key="ollama",  # this is an unused placeholder (required by SDK)
+    api_key="ollama",  # this is an unused placeholder value (required by SDK)
     temperature=0,
     top_p=1 # makes the model model deterministic
 )
