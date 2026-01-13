@@ -20,6 +20,7 @@
 |       helper.py  # helper functions used with the agentic workflow
 │       sam.py  # the "main.py" file
 │       tools.py  # houses all @tool methods for the agentic workflow
+|       xgb_regressor.json  # json file that contains XGB model parameters (used to call XGB model)
 │ 
 ├───notebooks  # Jupyter Notebooks for functionality model testing
 │       vuln_classifier.ipynb  # finalized CVSS classifier (uses XGB model)
