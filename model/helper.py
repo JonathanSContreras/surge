@@ -84,13 +84,13 @@ def sanitize_flags_for_tier(flags: list[str], tier: str):
             i += 1
             continue
 
-        # Timing flags like -T4
+        # timing flags like -T4
         if tok.startswith("-T") and any(t.startswith("-T") for t in allowed):
             sanitized_flags.append(tok)
             i += 1
             continue
 
-        # Output flags: accept -oX and -oN and allow a following "-" or file path
+        # output flags: accept -oX and -oN and allow a following "-" or file path
         if tok in ("-oX", "-oN", "-oG", "-oA"):
             sanitized_flags.append(tok)
             # include next token if it exists and is not another flag (e.g., '-' or filename)
@@ -141,7 +141,7 @@ def sanitize_flags_for_tier(flags: list[str], tier: str):
                 i += 2
                 continue
             else:
-                # standalone --script with no argument: drop it
+                # standalone --script with no argument
                 i += 1
                 continue
 
@@ -151,19 +151,16 @@ def sanitize_flags_for_tier(flags: list[str], tier: str):
             i += 1
             continue
 
-        # allow flags that start with allowed prefixes (e.g., --version-*)
+        # allow flags that start with allowed prefixes
         if any(tok.startswith(pref) for pref in allowed if pref.endswith("-") or pref.endswith("_")):
             sanitized_flags.append(tok)
             i += 1
             continue
 
-        # if we reach here, token is not allowed — drop it
+        # if we reach here, token is not allowed
         i += 1
 
-    # After token loop: normalize port expressions if you prefer unified format
-    # (your earlier code replaced -p tokens with exprs; here we keep "-p" and its arg)
-
-    # ensure XML output is requested; if not, add "-oX -"
+    # ensure XML output is requested, if not, add "-oX -"
     has_oX = any(x == "-oX" or x.startswith("-oX") for x in sanitized_flags)
     if not has_oX:
         sanitized_flags.extend(["-oX", "-"])
@@ -180,15 +177,15 @@ def extract_json(raw_text: str, iteration: int) -> dict:
     # Try to find JSON block
     match = re.search(r"\{[\s\S]*\}", raw_text)
     if not match:
-        print(f"[{datetime.datetime.now()}] WARNING: No JSON block found in iteration {iteration}")
+        print(f"[{datetime.datetime.now()}] ~ WARNING: No JSON block found in iteration {iteration}")
         return {}
 
     try:
         parsed = json.loads(match.group(0))
-        print(f"[{datetime.datetime.now()}] ✅ Extracted valid JSON decision.")
+        print(f"[{datetime.datetime.now()}] ~ Extracted valid JSON decision.")
         return parsed
     except json.JSONDecodeError as e:
-        print(f"[{datetime.datetime.now()}] ⚠️ Invalid JSON at iteration {iteration}: {e}")
+        print(f"[{datetime.datetime.now()}] ~ Invalid JSON at iteration {iteration}: {e}")
         return {}
     
 
@@ -196,89 +193,24 @@ def extract_json(raw_text: str, iteration: int) -> dict:
 def target_to_proper_file_name(target: list):
     """
     Takes the scan target list and turns it into a valid file name.
+    Returns a string type of the file name.
+
+    Args
+        target: user inputted target value in list format
     """
     valid_file_name = re.sub(r"[^A-Za-z0-9_-]", "_", "".join(target))
 
     return valid_file_name
 
 
-def xml_parse(xml_data):
-    """
-    Parses nmap XML output into structured dictionary form.
-    Handles missing fields gracefully.
-    """
-    network_config = {}
-    
-    # nothing in the xml file
-    if not xml_data:
-        return {}
-    
-    # get the xml_ouput (either string or XML file)
-    try:
-        if os.path.exists(xml_data):
-            tree = ET.parse(xml_data)
-            root = tree.getroot()
-        else:
-            s = xml_data.strip()
-
-            if not (s.startswith("<")):  # check if the string is XML looking
-                return {"error": "~INPUT DOES NOT APPEAR TO BE XML"}
-            
-            root = ET.fromstring(s)
-
-    except ET.ParseError as pe:
-        return {"error": f"~ISSUE PARSING ELEMENTTREE: {pe}"}
-    except Exception as e:
-        return {"error": f"~UNEXPECTED ERROR PARSING XML: {e}"}
-
-    for host in root.findall("host"):
-        host_addr = None
-        host_name = None
-        port_lst = [] 
-
-        # --- Extract address ---
-        addr_elem = host.find("address")
-        if addr_elem is not None:
-            host_addr = addr_elem.attrib.get("addr")
-
-        # --- Extract hostname (optional) ---
-        hostnames_elem = host.find("hostnames/hostname")
-        if hostnames_elem is not None:
-            host_name = hostnames_elem.attrib.get("name")
-
-        # --- Extract ports (if any) ---
-        ports_elem = host.find("ports")
-        if ports_elem is not None:
-            for port in ports_elem.findall("port"):
-                port_id = port.attrib.get("portid")
-                protocol = port.attrib.get("protocol")
-                state_elem = port.find("state")
-                service_elem = port.find("service")
-
-                state = state_elem.attrib.get("state") if state_elem is not None else "unknown"
-                service = service_elem.attrib.get("name") if service_elem is not None else "unknown"
-
-                port_lst.append({
-                    "port": port_id,
-                    "protocol": protocol,
-                    "state": state,
-                    "service": service
-                })
-
-        # --- Store host summary ---
-        if host_addr:
-            network_config[host_addr] = {
-                "hostname": host_name or "unknown",
-                "ports": port_lst, 
-            }
-
-    return network_config
-
-
 def xml_parse_v1(xml_data):
     """
     Parses Nmap XML output into a structured dictionary.
     Handles missing fields and multiple addresses/hostnames.
+    Returns a dictionary type data structure of all nodes, devices, connections, etc.
+
+    Args
+        xml_data: .xml file definition that will become parsed.
     """
     network_config = {}
 
@@ -379,20 +311,12 @@ def store_xml_to_folder(target: list, scan_output: str, xml_file: str) -> str:  
     """
     Creates a directory named after the given target (if it doesn't already exist)
     and stores an XML file in that directory.
+    Returns a path to the directory where the file was saved.
 
-    Parameters
-    ----------
-    target : list
-        List of strings that represent the target identifier (e.g., hostnames or file parts).
-    scan_output : str
-        The XML content to be written to the file.
-    xml_file : str
-        The name of the XML file (should include `.xml` extension).
-
-    Returns
-    -------
-    str
-        The path to the directory where the file was saved.
+    Args
+        target: list of strings that represent the target identifier (e.g., hostnames or file parts)
+        scan_output: .xml content to be written to the file as a string
+        xml_file: name of the XML file (should include `.xml` extension)
     """
     # create directory
     target_name = target_to_proper_file_name(target)
@@ -439,6 +363,7 @@ def all_xml_output_to_txt(target_file: str) -> str:
 
 
 ## --- RECON ANALYZER HELPER METHOD -- ##
+# THIS IS A TEST METHOD 
 def summarize_recon_results(recon_results: dict) -> dict:
     """Return counts for LLM prompt from raw recon results."""
     open_ports = 0

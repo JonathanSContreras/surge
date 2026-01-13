@@ -36,6 +36,7 @@ llm = ChatOpenAI(
     top_p=1 # makes the model model deterministic
 )
 
+# data structure class build for the CVE entry data
 class CVEEntry(TypedDict, total=False):
     cve_id: str
     mod_date: str
@@ -50,6 +51,7 @@ class CVEEntry(TypedDict, total=False):
     impact_availability: str
     impact_confidentiality: str
     impact_integrity: str
+
 
 ## --- AGENTSTATE --- ##
 class AgentState(TypedDict):
@@ -616,7 +618,7 @@ def cvss_scoring(state: AgentState) -> AgentState:
     )
     print(vuln_df.head())
     categy_cols = ["access_authentication", "access_complexity", "access_vector", "impact_availability", "impact_confidentiality", "impact_integrity"]
-    cve_data = xgboost_data_cleaning(vuln_df, categy_cols, "summary")
+    cve_data = xgboost_data_cleaning(vuln_df, categy_cols)
     print("cve_data output:", cve_data)
 
     # will need to take the formatted data and output a score
@@ -733,6 +735,7 @@ sam = workflow.compile()
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
+
     initial_state = {
         "scan_type": "high",
         "targets": ["10.10.162.0/24"],  # whole subnet scan  ["10.10.162.0/24"]
@@ -746,7 +749,7 @@ if __name__ == "__main__":
     }
 
     ## FINAL OUTPUT
-    network_findings: str   # REPORT AGENT CHANGES THIS STATE
+    network_findings: str   # REPORT AGENT CHANGES THIS STATE  CONFUSED ABOUT THIS LINE LOL
 
     results = sam.invoke(initial_state)
     

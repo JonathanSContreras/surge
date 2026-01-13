@@ -5,7 +5,10 @@
 ```
 ./Surge Project Folder
 │   README.md
-|   .gitignore  
+|   .gitignore 
+|
+├───<IP_ADDRESS_SUBNET>  # this is a folder created by the agentic workflow that holds all xml output that is generated per run (the purpose is so there is a centralized place to keep run information)
+|       ...
 │    
 ├───data  # contains data that helps with functions, output of network scan, CVE training data
 │       nmap_output.xml  # might change to be name of scan
@@ -58,4 +61,4 @@ This agent is fully responsible for taking all outputs from all agents (except t
 ### Dashboard
 #### UNDER - CONSTRUCTION (Jonathan's Job)
 The dashboard built via `React` will contain graphs that are normally on a vulnerability dashboard but it will also include the GNN graph that was created and will dynmaically show/callout areas of the network the agent deemed as "risky". The graph view will be done through `D3.js`.
-*End goal of the dashboard is to have the backend be integrated with my Python agentic code, all on the HCU server.*
+*End goal of the dashboard is to have the backend be integrated with my Python agentic code, all on the HCU server. So the HCU server will house: the CVE training data, Python code, Dashboard, and gpt-oss.*

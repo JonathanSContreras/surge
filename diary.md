@@ -54,3 +54,13 @@ $$START -> RECON -> RECON ANALYSIS -> END$$
 - the vulnerability agent will take the xml_content state and possibly the recon results to create CVE type data
 - MY GOAL: have the barebone agentic workflow done before Thanksgiving
 - MY CURRENT ISSUES: find the sweet spot to declare a scan timeout, i need ti do aggressive recon scans to get everything but it takes long
+
+**1/13**
+- cleaned up the README and the repository
+- goal for the day is to go through the code and check for logic issues, my goal is to do a running of the code by the end of the week (1/16) when gpt-oss is on the server
+- FODD FOR THOUGHT: figure out what subset mask I need to do to find everything within a WiFi network
+- methods to clean up and why:
+    - `cvss_scorer()` in tools.py: instead of training at every run I need to save the best XGBoost model and then just call its saved state
+    - clean up the logging stuff in the `nmap_scanning()` tool: the commented out code just looks messy
+    - see how to make the `cve_search()` in tools.py bet better in identifying vulnerabilities (right now it is just cve.circl API, see if i can do it using the banner grabs, port scanning etc)
+    - see if the summarize recon results can be cleaned up a bit/actually pull the data

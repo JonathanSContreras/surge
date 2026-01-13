@@ -149,7 +149,15 @@ def cve_search(product: str, vendor: str="") -> list:
 
 
 ## --- VULNERABILITY CLASSIFIER METHODS --- ##
-def xgboost_data_cleaning(df, catgy_cols:list, summary_col:str):
+def xgboost_data_cleaning(df, catgy_cols:list, summary_col="summary"):
+    """
+    Responsible for formatting the found vulnerabilities within the scanned network into a format that the XGBoost model can understand.
+    
+    Args
+        df: DataFrame of Vulnerability Agent's findings
+        catgy_cols: type list of different categories
+        summary_col: column that houses the encoded summary based on the Sentence Transformer evaluation
+    """
     cve_data = df.copy()
 
     # fill na categorical columns as "UNKNOWN"
@@ -193,6 +201,12 @@ def xgboost_data_cleaning(df, catgy_cols:list, summary_col:str):
     return merged_cve_data
 
 def cvss_scorer(prediction_vals):
+    """
+    Pulls a trained XGBoost model and uses the CVE-formatted data that the Vulnerability Agent found to create/predict CVSS scores for each vulnerability.
+    
+    Args
+        prediction_vals: 
+    """
     testing_data = pd.read_csv(VULN_CLASSIFICATION_TRAINING_DATA)
     X = testing_data.drop(columns="cvss")
     X = X.select_dtypes(exclude="object")
