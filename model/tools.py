@@ -207,17 +207,20 @@ def cvss_scorer(prediction_vals):
     Args
         prediction_vals: 
     """
-    testing_data = pd.read_csv(VULN_CLASSIFICATION_TRAINING_DATA)
-    X = testing_data.drop(columns="cvss")
-    X = X.select_dtypes(exclude="object")
-    y = testing_data["cvss"]
+    print(prediction_vals)
+    # testing_data = pd.read_csv(VULN_CLASSIFICATION_TRAINING_DATA)
+    # X = testing_data.drop(columns="cvss")
+    # X = X.select_dtypes(exclude="object")
+    # y = testing_data["cvss"]
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+    # X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
 
-    model = XGBRegressor()
-    model.fit(X_train, y_train)
+    # load the model from the saved json
+    cvss_model = XGBRegressor()
+    cvss_model.load_model("../model/xgb_regressor.json")
+    # model.fit(X_train, y_train)
 
-    predict = model.predict(prediction_vals)
+    predict = cvss_model.predict(prediction_vals)
     print(f"Prediction score: {predict}")
 
     return predict
