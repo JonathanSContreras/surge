@@ -52,10 +52,8 @@ class CVEEntry(TypedDict, total=False):
     impact_confidentiality: str
     impact_integrity: str
 
-
 ## --- AGENTSTATE --- ##
 class AgentState(TypedDict):
-
     ## INPUTS 
     scan_type: str  # e.g. "low"/"medium"/"high"  GIVEN BY USER
     targets: list[str]  # e.g. ["10.10.160.0/24"]  GIVEN BY USER
@@ -66,12 +64,40 @@ class AgentState(TypedDict):
     recon_analysis: str  # RECON ANALYSIS AGENT RUNS
 
     ## VULNERABILITY DATA
-    vuln_raw_results: list[str]  # list of CVE vulnerabilities and its score    AFTER VULN AGENT RUNS
+    vuln_raw_results: list[dict[str, Any]]  # list of CVE vulnerabilities and its score    AFTER VULN AGENT RUNS
     vuln_formatted_results: list[CVEEntry]
     vuln_scoring: dict[str, Any]
 
     ## FINAL OUTPUT
     network_findings: str   # REPORT AGENT CHANGES THIS STATE
+
+
+def build_mas_graph():
+    """
+    Graph outline for the MAS.
+    """
+
+    workflow = StateGraph(AgentState)
+
+    workflow.add_node("recon", recon)
+    workflow.add_node("recon_analysis", recon_analysis)
+    workflow.add_node("vulnerability", vulnerability)
+    workflow.add_node("cvss_data_formatter", cvss_data_formatter) 
+    workflow.add_node("cvss_scorer", cvss_scoring) 
+    workflow.add_node("reporter", reporter)
+    
+    workflow.set_entry_point("recon")
+
+    workflow.add_edge("recon", "recon_analysis")
+    # workflow.add_edge("recon_analysis", END)  # TEST EDGE
+    workflow.add_edge("recon_analysis", "vulnerability")
+    workflow.add_edge("vulnerability", "cvss_data_formatter")
+    workflow.add_edge("cvss_data_formatter", "cvss_scorer")
+    workflow.add_edge("cvss_scorer", "reporter")
+    workflow.add_edge("reporter", END)
+
+    return workflow.compile()
+
 
 ## --- AGENT PROMPTS --- ##
 from agentic_prompts import RECON_AGENT_SYSTEM_PROMPT, RECON_ANALYSIS_SYSTEM_PROMPT, VULN_AGENT_SYSTEM_PROMPT, VULN_FORMATTING_SYSTEM_PROMPT, REPORTER_SYSTEM_PROMPT
@@ -171,7 +197,6 @@ def recon(state: AgentState) -> AgentState:
         raw_decision: AIMessage = llm.invoke([
             SystemMessage(content=RECON_AGENT_SYSTEM_PROMPT),
             HumanMessage(content=json.dumps(llm_input))
-             
         ])
 
         raw_text = getattr(raw_decision, "content", str(raw_decision))
@@ -332,11 +357,14 @@ def recon(state: AgentState) -> AgentState:
     ####
 
     # after recon agent ends run all xml content into a txt file
-    xml_dir = state["recon_results"]["xml"]
-    xml_content = all_xml_output_to_txt(xml_dir)
+    # xml_dirs = [log.get("xml_dir") for log in state["recon_results"]["all_logs"]]
+    xml_dir = state["recon_results"]["xml_dir"]  # get the directory for that current run
+    xml_content = all_xml_output_to_txt(xml_dir)  # push all xml content (iterate the folder) to a txt file
 
     with open(xml_content, "r") as f:
         state["all_xml_content"] += f.read()
+
+    print(state["recon_results"])
 
     return state
 
@@ -443,6 +471,8 @@ def recon_analysis(state: AgentState) -> AgentState:  # this will be a simple "h
     with open(f"./output/{target_ip}_recon_analysis.txt", "w") as f:
         f.write(result.content)
 
+    print(state["recon_analysis"])
+
     print("Recon analysis agent finished analysis and updated the state.")
 
     return state
@@ -536,7 +566,7 @@ def vulnerability(state: AgentState) -> AgentState:
 
     # define the result as an AIMessage and update the state
     vuln_result = AIMessage(vuln_result) if not isinstance(vuln_result, AIMessage) else vuln_result
-    state["vuln_raw_results"] = vuln_result.content
+    state["vuln_raw_results"] = json.loads(vuln_result.content)
 
     print("Vulnerability agent has ran and updated the state.")
 
@@ -590,7 +620,7 @@ def cvss_data_formatter(state: AgentState) -> AgentState:
 
     # check if result answer is a string
     result = AIMessage(result) if not isinstance(result, AIMessage) else result
-    state["vuln_formatted_results"] = result.content
+    state["vuln_formatted_results"] = json.loads(result.content)
 
     print("CVSS data formatter has been updated and the state has also been updated.")
 
@@ -601,32 +631,44 @@ def cvss_scoring(state: AgentState) -> AgentState:
     Calls the XGBoost classifier model and outputs the vulnerability with its label.
     """
 
-    vuln_data = state["vuln_formatted_results"]
+    vuln_list = state["vuln_formatted_results"]  # list object
 
-    cwe = vuln_data["cwe_code"] 
-    cwe_name = vuln_data["cwe_name"],
-    summary = vuln_data["summary"],
-    acces_auth = vuln_data["access_authentication"]
-    acces_complex = vuln_data["access_complexity"]
-    acces_vec = vuln_data["access_vector"]
-    impa_avail = vuln_data["impact_availability"]
-    impa_confid = vuln_data["impact_confidentiality"]
-    impa_integ = vuln_data["impact_integrity"]
+    for vuln_data in vuln_list:
+        cwe = vuln_data.get("cwe_code")
+        cwe_name = vuln_data.get("cwe_name")
+        summary = vuln_data.get("summary")
+        access_auth = vuln_data.get("access_authentication")
+        access_complex = vuln_data.get("access_complexity")
+        access_vec = vuln_data.get("access_vector")
+        impa_avail = vuln_data.get("impact_availability")
+        impa_confid = vuln_data.get("impact_confidentiality")
+        impa_integ = vuln_data.get("impact_integrity")
 
-    vuln_df = pd.DataFrame(
-        [cwe, cwe_name, summary, acces_auth, acces_complex, acces_vec, impa_avail, impa_confid, impa_confid, impa_integ]
-    )
-    print(vuln_df.head())
-    categy_cols = ["access_authentication", "access_complexity", "access_vector", "impact_availability", "impact_confidentiality", "impact_integrity"]
-    cve_data = xgboost_data_cleaning(vuln_df, categy_cols)
-    print("cve_data output:", cve_data)
+        vuln_df = pd.DataFrame([
+            {
+                "cwe": cwe, 
+                "cwe_name": cwe_name, 
+                "summary": summary, 
+                "access_authentication": access_auth,
+                "access_complexity": access_complex, 
+                "access_vector": access_vec, 
+                "impact_availability": impa_avail, 
+                "impact_confidentiality": impa_confid, 
+                "impact_integrity": impa_integ
 
-    # will need to take the formatted data and output a score
-    vulnerability_score = cvss_scorer(cve_data)
+            }]
+        )
+        print(vuln_df.head())
+        catgy_cols = ["access_authentication", "access_complexity", "access_vector", "impact_availability", "impact_confidentiality", "impact_integrity"]
+        cve_data = xgboost_data_cleaning(vuln_df, catgy_cols)
+        print("cve_data output:", cve_data)
 
-    print("vulnerability score:", vulnerability_score)
+        # will need to take the formatted data and output a score
+        vulnerability_score = cvss_scorer(cve_data)
 
-    state["vuln_scoring"] = vulnerability_score
+        print("vulnerability score:", vulnerability_score)
+
+        state["vuln_scoring"] = vulnerability_score
 
     print("CVSS scoring agent has completed running and the state is updated.")
 
@@ -712,26 +754,7 @@ def reporter(state: AgentState) -> AgentState:  # takes all output from all agen
 
 
 ## --- GRAPH DEFINITION --- ##
-workflow = StateGraph(AgentState)
-workflow.add_node("recon", recon)
-workflow.add_node("recon_analysis", recon_analysis)
-workflow.add_node("vulnerability", vulnerability)
-workflow.add_node("cvss_data_formatter", cvss_data_formatter) 
-workflow.add_node("cvss_scorer", cvss_scoring) 
-workflow.add_node("supervisor", reporter)
-
-workflow.add_edge("recon", "recon_analysis")
-workflow.add_edge("recon_analysis", END)  # TEST EDGE
-# workflow.add_edge("recon_analysis", "supervisor")
-# workflow.add_edge("recon", "vulnerability")
-# workflow.add_edge("vulnerability", "cvss_data_formatter")
-# workflow.add_edge("cvss_data_formatter", "cvss_scorer")
-# workflow.add_edge("cvss_scorer", "supervisor")
-# workflow.add_edge("supervisor", END)
-
-workflow.set_entry_point("recon")
-
-sam = workflow.compile()
+sam = build_mas_graph()
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
@@ -750,7 +773,7 @@ if __name__ == "__main__":
     }
 
     ## FINAL OUTPUT
-    network_findings: str   # REPORT AGENT CHANGES THIS STATE  CONFUSED ABOUT THIS LINE LOL
+    # network_findings: str   # REPORT AGENT CHANGES THIS STATE  CONFUSED ABOUT THIS LINE LOL
 
     results = sam.invoke(initial_state)
     
@@ -763,3 +786,4 @@ if __name__ == "__main__":
     time_in_minutes = (time.perf_counter()-start_time) / 60
 
     print(f"Code finished in {time_in_minutes} minutes.")
+    print(results["network_findings"])

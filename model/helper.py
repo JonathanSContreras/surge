@@ -355,11 +355,12 @@ def all_xml_output_to_txt(target_file: str) -> str:
                 print("SUCCESSFULLY RETRIEVED ALL XML CONTENT")
 
     # add the content to a txt file (used later for the recon analysis and vulnerability agent)
-    with open(f"{xml_folder}/xml_content.txt", "w") as c:
+    output_path = f"{xml_folder}/xml_content.txt"
+    with open(output_path, "w") as c:
         c.write(content)
         print("SUCCESSFULLY WROTE ALL CONTENT TO A TXT")
 
-    return 
+    return output_path
 
 
 ## --- RECON ANALYZER HELPER METHOD -- ##

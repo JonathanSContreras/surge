@@ -15,8 +15,14 @@ import pandas as pd
 from sklearn.preprocessing import OneHotEncoder
 from sentence_transformers import SentenceTransformer
 from sklearn.feature_extraction.text import TfidfVectorizer
-from xgboost import XGBRegressor
-from sklearn.model_selection import train_test_split
+import xgboost as xgb
+# from sklearn.model_selection import train_test_split
+
+## GLOBAL CACHES ##
+SBERT_MODEL = SentenceTransformer("all-MiniLM-L6-v2")
+XGB_MODEL = xgb.Booster()
+XGB_MODEL.load_model("../model/xgb_regressor.json")
+# FEATURE_SCHEMA = 
 
 ## --- RECON METHOD/TOOLS --- ##
 @tool
@@ -128,17 +134,22 @@ def nmap_scanning(scan_type: str, flags: list[str], targets: list[str], timeout:
 def cve_search(product: str, vendor: str="") -> list:
     """Fetch top 5 CVE's for a given product from CIRCL."""
 
-    base_url = f"https://cve.circl.lu/api/search/{product}"
-    url = f"{base_url}/{vendor}/{product}" if vendor else f"{base_url}/{product}"
+    # construct CVE API url
+    if vendor:
+        url = f"https://cve.circl.lu/api/search/{vendor}/{product}"
+    else: # no vendor given
+        url = f"https://cve.circl.lu/api/search/{product}"
+
     try:
-        response = requests.get(url, timeout=10)
+        response = requests.get(url, timeout=15)
         if response.status_code == 200:
             data = response.json()
+            print("cve_search", data)
             return [
                 {"id": item["id"], "summary": item["summary"]}
                 for item in data.get("data", [])[:10]
             ]        
-        return {"error": f"Failed to fetch CVEs for {product}"}
+        return {"data": [], "error": f"Failed to fetch CVEs for {product}"}
 
     except Exception as e:
         return {"error": str(e)}
@@ -161,7 +172,7 @@ def xgboost_data_cleaning(df, catgy_cols:list, summary_col="summary"):
     cve_data = df.copy()
 
     # fill na categorical columns as "UNKNOWN"
-    catgy_cols = ["access_authentication", "access_complexity", "access_vector", "impact_availability", "impact_confidentiality", "impact_integrity"]
+    # catgy_cols = ["access_authentication", "access_complexity", "access_vector", "impact_availability", "impact_confidentiality", "impact_integrity"]
     cve_data[catgy_cols] = cve_data[catgy_cols].fillna("UNKNOWN")
 
     # one hot encode categorical columns
@@ -169,12 +180,11 @@ def xgboost_data_cleaning(df, catgy_cols:list, summary_col="summary"):
     catgy_encode = ohe.fit_transform(cve_data[catgy_cols])
 
     # combine data
-    cve_data = pd.concat([cve_data, catgy_encode], axis=1)
-    cve_data.drop(columns=catgy_cols, inplace=True)
+    cve_data = pd.concat([cve_data.drop(columns=["catgy_cols"]), catgy_encode], axis=1)
 
     # vectorize summary field (SBERT)
-    model = SentenceTransformer("all-MiniLM-L6-v2") 
-    embeddings = model.encode(cve_data[summary_col])
+    # model = SentenceTransformer("all-MiniLM-L6-v2") 
+    embeddings = SBERT_MODEL.encode(cve_data[summary_col])
     embeddings_df = pd.DataFrame(
         embeddings,
         columns=[f"SBERT_summary_{i}" for i in range(embeddings.shape[1])]
@@ -191,13 +201,7 @@ def xgboost_data_cleaning(df, catgy_cols:list, summary_col="summary"):
     )
 
     # combine data
-    merged_cve_data = pd.concat([cve_data.drop(columns=["cwe_name"]), name_feat_df], axis=1)
-    merged_cve_data.head()
-
-    # combine data
-    merged_cve_data = pd.concat([cve_data.drop(columns=["cwe_name"]), name_feat_df], axis=1)
-    # merged_cve_data.head()
-
+    merged_cve_data = pd.concat([merged_cve_data.drop(columns=["cwe_name"]), name_feat_df], axis=1)
     return merged_cve_data
 
 def cvss_scorer(prediction_vals):
@@ -216,11 +220,11 @@ def cvss_scorer(prediction_vals):
     # X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
 
     # load the model from the saved json
-    cvss_model = XGBRegressor()
-    cvss_model.load_model("../model/xgb_regressor.json")
+    # cvss_model = XGBRegressor()
+    # cvss_model.load_model("../model/xgb_regressor.json")
     # model.fit(X_train, y_train)
-
-    predict = cvss_model.predict(prediction_vals)
+    dmatrix = xgb.DMatrix(prediction_vals)
+    predict = XGB_MODEL.predict(dmatrix)
     print(f"Prediction score: {predict}")
 
     return predict
