@@ -721,13 +721,13 @@ workflow.add_node("cvss_scorer", cvss_scoring)
 workflow.add_node("supervisor", reporter)
 
 workflow.add_edge("recon", "recon_analysis")
-# workflow.add_edge("recon_analysis", END)  # TEST EDGE
-workflow.add_edge("recon_analysis", "supervisor")
-workflow.add_edge("recon", "vulnerability")
-workflow.add_edge("vulnerability", "cvss_data_formatter")
-workflow.add_edge("cvss_data_formatter", "cvss_scorer")
-workflow.add_edge("cvss_scorer", "supervisor")
-workflow.add_edge("supervisor", END)
+workflow.add_edge("recon_analysis", END)  # TEST EDGE
+# workflow.add_edge("recon_analysis", "supervisor")
+# workflow.add_edge("recon", "vulnerability")
+# workflow.add_edge("vulnerability", "cvss_data_formatter")
+# workflow.add_edge("cvss_data_formatter", "cvss_scorer")
+# workflow.add_edge("cvss_scorer", "supervisor")
+# workflow.add_edge("supervisor", END)
 
 workflow.set_entry_point("recon")
 
@@ -739,7 +739,7 @@ if __name__ == "__main__":
     ## CLEAN scan_dumps.txt BEFORE EVERY RUN
     initial_state = {
         "scan_type": "high",
-        "targets": ["10.10.162.0/24"],  # whole subnet scan  ["10.10.162.0/24"]
+        "targets": ["192.168.1.0/24"],  # whole subnet scan  ["10.10.162.0/24"]
         "recon_results": {},
         "all_xml_content": "",
         "recon_analysis": "",
