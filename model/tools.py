@@ -21,7 +21,7 @@ import xgboost as xgb
 ## GLOBAL CACHES ##
 SBERT_MODEL = SentenceTransformer("all-MiniLM-L6-v2")
 XGB_MODEL = xgb.Booster()
-XGB_MODEL.load_model("../model/xgb_regressor.json")
+XGB_MODEL.load_model("model/xgb_regressor.json")
 # FEATURE_SCHEMA = 
 
 ## --- RECON METHOD/TOOLS --- ##

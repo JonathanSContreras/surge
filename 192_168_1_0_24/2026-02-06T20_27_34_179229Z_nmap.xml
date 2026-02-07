@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE nmaprun>
+<?xml-stylesheet href="file:///C:/Program Files (x86)/Nmap/nmap.xsl" type="text/xsl"?>
+<!-- Nmap 7.98 scan initiated Fri Feb  6 20:27:34 2026 as: nmap -sn -T4 -oX - 192.168.1.0/24 -->
+<nmaprun scanner="nmap" args="nmap -sn -T4 -oX - 192.168.1.0/24" start="1770431254" startstr="Fri Feb  6 20:27:34 2026" version="7.98" xmloutputversion="1.05">
+<verbose level="0"/>
+<debugging level="0"/>
+<host><status state="up" reason="arp-response" reason_ttl="0"/>
+<address addr="192.168.1.1" addrtype="ipv4"/>
+<address addr="24:41:FE:10:27:11" addrtype="mac" vendor="Wistron Neweb"/>
+<hostnames>
+<hostname name="CR200A.mynetworksettings.com" type="PTR"/>
+</hostnames>
+<times srtt="6750" rttvar="6000" to="100000"/>
+</host>
+<host><status state="up" reason="arp-response" reason_ttl="0"/>
+<address addr="192.168.1.152" addrtype="ipv4"/>
+<address addr="D8:3A:DD:ED:73:2F" addrtype="mac" vendor="Raspberry Pi Trading"/>
+<hostnames>
+<hostname name="pi.hole" type="PTR"/>
+</hostnames>
+<times srtt="13000" rttvar="13000" to="100000"/>
+</host>
+<host><status state="up" reason="arp-response" reason_ttl="0"/>
+<address addr="192.168.1.153" addrtype="ipv4"/>
+<address addr="12:C3:EE:FC:9D:0A" addrtype="mac"/>
+<hostnames>
+</hostnames>
+<times srtt="119000" rttvar="119000" to="595000"/>
+</host>
+<host><status state="up" reason="arp-response" reason_ttl="0"/>
+<address addr="192.168.1.156" addrtype="ipv4"/>
+<address addr="08:C2:24:EC:58:30" addrtype="mac" vendor="Amazon Technologies"/>
+<hostnames>
+</hostnames>
+<times srtt="602000" rttvar="602000" to="1250000"/>
+</host>
+<host><status state="up" reason="arp-response" reason_ttl="0"/>
+<address addr="192.168.1.160" addrtype="ipv4"/>
+<address addr="D4:BE:DC:80:3A:7E" addrtype="mac" vendor="Roku"/>
+<hostnames>
+<hostname name="40HiroRokuTV" type="PTR"/>
+</hostnames>
+<times srtt="118000" rttvar="118000" to="590000"/>
+</host>
+<host><status state="up" reason="arp-response" reason_ttl="0"/>
+<address addr="192.168.1.164" addrtype="ipv4"/>
+<address addr="50:14:79:A0:A2:72" addrtype="mac" vendor="iRobot"/>
+<hostnames>
+</hostnames>
+<times srtt="603000" rttvar="603000" to="1250000"/>
+</host>
+<host><status state="up" reason="arp-response" reason_ttl="0"/>
+<address addr="192.168.1.171" addrtype="ipv4"/>
+<address addr="82:87:18:BE:F6:F1" addrtype="mac"/>
+<hostnames>
+</hostnames>
+<times srtt="121000" rttvar="121000" to="605000"/>
+</host>
+<host><status state="up" reason="arp-response" reason_ttl="0"/>
+<address addr="192.168.1.174" addrtype="ipv4"/>
+<address addr="2A:5E:43:B4:C1:93" addrtype="mac"/>
+<hostnames>
+</hostnames>
+<times srtt="166253" rttvar="124183" to="662985"/>
+</host>
+<host><status state="up" reason="arp-response" reason_ttl="0"/>
+<address addr="192.168.1.176" addrtype="ipv4"/>
+<address addr="EC:C4:0D:F5:01:C2" addrtype="mac" vendor="Nintendo"/>
+<hostnames>
+</hostnames>
+<times srtt="85000" rttvar="85000" to="425000"/>
+</host>
+<host><status state="up" reason="localhost-response" reason_ttl="0"/>
+<address addr="192.168.1.159" addrtype="ipv4"/>
+<hostnames>
+<hostname name="LAPTOP-BEHPNF0T" type="PTR"/>
+</hostnames>
+</host>
+<runstats><finished time="1770431261" timestr="Fri Feb  6 20:27:41 2026" summary="Nmap done at Fri Feb  6 20:27:41 2026; 256 IP addresses (10 hosts up) scanned in 7.30 seconds" elapsed="7.30" exit="success"/><hosts up="10" down="246" total="256"/>
+</runstats>
+</nmaprun>

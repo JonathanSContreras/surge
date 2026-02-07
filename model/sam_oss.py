@@ -29,8 +29,9 @@ load_dotenv()
 BASE_URL = os.getenv("TAILSCALE_URL")
 print(BASE_URL)
 llm = ChatOpenAI(
-    model="qwen2.5:14b",
+    # model="qwen2.5:14b",
     base_url=BASE_URL,
+    model="gpt-oss:20b",
     api_key="ollama",  # this is an unused placeholder value (required by SDK)
     temperature=0,
     top_p=1 # makes the model model deterministic
@@ -89,12 +90,12 @@ def build_mas_graph():
     workflow.set_entry_point("recon")
 
     workflow.add_edge("recon", "recon_analysis")
-    # workflow.add_edge("recon_analysis", END)  # TEST EDGE
-    workflow.add_edge("recon_analysis", "vulnerability")
-    workflow.add_edge("vulnerability", "cvss_data_formatter")
-    workflow.add_edge("cvss_data_formatter", "cvss_scorer")
-    workflow.add_edge("cvss_scorer", "reporter")
-    workflow.add_edge("reporter", END)
+    workflow.add_edge("recon_analysis", END)  # TEST EDGE
+    # workflow.add_edge("recon_analysis", "vulnerability")
+    # workflow.add_edge("vulnerability", "cvss_data_formatter")
+    # workflow.add_edge("cvss_data_formatter", "cvss_scorer")
+    # workflow.add_edge("cvss_scorer", "reporter")
+    # workflow.add_edge("reporter", END)
 
     return workflow.compile()
 
@@ -304,9 +305,9 @@ def recon(state: AgentState) -> AgentState:
 
         # parse nmap scan output (will parse xml file to dictionary)  THIS IS AN ISSUE (the xml content is now the folder name)
         parsed = {}
-        print(log.get("xml_file"))
+        print("log.print xml", log.get("xml_file"))
         if log.get("xml_file"):
-            parsed = xml_parse_v1(log["xml_file"])  # get into the 
+            parsed = xml_parse_v1(log["xml_file"])  # NOTE: might need to concate the folder name and file name
 
         # detect new hosts
         hosts = set(parsed.keys()) - discovered_hosts
@@ -356,6 +357,7 @@ def recon(state: AgentState) -> AgentState:
         file.write(f"Recon finished after {iteration} iterations.")
     ####
 
+    # NOTE: ERROR HERE (issue getting all the xml content)
     # after recon agent ends run all xml content into a txt file
     # xml_dirs = [log.get("xml_dir") for log in state["recon_results"]["all_logs"]]
     xml_dir = state["recon_results"]["xml_dir"]  # get the directory for that current run

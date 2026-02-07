@@ -1,59 +1,40 @@
-Stop variables defined for RECON AGENT:
-----------------
-max iterations = 8
-no_new_threshold = 4
---- ITERATION 1 [2025-10-22 12:11:53] ---
-[2025-10-22 12:12:42] LLM raw output:
-{"flags":["-sn"],"targets":["10.10.162.0/24"],"scan_type":"low","reason":"Initial host discovery for new subnet.","max_runtime_s":30,"escalation":"none"}
-Decision fields have been validated. [2025-10-22 12:12:42]	Running Nmap scan on ['10.10.162.0/24'] with flags: ['-sn'].
+--- ITERATION 1 [2026-02-06 19:58:43] ---
+[2026-02-06 19:59:03] LLM raw output:
+{"flags":["-sn","-T4"],"targets":["192.168.1.0/24"],"scan_type":"low","reason":"Initial host discovery","max_runtime_s":30,"escalation":"none"}
+Decision fields have been validated. [2026-02-06 19:59:03]	Running Nmap scan on ['192.168.1.0/24'] with flags: ['-sn', '-T4'].
 New hosts discovered: {'error'}
 Hosts discovered so far: ['error']
-[{'timestamp': '2025-10-22T12:12:42.696825Z', 'command': ['nmap', '-sn', '-oX', '-', '10.10.162.0/24'], 'targets': ['10.10.162.0/24'], 'xml': './10_10_162_0_24', 'stderr': '', 'returncode': 0, 'success': True, 'max_runtime_s': 7.68}]
---- ITERATION 2 [2025-10-22 12:12:51] ---
-[2025-10-22 12:13:20] LLM raw output:
-{"flags":["-A","-sV","--script","vuln","-O"],"targets":["10.10.162.0/24"],"scan_type":"high","reason":"Deep scan for metadata, OS fingerprinting, and vulnerabilities.","max_runtime_s":300,"escalation":"none"}
-Decision fields have been validated. [2025-10-22 12:13:20]	Running Nmap scan on ['10.10.162.0/24'] with flags: ['-A', '-sV', '--script', 'vuln', '-O'].
+[{'timestamp': '2026-02-06T19:59:03.886852Z', 'command': ['nmap', '-sn', '-T4', '-oX', '-', '192.168.1.0/24'], 'targets': ['192.168.1.0/24'], 'xml_dir': './192_168_1_0_24', 'xml_file': '2026-02-06T19_59_03_886852Z_nmap.xml', 'stderr': '', 'returncode': 0, 'success': True, 'max_runtime_s': 7.23}]
+{'error': '~INPUT DOES NOT APPEAR TO BE XML'}
+--- ITERATION 2 [2026-02-06 19:59:12] ---
+[2026-02-06 20:01:21] LLM raw output:
+{"flags":["-sn"],"targets":["192.168.1.0/24"],"scan_type":"low","reason":"confirm host availability after high scan","max_runtime_s":30,"escalation":"none"}
+Decision fields have been validated. [2026-02-06 20:01:21]	Running Nmap scan on ['192.168.1.0/24'] with flags: ['-sn'].
 ~NO NEW HOSTS DISCOVERED.
 Hosts discovered so far: ['error']
-[{'timestamp': '2025-10-22T12:12:42.696825Z', 'command': ['nmap', '-sn', '-oX', '-', '10.10.162.0/24'], 'targets': ['10.10.162.0/24'], 'xml': './10_10_162_0_24', 'stderr': '', 'returncode': 0, 'success': True, 'max_runtime_s': 7.68}, {'timestamp': '2025-10-22T12:13:20.679324Z', 'command': ['nmap', '-A', '-sV', '--script', 'vuln', '-O', '-oX', '-', '10.10.162.0/24'], 'targets': ['10.10.162.0/24'], 'xml': './10_10_162_0_24', 'stderr': '', 'returncode': 0, 'success': True, 'max_runtime_s': 282.66}]
---- ITERATION 3 [2025-10-22 12:18:04] ---
-[2025-10-22 12:18:32] LLM raw output:
-{"flags":["-A","-sV","--script","vuln","-O"],"targets":["10.10.162.0/24"],"scan_type":"high","reason":"Deep scan for metadata and vulnerabilities on active hosts.","max_runtime_s":300,"escalation":"none"}
-Decision fields have been validated. [2025-10-22 12:18:32]	Running Nmap scan on ['10.10.162.0/24'] with flags: ['-A', '-sV', '--script', 'vuln', '-O'].
+[{'timestamp': '2026-02-06T19:59:03.886852Z', 'command': ['nmap', '-sn', '-T4', '-oX', '-', '192.168.1.0/24'], 'targets': ['192.168.1.0/24'], 'xml_dir': './192_168_1_0_24', 'xml_file': '2026-02-06T19_59_03_886852Z_nmap.xml', 'stderr': '', 'returncode': 0, 'success': True, 'max_runtime_s': 7.23}, {'timestamp': '2026-02-06T20:01:21.375972Z', 'command': ['nmap', '-sn', '-oX', '-', '192.168.1.0/24'], 'targets': ['192.168.1.0/24'], 'xml_dir': './192_168_1_0_24', 'xml_file': '2026-02-06T20_01_21_375972Z_nmap.xml', 'stderr': '', 'returncode': 0, 'success': True, 'max_runtime_s': 7.29}]
+{'error': '~INPUT DOES NOT APPEAR TO BE XML'}
+--- ITERATION 3 [2026-02-06 20:01:29] ---
+[2026-02-06 20:02:03] LLM raw output:
+{"flags":["-A","-sS","-p-","--script","vuln","-T4"],"targets":["192.168.1.0/24"],"scan_type":"high","reason":"Deep enumeration on discovered host with full port scan","max_runtime_s":900,"escalation":"deep_scan"}
+Decision fields have been validated. [2026-02-06 20:02:03]	Running Nmap scan on ['192.168.1.0/24'] with flags: ['-A', '-sS', '-p-', '--script', 'vuln', '-T4'].
 ~NO NEW HOSTS DISCOVERED.
 Hosts discovered so far: ['error']
-[{'timestamp': '2025-10-22T12:12:42.696825Z', 'command': ['nmap', '-sn', '-oX', '-', '10.10.162.0/24'], 'targets': ['10.10.162.0/24'], 'xml': './10_10_162_0_24', 'stderr': '', 'returncode': 0, 'success': True, 'max_runtime_s': 7.68}, {'timestamp': '2025-10-22T12:13:20.679324Z', 'command': ['nmap', '-A', '-sV', '--script', 'vuln', '-O', '-oX', '-', '10.10.162.0/24'], 'targets': ['10.10.162.0/24'], 'xml': './10_10_162_0_24', 'stderr': '', 'returncode': 0, 'success': True, 'max_runtime_s': 282.66}, {'timestamp': '2025-10-22T12:18:32.767681Z', 'command': ['nmap', '-A', '-sV', '--script', 'vuln', '-O', '-oX', '-', '10.10.162.0/24'], 'targets': ['10.10.162.0/24'], 'xml': './10_10_162_0_24', 'stderr': '', 'returncode': 0, 'success': True, 'max_runtime_s': 291.45}]
---- ITERATION 4 [2025-10-22 12:23:25] ---
-[2025-10-22 12:23:53] LLM raw output:
-{"flags":["-A","-sV","--script","vuln","-O"],"targets":["10.10.162.0/24"],"scan_type":"high","reason":"Deep enumeration for metadata and vulnerabilities on active hosts.","max_runtime_s":300,"escalation":"none"}
-Decision fields have been validated. [2025-10-22 12:23:53]	Running Nmap scan on ['10.10.162.0/24'] with flags: ['-A', '-sV', '--script', 'vuln', '-O'].
+[{'timestamp': '2026-02-06T19:59:03.886852Z', 'command': ['nmap', '-sn', '-T4', '-oX', '-', '192.168.1.0/24'], 'targets': ['192.168.1.0/24'], 'xml_dir': './192_168_1_0_24', 'xml_file': '2026-02-06T19_59_03_886852Z_nmap.xml', 'stderr': '', 'returncode': 0, 'success': True, 'max_runtime_s': 7.23}, {'timestamp': '2026-02-06T20:01:21.375972Z', 'command': ['nmap', '-sn', '-oX', '-', '192.168.1.0/24'], 'targets': ['192.168.1.0/24'], 'xml_dir': './192_168_1_0_24', 'xml_file': '2026-02-06T20_01_21_375972Z_nmap.xml', 'stderr': '', 'returncode': 0, 'success': True, 'max_runtime_s': 7.29}, {'timestamp': '2026-02-06T20:02:03.797553Z', 'command': ['nmap', '-A', '-sS', '--script', 'vuln', '-T4', '-oX', '-', '192.168.1.0/24'], 'targets': ['192.168.1.0/24'], 'xml_dir': None, 'xml_file': None, 'stderr': '~SCAN TIMED OUT', 'returncode': None, 'success': False, 'max_runtime_s': 1500.07}]
+{}
+--- ITERATION 4 [2026-02-06 20:27:04] ---
+[2026-02-06 20:27:34] LLM raw output:
+{"flags":["-sn","-T4"],"targets":["192.168.1.0/24"],"scan_type":"low","reason":"No new hosts after 2 iterations, perform host discovery","max_runtime_s":60,"escalation":"none"}
+Decision fields have been validated. [2026-02-06 20:27:34]	Running Nmap scan on ['192.168.1.0/24'] with flags: ['-sn', '-T4'].
 ~NO NEW HOSTS DISCOVERED.
 Hosts discovered so far: ['error']
-[{'timestamp': '2025-10-22T12:12:42.696825Z', 'command': ['nmap', '-sn', '-oX', '-', '10.10.162.0/24'], 'targets': ['10.10.162.0/24'], 'xml': './10_10_162_0_24', 'stderr': '', 'returncode': 0, 'success': True, 'max_runtime_s': 7.68}, {'timestamp': '2025-10-22T12:13:20.679324Z', 'command': ['nmap', '-A', '-sV', '--script', 'vuln', '-O', '-oX', '-', '10.10.162.0/24'], 'targets': ['10.10.162.0/24'], 'xml': './10_10_162_0_24', 'stderr': '', 'returncode': 0, 'success': True, 'max_runtime_s': 282.66}, {'timestamp': '2025-10-22T12:18:32.767681Z', 'command': ['nmap', '-A', '-sV', '--script', 'vuln', '-O', '-oX', '-', '10.10.162.0/24'], 'targets': ['10.10.162.0/24'], 'xml': './10_10_162_0_24', 'stderr': '', 'returncode': 0, 'success': True, 'max_runtime_s': 291.45}, {'timestamp': '2025-10-22T12:23:53.669350Z', 'command': ['nmap', '-A', '-sV', '--script', 'vuln', '-O', '-oX', '-', '10.10.162.0/24'], 'targets': ['10.10.162.0/24'], 'xml': None, 'stderr': '~SCAN TIMED OUT', 'returncode': None, 'success': False, 'max_runtime_s': 1500.03}]
---- ITERATION 5 [2025-10-22 12:48:54] ---
-[2025-10-22 12:49:46] LLM raw output:
-{"flags":["-A","-sV","--script","vuln","-O"],"targets":["10.10.162.0/24"],"scan_type":"high","reason":"Deep scan for metadata, OS fingerprinting, and vulnerabilities.","max_runtime_s":300,"escalation":"none"}
-Decision fields have been validated. [2025-10-22 12:49:46]	Running Nmap scan on ['10.10.162.0/24'] with flags: ['-A', '-sV', '--script', 'vuln', '-O'].
+[{'timestamp': '2026-02-06T19:59:03.886852Z', 'command': ['nmap', '-sn', '-T4', '-oX', '-', '192.168.1.0/24'], 'targets': ['192.168.1.0/24'], 'xml_dir': './192_168_1_0_24', 'xml_file': '2026-02-06T19_59_03_886852Z_nmap.xml', 'stderr': '', 'returncode': 0, 'success': True, 'max_runtime_s': 7.23}, {'timestamp': '2026-02-06T20:01:21.375972Z', 'command': ['nmap', '-sn', '-oX', '-', '192.168.1.0/24'], 'targets': ['192.168.1.0/24'], 'xml_dir': './192_168_1_0_24', 'xml_file': '2026-02-06T20_01_21_375972Z_nmap.xml', 'stderr': '', 'returncode': 0, 'success': True, 'max_runtime_s': 7.29}, {'timestamp': '2026-02-06T20:02:03.797553Z', 'command': ['nmap', '-A', '-sS', '--script', 'vuln', '-T4', '-oX', '-', '192.168.1.0/24'], 'targets': ['192.168.1.0/24'], 'xml_dir': None, 'xml_file': None, 'stderr': '~SCAN TIMED OUT', 'returncode': None, 'success': False, 'max_runtime_s': 1500.07}, {'timestamp': '2026-02-06T20:27:34.179229Z', 'command': ['nmap', '-sn', '-T4', '-oX', '-', '192.168.1.0/24'], 'targets': ['192.168.1.0/24'], 'xml_dir': './192_168_1_0_24', 'xml_file': '2026-02-06T20_27_34_179229Z_nmap.xml', 'stderr': '', 'returncode': 0, 'success': True, 'max_runtime_s': 7.34}]
+{'error': '~INPUT DOES NOT APPEAR TO BE XML'}
+--- ITERATION 5 [2026-02-06 20:27:42] ---
+[2026-02-06 20:28:09] LLM raw output:
+{"flags":["-A","-sV","--script","vuln","-O","-sU","-T4"],"targets":["192.168.1.0/24"],"scan_type":"high","reason":"Add UDP scanning to cover missing services","max_runtime_s":600,"escalation":"deep_scan"}
+Decision fields have been validated. [2026-02-06 20:28:09]	Running Nmap scan on ['192.168.1.0/24'] with flags: ['-A', '-sV', '--script', 'vuln', '-O', '-sU', '-T4'].
 ~NO NEW HOSTS DISCOVERED.
 Hosts discovered so far: ['error']
-[{'timestamp': '2025-10-22T12:12:42.696825Z', 'command': ['nmap', '-sn', '-oX', '-', '10.10.162.0/24'], 'targets': ['10.10.162.0/24'], 'xml': './10_10_162_0_24', 'stderr': '', 'returncode': 0, 'success': True, 'max_runtime_s': 7.68}, {'timestamp': '2025-10-22T12:13:20.679324Z', 'command': ['nmap', '-A', '-sV', '--script', 'vuln', '-O', '-oX', '-', '10.10.162.0/24'], 'targets': ['10.10.162.0/24'], 'xml': './10_10_162_0_24', 'stderr': '', 'returncode': 0, 'success': True, 'max_runtime_s': 282.66}, {'timestamp': '2025-10-22T12:18:32.767681Z', 'command': ['nmap', '-A', '-sV', '--script', 'vuln', '-O', '-oX', '-', '10.10.162.0/24'], 'targets': ['10.10.162.0/24'], 'xml': './10_10_162_0_24', 'stderr': '', 'returncode': 0, 'success': True, 'max_runtime_s': 291.45}, {'timestamp': '2025-10-22T12:23:53.669350Z', 'command': ['nmap', '-A', '-sV', '--script', 'vuln', '-O', '-oX', '-', '10.10.162.0/24'], 'targets': ['10.10.162.0/24'], 'xml': None, 'stderr': '~SCAN TIMED OUT', 'returncode': None, 'success': False, 'max_runtime_s': 1500.03}, {'timestamp': '2025-10-22T12:49:46.931896Z', 'command': ['nmap', '-A', '-sV', '--script', 'vuln', '-O', '-oX', '-', '10.10.162.0/24'], 'targets': ['10.10.162.0/24'], 'xml': None, 'stderr': '~SCAN TIMED OUT', 'returncode': None, 'success': False, 'max_runtime_s': 1500.02}]Recon finished after 5 iterations.Stop variables defined for RECON AGENT:
-----------------
-max iterations = 8
-no_new_threshold = 4
---- ITERATION 1 [2025-10-28 16:11:02] ---Stop variables defined for RECON AGENT:
-----------------
-max iterations = 8
-no_new_threshold = 4
---- ITERATION 1 [2025-10-28 16:18:44] ---Stop variables defined for RECON AGENT:
-----------------
-max iterations = 8
-no_new_threshold = 4
---- ITERATION 1 [2025-10-28 16:24:27] ---Stop variables defined for RECON AGENT:
-----------------
-max iterations = 8
-no_new_threshold = 4
---- ITERATION 1 [2025-10-28 17:00:55] ---Stop variables defined for RECON AGENT:
-----------------
-max iterations = 8
-no_new_threshold = 4
---- ITERATION 1 [2025-11-17 09:39:05] ---
+[{'timestamp': '2026-02-06T19:59:03.886852Z', 'command': ['nmap', '-sn', '-T4', '-oX', '-', '192.168.1.0/24'], 'targets': ['192.168.1.0/24'], 'xml_dir': './192_168_1_0_24', 'xml_file': '2026-02-06T19_59_03_886852Z_nmap.xml', 'stderr': '', 'returncode': 0, 'success': True, 'max_runtime_s': 7.23}, {'timestamp': '2026-02-06T20:01:21.375972Z', 'command': ['nmap', '-sn', '-oX', '-', '192.168.1.0/24'], 'targets': ['192.168.1.0/24'], 'xml_dir': './192_168_1_0_24', 'xml_file': '2026-02-06T20_01_21_375972Z_nmap.xml', 'stderr': '', 'returncode': 0, 'success': True, 'max_runtime_s': 7.29}, {'timestamp': '2026-02-06T20:02:03.797553Z', 'command': ['nmap', '-A', '-sS', '--script', 'vuln', '-T4', '-oX', '-', '192.168.1.0/24'], 'targets': ['192.168.1.0/24'], 'xml_dir': None, 'xml_file': None, 'stderr': '~SCAN TIMED OUT', 'returncode': None, 'success': False, 'max_runtime_s': 1500.07}, {'timestamp': '2026-02-06T20:27:34.179229Z', 'command': ['nmap', '-sn', '-T4', '-oX', '-', '192.168.1.0/24'], 'targets': ['192.168.1.0/24'], 'xml_dir': './192_168_1_0_24', 'xml_file': '2026-02-06T20_27_34_179229Z_nmap.xml', 'stderr': '', 'returncode': 0, 'success': True, 'max_runtime_s': 7.34}, {'timestamp': '2026-02-06T20:28:09.298706Z', 'command': ['nmap', '-A', '-sV', '--script', 'vuln', '-O', '-sU', '-T4', '-oX', '-', '192.168.1.0/24'], 'targets': ['192.168.1.0/24'], 'xml_dir': None, 'xml_file': None, 'stderr': '~SCAN TIMED OUT', 'returncode': None, 'success': False, 'max_runtime_s': 1500.04}]
+{}Recon finished after 5 iterations.
