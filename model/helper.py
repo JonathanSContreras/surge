@@ -218,12 +218,13 @@ def xml_parse_v1(xml_data):
         return {}
 
     # Parse XML (from file or string)
-    try:
-        if os.path.exists(xml_data):
+    try:  
+        if os.path.exists(xml_data):  # file parse
             tree = ET.parse(xml_data)
             root = tree.getroot()
-        else:
+        else:  # string parse
             s = xml_data.strip()
+            print("printing s", s)
             if not s.startswith("<"):
                 return {"error": "~INPUT DOES NOT APPEAR TO BE XML"}
             root = ET.fromstring(s)

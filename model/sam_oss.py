@@ -123,11 +123,11 @@ def recon(state: AgentState) -> AgentState:
     # --- VARIABLES ---
     discovered_hosts = set()
     iteration = 0
-    max_iterations = 8
+    max_iterations = 5
     aggregated_logs = []
 
     no_new_count = 0
-    no_new_threshold = 4
+    no_new_threshold = 3
 
     with open(SCANNING_DUMP_LOG, "a") as file:
         file.write(f"Stop variables defined for RECON AGENT:\n----------------\nmax iterations = {max_iterations}\nno_new_threshold = {no_new_threshold}")
@@ -305,9 +305,10 @@ def recon(state: AgentState) -> AgentState:
 
         # parse nmap scan output (will parse xml file to dictionary)  THIS IS AN ISSUE (the xml content is now the folder name)
         parsed = {}
-        print("log.print xml", log.get("xml_file"))
-        if log.get("xml_file"):
-            parsed = xml_parse_v1(log["xml_file"])  # NOTE: might need to concate the folder name and file name
+        print("log.print xml", type(log.get("xml_file")))
+        if log.get("success"):
+            parsed = xml_parse_v1(f"{log['xml_dir']}/{log['xml_file']}")  # NOTE: might need to concate the folder name and file name
+            print("parsing", parsed)
 
         # detect new hosts
         hosts = set(parsed.keys()) - discovered_hosts
@@ -360,10 +361,13 @@ def recon(state: AgentState) -> AgentState:
     # NOTE: ERROR HERE (issue getting all the xml content)
     # after recon agent ends run all xml content into a txt file
     # xml_dirs = [log.get("xml_dir") for log in state["recon_results"]["all_logs"]]
-    xml_dir = state["recon_results"]["xml_dir"]  # get the directory for that current run
-    xml_content = all_xml_output_to_txt(xml_dir)  # push all xml content (iterate the folder) to a txt file
+    # xml_dir = state["recon_results"]["xml_dir"]  # get the directory for that current run
+    xml_dir = [log["xml_dir"] for log in state["recon_results"]["all_logs"] if log.get("xml_dir") and log.get("success")]  # xml dir is now a list
 
-    with open(xml_content, "r") as f:
+    print(f"length of xml_dir: {len(xml_dir)}, content: {xml_dir}")
+    xml_content = all_xml_output_to_txt(xml_dir[0])  # push all xml content (iterate the folder) to a txt file
+
+    with open(xml_content, "r", encoding="utf-8") as f:
         state["all_xml_content"] += f.read()
 
     print(state["recon_results"])
@@ -470,7 +474,7 @@ def recon_analysis(state: AgentState) -> AgentState:  # this will be a simple "h
 
     # write the analysis into a txt file
     target_ip = target_to_proper_file_name(state["targets"])
-    with open(f"./output/{target_ip}_recon_analysis.txt", "w") as f:
+    with open(f"./output/{target_ip}_recon_analysis.txt", "w", encoding="utf-8") as f:
         f.write(result.content)
 
     print(state["recon_analysis"])
@@ -747,7 +751,7 @@ def reporter(state: AgentState) -> AgentState:  # takes all output from all agen
 
     # write the analysis into a txt file
     target_ip = target_to_proper_file_name(state["targets"])
-    with open(f"./output/{target_ip}_final_report.txt", "w") as f:
+    with open(f"./output/{target_ip}_final_report.txt", "w", encoding="utf-8") as f:
         f.write(result.content)
 
     print("Reporter agent finished writing and updated the state.")
