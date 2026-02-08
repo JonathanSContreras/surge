@@ -1,0 +1,120 @@
+# Network Vulnerability Assessment Report  
+**Scope:** 192.168.1.0/24 – 11 active hosts discovered on 2026‑02‑08.  
+**Assessment Date:** 2026‑02‑08  
+**Prepared for:** CISO / Security Manager / Technical Teams  
+
+---
+
+## Executive Risk Score Block  
+
+| Metric | Value |
+|--------|-------|
+| **Overall Risk Level** | **Low** |
+| **Critical Assets Affected** | 0 |
+| **Exploitable Services Detected** | 0 |
+| **Top 5 CVEs / Vulnerabilities** | None identified (no service data available) |
+
+> *The current scan revealed no open ports or services, and consequently no vulnerabilities were detected. The risk assessment is based solely on host discovery; further probing is required for a definitive posture.*
+
+---
+
+## Executive Summary (Layman’s Terms)
+
+A quick ping‑based scan of the local network identified 11 devices, including the router, a Pi‑hole ad‑blocker, a Blink smart‑light, a laptop, and several unknown consumer gadgets. No services or open ports were discovered, so no software weaknesses were found at this time. The network appears to be in a **low‑risk** state, but the presence of many un‑identified devices suggests that a more detailed scan is needed to confirm that no hidden services or outdated firmware are running.
+
+---
+
+## Technical Summary
+
+| IP Address | Hostname | MAC Address | Vendor | Open Ports / Services |
+|------------|----------|-------------|--------|------------------------|
+| 192.168.1.1 | CR200A.mynetworksettings.com | 24:41:FE:10:27:11 | Wistron Neweb | *None detected* |
+| 192.168.1.152 | pi.hole | D8:3A:DD:ED:73:2F | Raspberry Pi Trading | *None detected* |
+| 192.168.1.153 | *unknown* | 12:C3:EE:FC:9D:0A | *Unknown* | *None detected* |
+| 192.168.1.155 | *unknown* | D4:E2:2F:98:F5:CE | Roku | *None detected* |
+| 192.168.1.156 | Blink‑Device | 08:C2:24:EC:58:30 | Amazon Technologies | *None detected* |
+| 192.168.1.162 | *unknown* | FA:A2:BA:2A:95:12 | *Unknown* | *None detected* |
+| 192.168.1.164 | *unknown* | 50:14:79:A0:A2:72 | iRobot | *None detected* |
+| 192.168.1.166 | *unknown* | DE:BD:4C:22:44:B9 | *Unknown* | *None detected* |
+| 192.168.1.171 | *unknown* | 82:87:18:BE:F6:F1 | *Unknown* | *None detected* |
+| 192.168.1.176 | *unknown* | EC:C4:0D:F5:01:C2 | Nintendo | *None detected* |
+| 192.168.1.159 | LAPTOP‑BEHPNF0T | *None* | *Unknown* | *None detected* |
+
+*All hosts responded to ARP/ICMP ping; no TCP/UDP ports were probed.*
+
+---
+
+## Vulnerability Findings
+
+| Host | Service | CVE | Severity | Description |
+|------|---------|-----|----------|-------------|
+| *None* | *None* | *None* | *None* | No vulnerabilities were identified because no services were discovered during the scan. |
+
+---
+
+## Risk and Impact Analysis
+
+| Risk Category | Assessment | Impact | Likelihood |
+|---------------|------------|--------|------------|
+| **Unknown Devices** | Presence of 8 devices with no hostname or vendor information. | Potential unpatched firmware or hidden services. | Medium – could be legacy or malicious devices. |
+| **Lack of Service Discovery** | No port or service data available. | Incomplete risk picture; hidden vulnerabilities may exist. | High – without service data, critical exposures cannot be ruled out. |
+| **Critical Asset Exposure** | Router and Pi‑hole are critical but no services were detected. | If misconfigured, could expose network to external threats. | Medium – depends on firmware version and configuration. |
+
+**Highest Priority Risk:** Unknown devices and the absence of service data. These gaps prevent a full assessment of potential attack vectors.
+
+---
+
+## Remediation and Recommendations
+
+1. **Perform a Full Service Discovery Scan**  
+   *Command:* `nmap -sV -sC -O -p- 192.168.1.0/24`  
+   *Goal:* Identify open ports, service versions, and OS fingerprints.
+
+2. **Target Critical Infrastructure First**  
+   *Router (192.168.1.1):* Scan ports 80, 443, 22, 23, 53, 8080.  
+   *Pi‑hole (192.168.1.152):* Scan ports 80, 443, 53, 22.
+
+3. **Validate Firmware Versions**  
+   - Check router and Pi‑hole for the latest firmware.  
+   - Verify Blink device and other IoT devices against vendor advisories.
+
+4. **Implement Network Segmentation**  
+   - Place IoT devices on a separate VLAN or subnet to limit lateral movement.
+
+5. **Enable Logging and Monitoring**  
+   - Ensure all devices send logs to a central SIEM.  
+   - Monitor for anomalous traffic patterns.
+
+6. **Regular Vulnerability Scanning**  
+   - Schedule quarterly scans of all hosts.  
+   - Integrate findings into the incident response plan.
+
+7. **Document Unknown Devices**  
+   - Maintain an inventory of all devices, including MAC addresses and physical locations.  
+   - Periodically verify that each device is authorized.
+
+---
+
+## Appendix
+
+### Raw Host Inventory
+
+| IP | Hostname | MAC | Vendor |
+|----|----------|-----|--------|
+| 192.168.1.1 | CR200A.mynetworksettings.com | 24:41:FE:10:27:11 | Wistron Neweb |
+| 192.168.1.152 | pi.hole | D8:3A:DD:ED:73:2F | Raspberry Pi Trading |
+| 192.168.1.153 | *unknown* | 12:C3:EE:FC:9D:0A | *Unknown* |
+| 192.168.1.155 | *unknown* | D4:E2:2F:98:F5:CE | Roku |
+| 192.168.1.156 | Blink‑Device | 08:C2:24:EC:58:30 | Amazon Technologies |
+| 192.168.1.162 | *unknown* | FA:A2:BA:2A:95:12 | *Unknown* |
+| 192.168.1.164 | *unknown* | 50:14:79:A0:A2:72 | iRobot |
+| 192.168.1.166 | *unknown* | DE:BD:4C:22:44:B9 | *Unknown* |
+| 192.168.1.171 | *unknown* | 82:87:18:BE:F6:F1 | *Unknown* |
+| 192.168.1.176 | *unknown* | EC:C4:0D:F5:01:C2 | Nintendo |
+| 192.168.1.159 | LAPTOP‑BEHPNF0T | *None* | *Unknown* |
+
+---
+
+## Final Summary
+
+The initial ping‑based reconnaissance of the 192.168.1.0/24 subnet revealed 11 active hosts, including key infrastructure devices such as the router and Pi‑hole. No open ports or services were detected, resulting in a **low overall risk** assessment at this stage. However, the presence of multiple unknown devices and the lack of service data create significant blind spots. To achieve a comprehensive security posture, a full service discovery and vulnerability scan should be conducted immediately, followed by firmware validation, network segmentation, and continuous monitoring. These actions will transform the current low‑risk status into a robust, defensible network environment.

@@ -1,0 +1,16 @@
+**Network Summary:**  
+The scan covered a /24 subnet (192.168.1.0/24) and identified 11 active hosts, leaving 245 addresses down. Hosts include a router (CR200A.mynetworksettings.com), a Pi-hole device, a Blink smart‑light, a laptop, and several unknown devices (likely IoT or consumer appliances). MAC vendors span Wistron Neweb, Raspberry Pi Trading, Amazon Technologies, iRobot, Roku, Nintendo, and several unregistered vendors. No TCP/UDP ports were reported, as the scan used only ping/ARP discovery. The network appears to be a typical home or small office LAN with a mix of consumer and hobbyist hardware.
+
+**Key Observations:**  
+- The router (192.168.1.1) and Pi-hole (192.168.1.152) are correctly identified by hostname and vendor.  
+- The Blink device (192.168.1.156) and its MAC counterpart (08:C2:24:EC:58:30) are also resolved.  
+- Several hosts (e.g., 192.168.1.155, 192.168.1.162, 192.168.1.164) show no hostname and are marked “unknown,” suggesting either disabled reverse DNS or non‑standard devices.  
+- No open ports or service fingerprints are available; the scan only confirmed host presence.  
+- MAC addresses with the same hostname as an IPv4 host (e.g., CR200A) indicate the ARP table was used to map IP to MAC, but no port data was collected.
+
+**Recommended Next Actions:**  
+1. Perform a service‑discovery scan on all 11 hosts using `-sV -sC -O` to enumerate open ports, service versions, and OS fingerprints.  
+2. Target the router and Pi-hole first, as they are critical infrastructure; use `-p 80,443,53,22,23,8080` to cover common management and DNS services.  
+3. For the unknown devices, run a top‑ports scan (`-F`) followed by a full port scan (`-p-`) if initial results show potential services.  
+4. Validate any discovered services with a version scan (`-sV`) and, if necessary, a script scan (`-sC`) to detect vulnerabilities.  
+5. If any hosts respond to ICMP but not to TCP/UDP probes, consider enabling firewall or NAT traversal checks to confirm network segmentation.

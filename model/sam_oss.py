@@ -90,12 +90,12 @@ def build_mas_graph():
     workflow.set_entry_point("recon")
 
     workflow.add_edge("recon", "recon_analysis")
-    workflow.add_edge("recon_analysis", END)  # TEST EDGE
-    # workflow.add_edge("recon_analysis", "vulnerability")
-    # workflow.add_edge("vulnerability", "cvss_data_formatter")
-    # workflow.add_edge("cvss_data_formatter", "cvss_scorer")
-    # workflow.add_edge("cvss_scorer", "reporter")
-    # workflow.add_edge("reporter", END)
+    # workflow.add_edge("recon_analysis", END)  # TEST EDGE
+    workflow.add_edge("recon_analysis", "vulnerability")
+    workflow.add_edge("vulnerability", "cvss_data_formatter")
+    workflow.add_edge("cvss_data_formatter", "cvss_scorer")
+    workflow.add_edge("cvss_scorer", "reporter")
+    workflow.add_edge("reporter", END)
 
     return workflow.compile()
 
@@ -105,7 +105,7 @@ from agentic_prompts import RECON_AGENT_SYSTEM_PROMPT, RECON_ANALYSIS_SYSTEM_PRO
 
 
 ## --- AGENT TOOL BINDING --- ##
-vuln_llm_w_tool = llm.bind_tools([cve_search], system_prompt=VULN_AGENT_SYSTEM_PROMPT, return_direct=True)  # return_direct tells the tool binding to return the AI's raw output
+# vuln_llm_w_tool = llm.bind_tools([cve_search], system_prompt=VULN_AGENT_SYSTEM_PROMPT, return_direct=True)  # return_direct tells the tool binding to return the AI's raw output
 
 
 ## --- AGENT DEFINITIONS --- ##
@@ -123,11 +123,11 @@ def recon(state: AgentState) -> AgentState:
     # --- VARIABLES ---
     discovered_hosts = set()
     iteration = 0
-    max_iterations = 5
+    max_iterations = 5  # changed from 5
     aggregated_logs = []
 
     no_new_count = 0
-    no_new_threshold = 3
+    no_new_threshold = 3  # changed from 3
 
     with open(SCANNING_DUMP_LOG, "a") as file:
         file.write(f"Stop variables defined for RECON AGENT:\n----------------\nmax iterations = {max_iterations}\nno_new_threshold = {no_new_threshold}")
@@ -210,7 +210,11 @@ def recon(state: AgentState) -> AgentState:
         ####
 
         # extract json (json = LLM response/output)
+        # decision = extract_json(raw_text, iteration)
         decision = extract_json(raw_text, iteration)
+        if not isinstance(decision, dict):
+            decision = {}
+
 
         # --- ROBUST CHECK: fallback and reprompt LLM if the JSON is not found
         if not decision:
@@ -526,53 +530,54 @@ def vulnerability(state: AgentState) -> AgentState:
     # CAN EITHER PROMPT TO DO THE CVSS SCORE OR NOT (CLASSIFIER WILL DO THAT)
 
     vuln_llm_prompt = f"""
-    You are a vulnerability analysis expert with access to the `cve_search` tool.
+    Analyze the following reconnaissance data and identify REAL CVEs
+    associated with detected products and versions.
 
-    Use it to find real CVE data for products discovered in network reconnaissance.
-    Only use the tool when product or service information is available.
-
-    Reconnaissance data:
+    Reconnaissance results:
     {json.dumps(state.get("recon_results", {}), indent=2)}
 
-    Nmap XML (for version and banner references):
+    Nmap XML excerpts (for banner/version context):
     {state.get("all_xml_content", "")[:10000]}
 
-    Steps:
-        1. Extract product and version info for each host/service.
-        2. For each, use `cve_search(product)` or `cve_search(product, vendor)` to look up real CVEs.
-        3. Build a JSON array exactly like this:
-        [
-            {{
-                "host": "<IP>",
-                "product": "<product name>",
-                "version": "<version>",
-                "cve": [
-                    {{
-                        "id": "<CVE-YYYY-NNNNN>",
-                        "summary": "<short English summary>"
-                    }}
-                ]
-            }}
-        ]
-        - If no CVEs found, include an empty list for "cve".
-        - Do not invent vulnerabilities.
-        
+    Instructions:
+    1. Extract product name, version, and host IP for each discovered service.
+    2. Use known public CVE knowledge (NVD, MITRE, CIRCL-style data).
+    3. Output ONE JSON ARRAY where EACH OBJECT IS A SINGLE CVE.
+    4. Populate all schema fields where possible.
+    5. If no vulnerabilities are found, return [].
 
-    Ensure:
-    - Use double quotes for all keys and values (valid JSON).
-    - If no vulnerabilities are found, output `"cve": []` for that product.
-    - Do not add extra commentary or explanation outside the JSON.
+    Remember:
+    - Output JSON only.
+    - No markdown.
+    - No explanations.
+    - No nested structures.
     """
 
-
     # call the llm
-    vuln_result = vuln_llm_w_tool.invoke([
+    vuln_result = llm.invoke([
+        SystemMessage(content=VULN_AGENT_SYSTEM_PROMPT),
         HumanMessage(content=vuln_llm_prompt)
     ])
 
-    # define the result as an AIMessage and update the state
-    vuln_result = AIMessage(vuln_result) if not isinstance(vuln_result, AIMessage) else vuln_result
-    state["vuln_raw_results"] = json.loads(vuln_result.content)
+    ## ADDED 
+    raw = vuln_result.content
+    parsed = extract_json(raw)
+
+    if not isinstance(parsed, list):
+        print("~ Vulnerability agent returned invalid JSON, defaulting to []")
+        parsed = []
+
+    state["vuln_raw_results"] = parsed
+
+    ####
+    # # # call the llm
+    # # vuln_result = vuln_llm_w_tool.invoke([
+    # #     HumanMessage(content=vuln_llm_prompt)
+    # # ])
+
+    # # define the result as an AIMessage and update the state
+    # vuln_result = AIMessage(vuln_result) if not isinstance(vuln_result, AIMessage) else vuln_result
+    # state["vuln_raw_results"] = json.loads(vuln_result.content)
 
     print("Vulnerability agent has ran and updated the state.")
 
@@ -585,43 +590,90 @@ def cvss_data_formatter(state: AgentState) -> AgentState:
     Normalizes vulnerability results into standardized CVEEntry format for ML models.
     """
 
-    data_formatter_prompt = f"""
-    Below is raw vulnerability analysis output. Your task is to cleanly normalize it.
+    # data_formatter_prompt = f"""
+    # Normalize the following raw vulnerability data into the exact schema below.
 
-    ### Raw Input:
-    {json.dumps(state.get("vuln_raw_results", []), indent=2)}
+    # Raw Input:
+    # {json.dumps(state.get("vuln_raw_results", []), indent=2)}
 
-    ### Expected Output Format (Strict JSON):
+    # Required Output Schema (STRICT):
+
+    # [
+    # {
+    #     "cve_id": "CVE-YYYY-NNNNN",
+    #     "mod_date": "YYYY-MM-DD HH:MM:SS",
+    #     "pub_date": "YYYY-MM-DD HH:MM:SS",
+    #     "cvss": 7.5,
+    #     "cwe_code": 89,
+    #     "cwe_name": "CWE name",
+    #     "summary": "Short vulnerability description",
+    #     "access_authentication": "None | Single | Multiple",
+    #     "access_complexity": "Low | Medium | High",
+    #     "access_vector": "Network | Adjacent | Local",
+    #     "impact_availability": "None | Partial | Complete",
+    #     "impact_confidentiality": "None | Partial | Complete",
+    #     "impact_integrity": "None | Partial | Complete",
+    #     "product": "Detected software",
+    #     "version": "Detected version",
+    #     "host": "IP or hostname"
+    # }
+    # ]
+
+    # Instructions:
+    # - Output JSON only.
+    # - All objects must include ALL keys above.
+    # - Use null for unknown values.
+    # - Preserve host/product/version when present.
+    # - Ensure consistent data types (numbers as numbers, not strings).
+    # - Return [] if input is empty or contains no CVEs.
+    # """
+
+    data_formatter_prompt = """
+    Normalize the following raw vulnerability data into the exact schema below.
+
+    Raw Input:
+    {raw_input}
+
+    Required Output Schema (STRICT):
 
     [
-      {{
-        "cve_id": "CVE-2023-12345",
-        "mod_date": "2023-07-10 15:00:00",
-        "pub_date": "2023-06-12 10:00:00",
+    {{
+        "cve_id": "CVE-YYYY-NNNNN",
+        "mod_date": "YYYY-MM-DD HH:MM:SS",
+        "pub_date": "YYYY-MM-DD HH:MM:SS",
         "cvss": 7.5,
-        "cwe_code": "89",
-        "cwe_name": "Improper Neutralization of Special Elements used in an SQL Command ('SQL Injection')",
-        "summary": "SQL injection vulnerability in example software allows remote code execution.",
-        "access_authentication": "None",
-        "access_complexity": "Low",
-        "access_vector": "Network",
-        "impact_availability": "Partial",
-        "impact_confidentiality": "Complete",
-        "impact_integrity": "Complete"
-      }}
+        "cwe_code": 89,
+        "cwe_name": "CWE name",
+        "summary": "Short vulnerability description",
+        "access_authentication": "None | Single | Multiple",
+        "access_complexity": "Low | Medium | High",
+        "access_vector": "Network | Adjacent | Local",
+        "impact_availability": "None | Partial | Complete",
+        "impact_confidentiality": "None | Partial | Complete",
+        "impact_integrity": "None | Partial | Complete",
+        "product": "Detected software",
+        "version": "Detected version",
+        "host": "IP or hostname"
+    }}
     ]
 
-    ### Instructions:
-    - Output must be **valid JSON** (a list of objects).
-    - Each object must include all keys shown above.
-    - Use null for missing or unknown values.
-    - Ensure all field names match exactly.
-    - Do not include markdown, commentary, or any explanations outside of the JSON.
+    Instructions:
+    - Output JSON only.
+    - All objects must include ALL keys above.
+    - Use null for unknown values.
+    - Preserve host/product/version when present.
+    - Ensure consistent data types.
+    - Return [] if input is empty or contains no CVEs.
     """
 
+    data_formatter_prompt = data_formatter_prompt.format(
+        raw_input=json.dumps(state.get("vuln_raw_results", []), indent=2)
+    )
+
+
     result = llm.invoke([
-        SystemMessage(content=data_formatter_prompt),
-        HumanMessage(content=VULN_FORMATTING_SYSTEM_PROMPT)
+        SystemMessage(content=VULN_FORMATTING_SYSTEM_PROMPT),
+        HumanMessage(content=data_formatter_prompt)
     ])
 
     # check if result answer is a string
