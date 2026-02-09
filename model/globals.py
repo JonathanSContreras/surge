@@ -1,6 +1,11 @@
 TIMEOUT_VAL = 2000
 SCANNING_DUMP_LOG = "./utils/scan_dumps.txt"
 VULN_CLASSIFICATION_TRAINING_DATA = "./data/merged_cve.csv"
+RECON_CONVERGENCE = {
+    "max_iterations": 5,
+    "max_no_change_iterations": 2,
+    "time_budget_seconds": 2000
+}
 SANITIZATION_TIER_CONFIG = {
     "low": {  # Host discovery only
         "allowed_flags": {

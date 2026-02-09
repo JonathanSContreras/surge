@@ -103,6 +103,7 @@ def xml_parse(xml_input):
 
             # find IP open ports
             port_root = child.find("ports")
+            print(port_root)
             if port_root is not None:
                 port_lst = []
                 for port in port_root.findall("port"):
@@ -112,7 +113,7 @@ def xml_parse(xml_input):
                             port_data.update(child.attrib)
                     port_lst.append(port_data)
 
-            network_config["ports"] = port_lst
+                network_config["ports"] = port_lst
 
         # add the host into the dictionary
         network[ip_addr] = network_config
@@ -146,15 +147,17 @@ def dictionary_to_networkx(network_dict, cmd="COMMAND"):
     for ip in network_dict.keys():
         state = network_dict[ip].get("state", "unknown")
         G.add_node(ip, color="#4c956c" if state == "up" else "#d9d9d9")  # adding a node to IP
-
-        # if down connect using dashed lines
-        if state != "up":
-            G.add_edge(SCANNER, ip)
-        else:
-            G.add_edge(SCANNER, ip)
+        G.add_edge(SCANNER, ip)
+        # # if down connect using dashed lines
+        # if state != "up":
+        #     G.add_edge(SCANNER, ip)
+        # else:
+        #     G.add_edge(SCANNER, ip)
 
         # add port edges
-        if network_dict[ip]["ports"] is not None:
+        p = network_dict[ip].get("ports", [])
+        # if network_dict[ip]["ports"] is not None:
+        if p:
             for n in network_dict[ip]["ports"]:
                 # color code port edges
                 # color = PORT_COLORS.get(int(n["portid"]), "#0077b6")
@@ -167,6 +170,7 @@ def dictionary_to_networkx(network_dict, cmd="COMMAND"):
     # pull the colors used
     node_colors = [G.nodes[n].get("color", "#0077b6") for n in G.nodes()]
     edge_colors = nx.get_edge_attributes(G, "color").values()
+    cleaned_edge = edge_colors if edge_colors else "black"     
     node_degree = G.degree
     nx.draw(
         G,
@@ -174,8 +178,8 @@ def dictionary_to_networkx(network_dict, cmd="COMMAND"):
         # pos=nx.shell_layout(G),
         # pos=nx.multipartite_layout(G, subset_key=""), 
         node_color=node_colors,
-        edge_color=edge_colors,
-        with_labels= True,
+        edge_color=cleaned_edge,
+        with_labels=True,
         node_size=[v[1] * 200 for v in node_degree]
     )
 
@@ -188,10 +192,11 @@ def main():
     xml1 = "./data/nmap_output.xml"
     xml2 = "./data/nmap_output_adv.xml"
     xml3 = "./data/nmap_stress_test.xml"
+    xml4 = "./192_168_1_0_24/2026-02-08T17_52_59_681322Z_nmap.xml"
 
-    network = xml_parse(xml1)
+    network = xml_parse(xml4)
     print(network)
-    dictionary_to_networkx(network)
+    dictionary_to_networkx(network, cmd="full_test_run_home")
 
 def main_string():
     # minimal nmap XML string
@@ -229,3 +234,4 @@ def main_string():
 
 if __name__ == "__main__":
     main()
+    # main_string()

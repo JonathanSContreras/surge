@@ -17,8 +17,8 @@ from langchain.schema import AIMessage, SystemMessage, HumanMessage
 from tools import nmap_scanning, cve_search, xgboost_data_cleaning, cvss_scorer
 
 # other imports
-from globals import TIMEOUT_VAL, SCANNING_DUMP_LOG
-from helper import extract_json, summarize_recon_results, xml_parse_v1, all_xml_output_to_txt, target_to_proper_file_name
+from globals import TIMEOUT_VAL, SCANNING_DUMP_LOG, RECON_CONVERGENCE
+from helper import extract_json, xml_parse_v1, all_xml_output_to_txt, target_to_proper_file_name
 import json
 import time
 import datetime
@@ -105,7 +105,6 @@ from agentic_prompts import RECON_AGENT_SYSTEM_PROMPT, RECON_ANALYSIS_SYSTEM_PRO
 
 
 ## --- AGENT TOOL BINDING --- ##
-# vuln_llm_w_tool = llm.bind_tools([cve_search], system_prompt=VULN_AGENT_SYSTEM_PROMPT, return_direct=True)  # return_direct tells the tool binding to return the AI's raw output
 
 
 ## --- AGENT DEFINITIONS --- ##
@@ -120,34 +119,41 @@ def recon(state: AgentState) -> AgentState:
     Repeat until stop condition is met or no new hosts are found.
     """
 
-    # --- VARIABLES ---
-    discovered_hosts = set()
-    iteration = 0
-    max_iterations = 5  # changed from 5
-    aggregated_logs = []
+    ## STATE INITIALIZATION
+    state.setdefault("recon_seen_hosts", set())
+    state.setdefault("recon_seen_ports", set())
+    state.setdefault("recon_seen_services", set())
+    state.setdefault("recon_no_change_count", 0)
+    state.setdefault("recon_start_time", time.time())
 
-    no_new_count = 0
-    no_new_threshold = 3  # changed from 3
+    # --- VARIABLES ---
+    discovered_hosts = state["recon_seen_hosts"]
+    aggregated_logs = []
+    iteration = 0
 
     with open(SCANNING_DUMP_LOG, "a") as file:
-        file.write(f"Stop variables defined for RECON AGENT:\n----------------\nmax iterations = {max_iterations}\nno_new_threshold = {no_new_threshold}")
+        file.write(f"STARTING RECON AGENT:\n----------------\nmax iterations = {RECON_CONVERGENCE['max_iterations']}\nmax no change iterations = {RECON_CONVERGENCE['max_no_change_iterations']}\ntime budget (s): {RECON_CONVERGENCE['time_budget_seconds']}")
 
-    # load previous recon state if exists
-    prev = state.get("recon_results", {})
-    if prev:
-        parsed = prev.get("parsed_network", {})
-        discovered_hosts.update(parsed.keys())
-
-    # --- RECON LOOP ---
-    while iteration < max_iterations and no_new_count < no_new_threshold:
+    # --- MAIN RECON LOOP ---
+    while True:
         iteration += 1
-
-        print(f"\n--- ITERATION {iteration} [{time.strftime('%Y-%m-%d %H:%M:%S')}] ---")
+        # HARD CONVERGENCE
+        if (iteration > RECON_CONVERGENCE["max_iterations"]
+            or state["recon_no_change_count"] >= RECON_CONVERGENCE["max_no_change_iterations"]
+            or time.time() - state["recon_start_time"] > RECON_CONVERGENCE["time_budget_seconds"]):
+            print("Hard recon convergence reached, stopping RECON AGENT.")
+            break
 
         # write to scan dump file
+        print(f"\n--- ITERATION {iteration} [{time.strftime('%Y-%m-%d %H:%M:%S')}] ---")  # sanity print
         with open(SCANNING_DUMP_LOG, "a") as file:
             file.write(f"\n--- ITERATION {iteration} [{time.strftime('%Y-%m-%d %H:%M:%S')}] ---")
         ####
+
+        # LLM DECISIONS
+        if state["recon_no_change_count"] > 0:
+            print("No new data last iteartion (skipping LLM escalation).")
+            continue
 
         # prompt LLM to ensure correct output
         llm_input = f"""
@@ -200,10 +206,9 @@ def recon(state: AgentState) -> AgentState:
             HumanMessage(content=json.dumps(llm_input))
         ])
 
+        # write to scan dump file
         raw_text = getattr(raw_decision, "content", str(raw_decision))
         print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] LLM raw output:\n{raw_text}")
-        
-        # write to scan dump file
         with open(SCANNING_DUMP_LOG, "a") as file:
             print("WRITING TO DUMP LOG in sam_oss.py")
             file.write(f"\n[{time.strftime('%Y-%m-%d %H:%M:%S')}] LLM raw output:\n{raw_text}")
@@ -218,76 +223,23 @@ def recon(state: AgentState) -> AgentState:
 
         # --- ROBUST CHECK: fallback and reprompt LLM if the JSON is not found
         if not decision:
-            print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] No valid JSON, reprompting model to reformat output...")
-
             # write to scan dump file
+            print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] No valid JSON,skipping iteartion...")
             with open(SCANNING_DUMP_LOG, "a") as file:
-                file.write(f"\n[{time.strftime('%Y-%m-%d %H:%M:%S')}] No valid JSON, reprompting model to reformat output...")
+                file.write(f"\n[{time.strftime('%Y-%m-%d %H:%M:%S')}] No valid JSON, skipping iteration...")
             ####
 
-            repair_prompt = f"""
-            You previously generated malformed or incomplete JSON.
-            Reformat the following into a single, strictly valid JSON object only — no explanations, no markdown, no code fences, and no extra text.
-
-            Rules:
-            1. Preserve the existing value of "scan_type" — do not modify it under any circumstances.
-            2. The output must follow exactly this schema:
-
-            {{
-            "flags": [string],             // list of flag strings
-            "targets": {state["targets"]}, // use this exact list (do not alter)
-            "scan_type": {state["scan_type"]},
-            "reason": "string",
-            "max_runtime_s": int
-            }}
-
-            Context:
-            - Preferred scan_type (from state): "{state['scan_type']}"
-            - If uncertain, always use this preferred value.
-            - Do not include any extra fields, comments, or formatting.
-            - Output one valid JSON object only.
-
-            Text to reformat:
-            {raw_text}
-            """
-            
-            repaired = llm.invoke([
-                SystemMessage(content=RECON_AGENT_SYSTEM_PROMPT),
-                HumanMessage(content=repair_prompt)
-            ])
-
-            decision = extract_json(getattr(repaired, "content", str(repaired)), iteration)
-
-            if not decision:
-                # if still invalid, move to next iteration
-                aggregated_logs.append({
-                    "error": "~NO_VALID_JSON",
-                    "raw_output": raw_text,
-                    "iteration": iteration
-                })
-                no_new_count += 1
-                state["recon_results"] = {
-                    "last_log": {},
-                    "parsed_network": {},
-                    "all_logs": aggregated_logs,
-                    "discovered_hosts": list(discovered_hosts),
-                    "iteration": iteration
-                }
-                continue
-
-        # validate decision fields for nmap scan
-        flags = decision.get("flags", [])
-        dec_targets = decision.get("targets", [])
-        max_runtime = decision.get("max_runtime_s", TIMEOUT_VAL)
-
-        if not isinstance(flags, list) or not isinstance(dec_targets, list):
-            print(f"~INVALID DECISION: flags={flags}, targets={dec_targets}")
-            no_new_count += 1
+            state["recon_no_change_count"] += 1
             continue
 
-        if len(dec_targets) == 0:
-            print("~LLM returned no targets, skipping this iteration.")
-            no_new_count += 1
+        # validate decision fields for nmap scan (have robust data type structure)
+        flags = decision.get("flags", [])
+        dec_targets = decision.get("targets", [])
+        # timeout = decision.get("max_runtime_s", TIMEOUT_VAL)
+
+        if not flags or not dec_targets:
+            print(f"~DECISION MISSING FLAGS OR TARGETS: flags={flags}, targets={dec_targets}")
+            state["recon_no_change_count"] += 1
             continue
 
         # run validated nmap scan
@@ -298,84 +250,77 @@ def recon(state: AgentState) -> AgentState:
             file.write(f"\nDecision fields have been validated. [{time.strftime('%Y-%m-%d %H:%M:%S')}]\tRunning Nmap scan on {dec_targets} with flags: {flags}.")
         ####
 
+        # RUN NMAP
         log = nmap_scanning.invoke({
             "scan_type": decision.get("scan_type", state["scan_type"]),
             "flags": flags,
             "targets": dec_targets,
             # "timeout": min(max_runtime, TIMEOUT_VAL)  # THE max_runtime VALUE THE AGENT IS GIVING IS TO SMALL (making all in-depth scans have timed out)
-            "timeout": 1500
+            "timeout": TIMEOUT_VAL
         })
         aggregated_logs.append(log)
 
         # parse nmap scan output (will parse xml file to dictionary)  THIS IS AN ISSUE (the xml content is now the folder name)
         parsed = {}
-        print("log.print xml", type(log.get("xml_file")))
+        # print("log.print xml", type(log.get("xml_file")))
         if log.get("success"):
             parsed = xml_parse_v1(f"{log['xml_dir']}/{log['xml_file']}")  # NOTE: might need to concate the folder name and file name
-            print("parsing", parsed)
+            # print("parsing", parsed)
 
-        # detect new hosts
-        hosts = set(parsed.keys()) - discovered_hosts
-        if hosts:
-            print(f"New hosts discovered: {hosts}")
+        # DELTA DETECTION
+        new_hosts = set(parsed.keys()) - discovered_hosts
+        new_ports = set()
+        new_services = set()
 
-            # write to scan dump file
-            with open(SCANNING_DUMP_LOG, "a") as file:
-                file.write(f"\nNew hosts discovered: {hosts}")
-            ####
+        for host, host_data in parsed.items():
+            for svc in host_data.get("services", []):
+                port_id = f"{host}:{svc.get('port')}"
+                svc_id = f"{svc.get('product')}:{svc.get('version')}"
 
-            discovered_hosts.update(hosts)
-            no_new_count = 0
+                if port_id not in state["recon_seen_ports"]:
+                    new_ports.add(port_id)
+
+                if svc_id not in state["recon_seen_services"]:
+                    new_services.add(svc_id)
+
+        # UPDATE STATE + CONVERGENCE
+        if new_hosts or new_ports or new_services:
+            print(
+                f"New discovery — hosts:{len(new_hosts)} "
+                f"ports:{len(new_ports)} services:{len(new_services)}"
+            )
+            discovered_hosts.update(new_hosts)
+            state["recon_seen_ports"].update(new_ports)
+            state["recon_seen_services"].update(new_services)
+            state["recon_no_change_count"] = 0
         else:
-            print("~No new hosts found.")
+            print("No new hosts, ports, or services.")
+            state["recon_no_change_count"] += 1
 
-            # write to scan dump file
-            with open(SCANNING_DUMP_LOG, "a") as file:
-                file.write(f"\n~NO NEW HOSTS DISCOVERED.")
-            ####
-
-            no_new_count += 1
-
-        # update agent state
+        # UPDATE AGENT STATE
         state["recon_results"] = {
             "last_log": log,
             "parsed_network": parsed,
             "all_logs": aggregated_logs,
             "discovered_hosts": list(discovered_hosts),
-            "iteration": iteration
+            "iteration": iteration,
         }
-
-        print(f"Hosts discovered so far: {state['recon_results']['discovered_hosts']}")
-        print("aggregated logs:", aggregated_logs)  # debug print (see what is inside)
-
-        # write to scan dump file
-        with open(SCANNING_DUMP_LOG, "a") as file:
-            file.write(f"\nHosts discovered so far: {state['recon_results']['discovered_hosts']}\n{aggregated_logs}\n{str(parsed)}")
-        ####
 
         time.sleep(1)
 
-    print(f"Recon finished after {iteration} iterations.")
+    # FINAL XML AGGREGATION
+    xml_dirs = [
+        log["xml_dir"]
+        for log in state["recon_results"]["all_logs"]
+        if log.get("success") and log.get("xml_dir")
+    ]
 
-    # write to scan dump file
-    with open(SCANNING_DUMP_LOG, "a") as file:
-        file.write(f"Recon finished after {iteration} iterations.")
-    ####
+    if xml_dirs:
+        xml_content_path = all_xml_output_to_txt(xml_dirs[0])
+        with open(xml_content_path, "r", encoding="utf-8") as f:
+            state["all_xml_content"] += f.read()
 
-    # NOTE: ERROR HERE (issue getting all the xml content)
-    # after recon agent ends run all xml content into a txt file
-    # xml_dirs = [log.get("xml_dir") for log in state["recon_results"]["all_logs"]]
-    # xml_dir = state["recon_results"]["xml_dir"]  # get the directory for that current run
-    xml_dir = [log["xml_dir"] for log in state["recon_results"]["all_logs"] if log.get("xml_dir") and log.get("success")]  # xml dir is now a list
-
-    print(f"length of xml_dir: {len(xml_dir)}, content: {xml_dir}")
-    xml_content = all_xml_output_to_txt(xml_dir[0])  # push all xml content (iterate the folder) to a txt file
-
-    with open(xml_content, "r", encoding="utf-8") as f:
-        state["all_xml_content"] += f.read()
-
-    print(state["recon_results"])
-
+    print("Recon agent finished cleanly.")
     return state
 
 
@@ -716,10 +661,11 @@ def cvss_scoring(state: AgentState) -> AgentState:
 
             }]
         )
-        print(vuln_df.head())
+        # print(vuln_df.head())
         catgy_cols = ["access_authentication", "access_complexity", "access_vector", "impact_availability", "impact_confidentiality", "impact_integrity"]
         cve_data = xgboost_data_cleaning(vuln_df, catgy_cols)
         print("cve_data output:", cve_data)
+        cve_data.to_csv("cvs_data.csv", index=False)
 
         # will need to take the formatted data and output a score
         vulnerability_score = cvss_scorer(cve_data)
@@ -843,5 +789,6 @@ if __name__ == "__main__":
 
     time_in_minutes = (time.perf_counter()-start_time) / 60
 
-    print(f"Code finished in {time_in_minutes} minutes.")
+    print(f"Code finished in {time_in_minutes} minutes.") 
+    # NOTE: full run at my home took 35 minutes
     print(results["network_findings"])
