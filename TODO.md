@@ -6,3 +6,4 @@ SANITY CHECKS
 CODE CHANGES
 - see if the large CVE dataset is used
 - work on the sweet spot for the timeout scan value
+- add a fingerprinting agent (nmap)
