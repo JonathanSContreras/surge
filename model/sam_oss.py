@@ -64,6 +64,11 @@ class AgentState(TypedDict):
     all_xml_content: str
     recon_analysis: str  # RECON ANALYSIS AGENT RUNS
 
+    ## OS DATA
+    os_fingerprint_results: dict[str, Any]
+    os_xml_content: str
+    os_analysis: str  # LLM summary of OS landscape
+
     ## VULNERABILITY DATA
     vuln_raw_results: list[dict[str, Any]]  # list of CVE vulnerabilities and its score    AFTER VULN AGENT RUNS
     vuln_formatted_results: list[CVEEntry]
@@ -82,6 +87,8 @@ def build_mas_graph():
 
     workflow.add_node("recon", recon)
     workflow.add_node("recon_analysis", recon_analysis)
+    workflow.add_node("os_finder", os_fingerprint_finder)
+    workflow.add_node("os_analysis", os_analysis)
     workflow.add_node("vulnerability", vulnerability)
     workflow.add_node("cvss_data_formatter", cvss_data_formatter) 
     workflow.add_node("cvss_scorer", cvss_scoring) 
@@ -91,7 +98,9 @@ def build_mas_graph():
 
     workflow.add_edge("recon", "recon_analysis")
     # workflow.add_edge("recon_analysis", END)  # TEST EDGE
-    workflow.add_edge("recon_analysis", "vulnerability")
+    workflow.add_edge("recon_analysis", "os_finder")
+    workflow.add_edge("os_finder", "os_analysis")
+    workflow.add_edge("os_analysis", "vulnerability")
     workflow.add_edge("vulnerability", "cvss_data_formatter")
     workflow.add_edge("cvss_data_formatter", "cvss_scorer")
     workflow.add_edge("cvss_scorer", "reporter")
@@ -101,7 +110,7 @@ def build_mas_graph():
 
 
 ## --- AGENT PROMPTS --- ##
-from agentic_prompts import RECON_AGENT_SYSTEM_PROMPT, RECON_ANALYSIS_SYSTEM_PROMPT, VULN_AGENT_SYSTEM_PROMPT, VULN_FORMATTING_SYSTEM_PROMPT, REPORTER_SYSTEM_PROMPT
+from agentic_prompts import RECON_AGENT_SYSTEM_PROMPT, RECON_ANALYSIS_SYSTEM_PROMPT, OS_FINGERPRINT_SYSTEM_PROMPT, VULN_AGENT_SYSTEM_PROMPT, VULN_FORMATTING_SYSTEM_PROMPT, REPORTER_SYSTEM_PROMPT
 
 
 ## --- AGENT TOOL BINDING --- ##
@@ -432,6 +441,143 @@ def recon_analysis(state: AgentState) -> AgentState:  # this will be a simple "h
 
     return state
 
+def os_fingerprint_finder(state: AgentState) -> AgentState:
+    """
+    Performs an aggressive OS fingerprinting on all discovered hosts.
+
+    This agent takes the list of discovered hosts from reconnaissance, and runs a targeted nmap OS detection scan,
+    and extractes detailed operating system information including:
+    - OS family and version
+    - accuracy/confidence scores
+    - CPE identifiers for vulnerability correlation
+    - TCP/IP stack fingerprints
+    Returns the updated AgentState with os_fingerprint_results containing structured OS data.
+
+    ARGS
+        state: passed AgentState, current pipeline state with discovered hosts from recon
+    """
+
+    # extracted discovered hosts from recon results
+    discovered_hosts = state.get("recon_results", {}).get("discovered_hosts", [])
+
+    if not discovered_hosts:
+        print("No hosts discovered in recon phase, skipping OS fingerprinting.")
+        state["os_fingerprint_results"] = {}
+        return state
+    
+    print(f"Starting OS fingerprinting for {len(discovered_hosts)} hosts...")
+
+    # prepare the OS detection flags
+    """
+    -O -> enable OS detection
+    -A -> aggressive scan
+    --osscan-guess -> guess the OS more aggressively
+    -Pn -> skip host discovery
+    --script=banner -> grab the service banners for more context
+    """
+    os_scan_flags = [
+        "-O",
+        "-A",
+        "--osscan-guess",
+        "-Pn",
+        "--script=banner,os-fingerprint"
+    ]
+
+    # run OS detection scan on all hosts
+    os_scan_log = nmap_scanning.invoke({
+        "scan_type":"high",
+        "flags":os_scan_flags,
+        "targets":discovered_hosts,
+        "timeout":TIMEOUT_VAL
+    })
+
+    # write to scan log dump
+    with open(SCANNING_DUMP_LOG, "a") as f:
+        f.write(f"\n\n [OS FINGERPRINTING SCAN] [{_now()}]")
+        f.write(f"\nTargets: {discovered_hosts}")
+        f.write(f"\nFlags: {os_scan_flags}")
+        f.write(f"\nSuccess: {os_scan_log.get('success')}\n")
+
+    # parse the OS fingerprinting results
+    os_results = {}
+    if os_scan_log.get("success") and os_scan_log.get("xml_file"):
+        xml_path = f"{os_scan_log['xml_dir']}/{os_scan_log['xml_file']}"
+
+        # parse the XML for OS data
+        parsed_data = xml_parse_v1(xml_path)
+
+        # extract the OS information
+        for host_ip, host_data in parsed_data.items():
+            os_info = host_data.get("os", {})
+            
+            os_results[host_ip] = {
+                "os_matches": os_info.get("matches", []),  # List of possible OS matches
+                "os_classes": os_info.get("classes", []),   # OS classification data
+                "fingerprint": os_info.get("fingerprint", ""),  # TCP/IP fingerprint
+                "ports_used": os_info.get("ports_used", []),  # Ports used for detection
+                "accuracy": os_info.get("accuracy", 0),  # Detection confidence
+                "cpe": os_info.get("cpe", []),  # CPE identifiers for vuln correlation
+                "device_type": os_info.get("device_type", "unknown"),
+                "vendor": os_info.get("vendor", "unknown")
+            }
+
+        # read and store the XML content
+        with open(xml_path, "r", encoding="utf-8") as f:
+            state["os_xml_content"] = f.read()
+
+    # store the results in state
+    state["os_fingerprint_results"] = os_results
+
+    return state
+
+def os_analysis(state: AgentState) -> AgentState:
+    """
+    MAKE DOCSTRING
+    """
+    # define variables agent will use
+    os_results = state.get("os_fingerprint_results", {})
+    discovered_hosts = state.get("recon_results", {}).get("discovered_hosts", [])
+
+    os_analysis_prompt = f"""
+    Analyze the following OS fingerprinting results and provide a structured summary.
+    
+    OS Fingerprinting Data:
+    {json.dumps(os_results, indent=2)}
+    
+    Discovered Hosts:
+    {json.dumps(discovered_hosts, indent=2)}
+    
+    Instructions:
+    1. Summarize the OS landscape of the network
+    2. Identify the most common operating systems
+    3. Highlight any unusual or outdated OS versions
+    4. Note any hosts where OS detection failed or has low confidence
+    5. Identify potential targets for vulnerability scanning based on OS
+    
+    Output a concise technical summary in markdown format.
+    """
+
+    os_analysis = llm.invoke([
+        SystemMessage(content=OS_FINGERPRINT_SYSTEM_PROMPT),
+        HumanMessage(content=os_analysis_prompt)
+    ])
+    
+    # Store the analysis
+    os_analysis = AIMessage(os_analysis) if not isinstance(os_analysis, AIMessage) else os_analysis
+    state["os_analysis"] = os_analysis.content
+    
+    # Write OS analysis to file
+    target_ip = target_to_proper_file_name(state["targets"])
+    with open(f"./output/{target_ip}_os_fingerprinting.txt", "w", encoding="utf-8") as f:
+        f.write("=== OS FINGERPRINTING RESULTS ===\n\n")
+        f.write(os_analysis.content)
+        f.write("\n\n=== RAW OS DATA ===\n\n")
+        f.write(json.dumps(os_results, indent=2))
+    
+    print(f"OS fingerprinting completed. Found OS data for {len(os_results)} hosts.")
+    
+    return state
+
 
 def vulnerability(state: AgentState) -> AgentState:
     """
@@ -481,15 +627,20 @@ def vulnerability(state: AgentState) -> AgentState:
     Reconnaissance results:
     {json.dumps(state.get("recon_results", {}), indent=2)}
 
+    OS Fingerprinting Results:
+    {json.dumps(state.get("os_fingerprint_results", {}), indent=2)}
+
     Nmap XML excerpts (for banner/version context):
     {state.get("all_xml_content", "")[:10000]}
 
     Instructions:
     1. Extract product name, version, and host IP for each discovered service.
-    2. Use known public CVE knowledge (NVD, MITRE, CIRCL-style data).
-    3. Output ONE JSON ARRAY where EACH OBJECT IS A SINGLE CVE.
-    4. Populate all schema fields where possible.
-    5. If no vulnerabilities are found, return [].
+    2. **Use OS information to prioritize OS-specific vulnerabilities.**
+    3. Cross-reference CPE identifiers from OS detection with known CVEs.
+    4. Use known public CVE knowledge (NVD, MITRE, CIRCL-style data).
+    5. Output ONE JSON ARRAY where EACH OBJECT IS A SINGLE CVE.
+    6. Populate all schema fields where possible.
+    7. If no vulnerabilities are found, return [].
 
     Remember:
     - Output JSON only.
@@ -770,6 +921,9 @@ if __name__ == "__main__":
         "recon_results": {},
         "all_xml_content": "",
         "recon_analysis": "",
+        "os_fingerprint_results": {},
+        "os_xml_content": "",
+        "os_analysis": "",
         "vuln_raw_results": [],
         "vuln_formatted_results": [],
         "vuln_scoring": {},
