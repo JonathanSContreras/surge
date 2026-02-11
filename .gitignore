@@ -1,7 +1,13 @@
 .env
-/dump
 model/__pycache__
-/run_logs
 data/merged_cve.csv
+
+# delete after code is fully polished
+/dump
 /full_test_192_168_1_0_24
 /192_168_1_0_24
+/run_logs
+/test_192_168_1_0_24
+diary.md
+/utils/research.md
+/utils/scan_dumps copy.txt
