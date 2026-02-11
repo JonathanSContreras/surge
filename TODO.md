@@ -3,7 +3,7 @@ SANITY CHECKS
 - add some try/except for whenever the agent doesnt format data correctly
 
 CODE CHANGES
+- change the data inputs for the vulnerability agent to take the OS results
 - see if the large CVE dataset is used
 - work on the sweet spot for the timeout scan value
-- add a fingerprinting agent (nmap)
 - include the logging library and output a logger per run
