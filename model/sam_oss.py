@@ -930,9 +930,6 @@ if __name__ == "__main__":
         "network_findings": ""
     }
 
-    ## FINAL OUTPUT
-    # network_findings: str   # REPORT AGENT CHANGES THIS STATE  CONFUSED ABOUT THIS LINE LOL
-
     results = sam.invoke(initial_state)
     
     # string print
