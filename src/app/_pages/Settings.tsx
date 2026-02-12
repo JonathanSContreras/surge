@@ -83,7 +83,10 @@ export function Settings() {
   const [agentStates, setAgentStates] = useState(
     agents.reduce((acc, agent) => ({ ...acc, [agent.name]: agent.enabled }), {} as Record<string, boolean>)
   );
-  const [notifications, setNotifications] = useState({
+
+  type NotificationKey = 'critical' | 'exploit' | 'scan' | 'error';
+
+  const [notifications, setNotifications] = useState<Record<NotificationKey, boolean>>({
     critical: true,
     exploit: true,
     scan: false,
@@ -96,7 +99,8 @@ export function Settings() {
   };
 
   const toggleNotification = (id: string) => {
-    setNotifications((prev) => ({ ...prev, [id]: !prev[id] }));
+    const key = id as NotificationKey;
+    setNotifications((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
   const renderContent = () => {
@@ -463,7 +467,7 @@ export function Settings() {
                     }`}
                     style={{
                       backgroundColor: accent.color,
-                      ringColor: accent.color,
+                      boxShadow: selectedAccent === accent.id ? `0 0 0 2px ${accent.color}` : 'none'
                     }}
                   >
                     {selectedAccent === accent.id && (
