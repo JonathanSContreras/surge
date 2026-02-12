@@ -1,17 +1,11 @@
 STARTING RECON AGENT:
 ----------------
-max iterations = 5
-max no change iterations = 2
-time budget (s): 600STARTING RECON AGENT:
+max iterations = 10
+max no change iterations = 4
+time budget (s): 7200
+--- ITERATION 1 [2026-02-12 12:48:36] ---STARTING RECON AGENT:
 ----------------
-max iterations = 5
-max no change iterations = 2
-time budget (s): 600
---- ITERATION 1 [2026-02-08 17:52:42] ---
-[2026-02-08 17:52:59] LLM raw output:
-{"flags":["-sn","-T4"],"targets":["192.168.1.0/24"],"scan_type":"low","reason":"discover hosts","max_runtime_s":30,"escalation":"none"}
-Decision fields have been validated. [2026-02-08 17:52:59]	Running Nmap scan on ['192.168.1.0/24'] with flags: ['-sn', '-T4'].
---- ITERATION 2 [2026-02-08 17:53:07] ---
-[2026-02-08 17:53:27] LLM raw output:
-{"flags":["-A","-sV","--script","vuln","-O"],"targets":["192.168.1.0/24"],"scan_type":"high","reason":"complete metadata for all hosts","max_runtime_s":600,"escalation":"deep_scan"}
-Decision fields have been validated. [2026-02-08 17:53:27]	Running Nmap scan on ['192.168.1.0/24'] with flags: ['-A', '-sV', '--script', 'vuln', '-O'].
+max iterations = 10
+max no change iterations = 4
+time budget (s): 7200
+--- ITERATION 1 [2026-02-12 13:35:11] ---

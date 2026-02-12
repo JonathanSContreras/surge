@@ -800,7 +800,7 @@ def cvss_scoring(state: AgentState) -> AgentState:
 
         vuln_df = pd.DataFrame([
             {
-                "cwe": cwe, 
+                "cwe": cwe if cwe is not None else 0, 
                 "cwe_name": cwe_name, 
                 "summary": summary, 
                 "access_authentication": access_auth,
@@ -917,7 +917,7 @@ if __name__ == "__main__":
     ## CLEAN scan_dumps.txt BEFORE EVERY RUN
     initial_state = {
         "scan_type": "high",
-        "targets": ["192.168.1.0/24"],  # whole subnet scan  ["10.10.162.0/24"]
+        "targets": ["192.168.1.0/24"],  # whole subnet scan  HCUEngg ["10.10.162.0/24"], Apt ["192.168.1.0/24"]
         "recon_results": {},
         "all_xml_content": "",
         "recon_analysis": "",

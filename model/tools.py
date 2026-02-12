@@ -180,7 +180,7 @@ def xgboost_data_cleaning(df, catgy_cols:list, summary_col="summary"):
     catgy_encode = ohe.fit_transform(cve_data[catgy_cols])
 
     # combine data
-    cve_data = pd.concat([cve_data.drop(columns=["catgy_cols"]), catgy_encode], axis=1)
+    cve_data = pd.concat([cve_data.drop(columns=catgy_cols), catgy_encode], axis=1)
 
     # vectorize summary field (SBERT)
     # model = SentenceTransformer("all-MiniLM-L6-v2") 
