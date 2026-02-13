@@ -1,6 +1,5 @@
 SANITY CHECKS
 - output the agentic graph
-- add some try/except for whenever the agent doesnt format data correctly
 
 CODE CHANGES
 - change the data inputs for the vulnerability agent to take the OS results
