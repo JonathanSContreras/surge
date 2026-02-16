@@ -50,6 +50,8 @@ export function NetworkGraph({ hoveredDeviceId }: { hoveredDeviceId: string | nu
   const [mode, setMode] = useState<'Live' | 'Demo'>('Live');
   const [progress, setProgress] = useState(67);
   const [elapsed, setElapsed] = useState(142);
+  const [hoveredNode, setHoveredNode] = useState<string | null>(null);
+  const [selectedNode, setSelectedNode] = useState<string | null>(null);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -152,7 +154,8 @@ export function NetworkGraph({ hoveredDeviceId }: { hoveredDeviceId: string | nu
           {/* Nodes */}
           <g>
             {nodes.map((node) => {
-              const isHovered = hoveredDeviceId === node.id;
+              const isHovered = hoveredDeviceId === node.id || hoveredNode === node.id;
+              const isSelected = selectedNode === node.id;
               const isCritical = node.severity === 'critical';
               return (
                 <g key={node.id}>
@@ -174,14 +177,18 @@ export function NetworkGraph({ hoveredDeviceId }: { hoveredDeviceId: string | nu
                     r="16"
                     fill="#16181F"
                     stroke={severityColors[node.severity]}
-                    strokeWidth={isHovered ? "3" : "2"}
+                    strokeWidth={isHovered || isSelected ? "3" : "2"}
                     animate={{
-                      scale: isHovered ? 1.15 : 1,
+                      scale: isHovered || isSelected ? 1.15 : 1,
                     }}
                     transition={{ duration: 0.2 }}
                     style={{
                       transformOrigin: `${node.x}px ${node.y}px`,
+                      cursor: 'pointer',
                     }}
+                    onMouseEnter={() => setHoveredNode(node.id)}
+                    onMouseLeave={() => setHoveredNode(null)}
+                    onClick={() => setSelectedNode(selectedNode === node.id ? null : node.id)}
                   />
                   {/* Inner dot */}
                   <circle
@@ -189,12 +196,52 @@ export function NetworkGraph({ hoveredDeviceId }: { hoveredDeviceId: string | nu
                     cy={node.y}
                     r="4"
                     fill={severityColors[node.severity]}
+                    style={{ pointerEvents: 'none' }}
                   />
                 </g>
               );
             })}
           </g>
         </svg>
+
+        {/* Tooltip */}
+        {(hoveredNode || selectedNode) && (() => {
+          const activeNode = nodes.find(n => n.id === (hoveredNode || selectedNode));
+          if (!activeNode) return null;
+
+          return (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              transition={{ duration: 0.15 }}
+              className="absolute bg-[#1F2937] rounded-lg p-3 shadow-xl border border-[#374151] pointer-events-none z-10"
+              style={{
+                left: `${activeNode.x + 30}px`,
+                top: `${activeNode.y - 20}px`,
+              }}
+            >
+              <div className="flex flex-col gap-1.5 min-w-[150px]">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-xs text-[#9CA3AF] font-medium">IP Address</span>
+                  <span className="text-sm text-white font-mono">{activeNode.label}</span>
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-xs text-[#9CA3AF] font-medium">Severity</span>
+                  <span
+                    className="text-xs font-semibold px-2 py-0.5 rounded capitalize"
+                    style={{
+                      backgroundColor: `${severityColors[activeNode.severity]}20`,
+                      color: severityColors[activeNode.severity],
+                    }}
+                  >
+                    {activeNode.severity}
+                  </span>
+                </div>
+              </div>
+            </motion.div>
+          );
+        })()}
       </div>
 
       {/* Progress bar */}
