@@ -3,10 +3,15 @@
 import { useState } from 'react';
 import { DeviceList } from '../_components/DeviceList';
 import { NetworkGraph } from '../_components/NetworkGraph';
+import { NetworkGraphForce } from '../_components/NetworkGraphForce';
+import { sampleTopology } from '../_components/data/sample-topology';
 import { ActivityFeed } from '../_components/ActivityFeed';
 import { StatCards } from '../_components/StatCards';
 import { VulnerabilityChart } from '../_components/VulnerabilityChart';
 import { ExploitQueue } from '../_components/ExploitQueue';
+
+// Feature flag to toggle between old and new graph
+const USE_FORCE_LAYOUT = true;
 
 export function Dashboard() {
   const [hoveredDeviceId, setHoveredDeviceId] = useState<string | null>(null);
@@ -22,7 +27,14 @@ export function Dashboard() {
 
         {/* Center: Network Graph */}
         <div className="col-span-6">
-          <NetworkGraph hoveredDeviceId={hoveredDeviceId} />
+          {USE_FORCE_LAYOUT ? (
+            <NetworkGraphForce
+              topology={sampleTopology}
+              hoveredDeviceId={hoveredDeviceId}
+            />
+          ) : (
+            <NetworkGraph hoveredDeviceId={hoveredDeviceId} />
+          )}
         </div>
 
         {/* Right: Activity Feed */}

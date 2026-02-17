@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { SEVERITY_COLORS } from './types/network-topology';
 
 interface Device {
   id: string;
@@ -21,13 +22,6 @@ const devices: Device[] = [
   { id: '7', ip: '192.168.1.156', hostname: 'dev-workstation', status: 'Online', cvss: 4.6, severity: 'medium' },
   { id: '8', ip: '192.168.1.178', hostname: 'analytics-node', status: 'Scanning', cvss: 2.4, severity: 'low' },
 ];
-
-const severityColors = {
-  low: '#00E676',
-  medium: '#FFB300',
-  high: '#FF6F00',
-  critical: '#FF1744',
-};
 
 const statusColors = {
   Online: 'bg-[#00E676]/10 text-[#00E676]',
@@ -61,7 +55,7 @@ export function DeviceList({ onDeviceHover }: { onDeviceHover: (id: string | nul
               className={`p-4 border-l-2 cursor-pointer transition-all ${
                 hoveredId === device.id ? 'bg-[#16181F]' : 'hover:bg-[#16181F]/50'
               }`}
-              style={{ borderLeftColor: severityColors[device.severity] }}
+              style={{ borderLeftColor: SEVERITY_COLORS[device.severity] }}
               onMouseEnter={() => handleMouseEnter(device.id)}
               onMouseLeave={handleMouseLeave}
             >
