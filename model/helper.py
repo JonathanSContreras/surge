@@ -2,7 +2,7 @@
 @author: Brianna Hinds
 Description: Helper functions for the agents.
 """
-from globals import SANITIZATION_TIER_CONFIG, METACHARACTERS
+from globals import SANITIZATION_TIER_CONFIG, METACHARACTERS, SCAN_RESULTS_DIR
 import re
 import json
 import datetime
@@ -521,7 +521,7 @@ def xml_parse_v1(xml_data):
 
 #     return network_config
 
-def store_xml_to_folder(target: list, scan_output: str, xml_file: str) -> str:   # this will take all of the xml files generated and store it in a folder
+def store_xml_to_folder(target: list, scan_output: str, xml_file: str, base_folder: str=SCAN_RESULTS_DIR) -> str:   # this will take all of the xml files generated and store it in a folder
     """
     Creates a directory named after the given target (if it doesn't already exist)
     and stores an XML file in that directory.
@@ -532,20 +532,24 @@ def store_xml_to_folder(target: list, scan_output: str, xml_file: str) -> str:  
         scan_output: .xml content to be written to the file as a string
         xml_file: name of the XML file (should include `.xml` extension)
     """
-    # create directory
-    target_name = target_to_proper_file_name(target)
-    directory_name = f"./{target_name}"
+    # Create base folder if it doesn't exist
+    os.makedirs(base_folder, exist_ok=True)
+
+    # # create directory
+    # target_name = target_to_proper_file_name(target)
+    # directory_name = f"./{target_name}"
 
     # make directory and add xml file into it
-    os.makedirs(directory_name, exist_ok=True)
-    new_xml_path = f"{directory_name}/{xml_file}"
+    # os.makedirs(directory_name, exist_ok=True)
+    # new_xml_path = f"{directory_name}/{xml_file}"
+    new_xml_path = os.path.join(base_folder, xml_file)
 
     with open(new_xml_path, "w", encoding="utf-8") as f:
         f.write(scan_output)
 
-    print(f"Successfully saved .xml file to folder {directory_name}.")
+    print(f"Successfully saved .xml file to folder {base_folder}.")
 
-    return directory_name
+    return base_folder
 
 def all_xml_output_to_txt(target_file: str) -> str:
     """

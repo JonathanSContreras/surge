@@ -741,12 +741,12 @@ def cvss_data_formatter(state: AgentState) -> AgentState:
         "cwe_code": 89,
         "cwe_name": "CWE name",
         "summary": "Short vulnerability description",
-        "access_authentication": "None | Single | Multiple",
-        "access_complexity": "Low | Medium | High",
-        "access_vector": "Network | Adjacent | Local",
-        "impact_availability": "None | Partial | Complete",
-        "impact_confidentiality": "None | Partial | Complete",
-        "impact_integrity": "None | Partial | Complete",
+        "access_authentication": "NONE | SINGLE | MULTIPLE",
+        "access_complexity": "LOW | MEDIUM | HIGH",
+        "access_vector": "NETWORK | ADJACENT | LOCAL",
+        "impact_availability": "NONE | PARTIAL | COMPLETE",
+        "impact_confidentiality": "NONE | PARTIAL | COMPLETE",
+        "impact_integrity": "NONE | PARTIAL | COMPLETE",
         "product": "Detected software",
         "version": "Detected version",
         "host": "IP or hostname"
@@ -800,21 +800,22 @@ def cvss_scoring(state: AgentState) -> AgentState:
 
         vuln_df = pd.DataFrame([
             {
-                "cwe": cwe if cwe is not None else 0, 
+                "cwe_code": cwe if cwe is not None else 0, 
                 "cwe_name": cwe_name, 
                 "summary": summary, 
-                "access_authentication": access_auth,
-                "access_complexity": access_complex, 
-                "access_vector": access_vec, 
-                "impact_availability": impa_avail, 
-                "impact_confidentiality": impa_confid, 
-                "impact_integrity": impa_integ
+                "access_authentication": access_auth.upper(),
+                "access_complexity": access_complex.upper(), 
+                "access_vector": access_vec.upper(), 
+                "impact_availability": impa_avail.upper(), 
+                "impact_confidentiality": impa_confid.upper(), 
+                "impact_integrity": impa_integ.upper()
 
             }]
         )
         # print(vuln_df.head())
         catgy_cols = ["access_authentication", "access_complexity", "access_vector", "impact_availability", "impact_confidentiality", "impact_integrity"]
         cve_data = xgboost_data_cleaning(vuln_df, catgy_cols)
+        print("cve data made successfully")
         print("cve_data output:", cve_data)
         cve_data.to_csv("cvs_data.csv", index=False)
 
@@ -917,7 +918,7 @@ if __name__ == "__main__":
     ## CLEAN scan_dumps.txt BEFORE EVERY RUN
     initial_state = {
         "scan_type": "high",
-        "targets": ["192.168.1.0/24"],  # whole subnet scan  HCUEngg ["10.10.162.0/24"], Apt ["192.168.1.0/24"]
+        "targets": ["10.10.160.0/24"],  # whole subnet scan  HCUEngg ["10.10.162.0/24"], Apt ["192.168.1.0/24"]
         "recon_results": {},
         "all_xml_content": "",
         "recon_analysis": "",

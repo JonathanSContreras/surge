@@ -9,7 +9,7 @@ import datetime
 import time
 import shlex
 from helper import sanitize_flags_for_tier, store_xml_to_folder
-from globals import TIMEOUT_VAL, VULN_CLASSIFICATION_TRAINING_DATA
+from globals import TIMEOUT_VAL
 import requests
 import pandas as pd
 from sklearn.preprocessing import OneHotEncoder

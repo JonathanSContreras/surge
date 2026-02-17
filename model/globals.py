@@ -1,5 +1,6 @@
-TIMEOUT_VAL = 2000
+TIMEOUT_VAL = 3600
 SCANNING_DUMP_LOG = "./utils/scan_dumps.txt"
+SCAN_RESULTS_DIR = "./scan_results"
 VULN_CLASSIFICATION_TRAINING_DATA = "./data/merged_cve.csv"
 # RECON_CONVERGENCE = {
 #     "max_iterations": 5,
