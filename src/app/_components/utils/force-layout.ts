@@ -4,10 +4,15 @@ import {
   forceManyBody,
   forceCenter,
   forceCollide,
+  forceX,
+  forceY,
   SimulationNodeDatum,
   SimulationLinkDatum,
 } from 'd3-force';
 import { ForceNode, ForceEdge, NetworkTopology } from '../types/network-topology';
+
+const PADDING = 40;
+const NODE_RADIUS = 16;
 
 export function createForceSimulation(
   nodes: ForceNode[],
@@ -15,34 +20,47 @@ export function createForceSimulation(
   width: number,
   height: number
 ) {
-  // Clone nodes to avoid mutation
   const simulationNodes = nodes.map(n => ({ ...n })) as (ForceNode & SimulationNodeDatum)[];
 
-  // Dynamic spacing based on node count
   const nodeCount = nodes.length;
-
-  // Adjust forces based on network size
-  // More nodes = more spacing needed
   const linkDistance = nodeCount <= 8 ? 80 : nodeCount <= 15 ? 100 : 120;
   const chargeStrength = nodeCount <= 8 ? -300 : nodeCount <= 15 ? -400 : -500;
   const collisionRadius = nodeCount <= 8 ? 30 : nodeCount <= 15 ? 35 : 40;
 
-  // Create simulation
+  const centerX = width / 2;
+  const centerY = height / 2;
+
   const simulation = forceSimulation(simulationNodes)
     .force(
       'link',
       forceLink<ForceNode & SimulationNodeDatum, SimulationLinkDatum<ForceNode & SimulationNodeDatum>>(edges)
-        .id((d: any) => d.id)
-        .distance(linkDistance)        // Distance between connected nodes (dynamic)
-        .strength(1)                   // Link strength
+        .id((d: ForceNode & SimulationNodeDatum) => d.id)
+        .distance(linkDistance)
+        .strength(1)
     )
     .force(
       'charge',
       forceManyBody()
-        .strength(chargeStrength)      // Repulsion force (dynamic, more negative = more repel)
+        .strength(chargeStrength)
     )
-    .force('center', forceCenter(width / 2, height / 2))
-    .force('collision', forceCollide().radius(collisionRadius)); // Prevent overlap (dynamic)
+    .force('center', forceCenter(centerX, centerY))
+    .force('collision', forceCollide().radius(collisionRadius))
+    .force('x', forceX(centerX).strength(0.05))
+    .force('y', forceY(centerY).strength(0.05));
+
+  simulation.on('tick', () => {
+    const minX = PADDING + NODE_RADIUS;
+    const maxX = width - PADDING - NODE_RADIUS;
+    const minY = PADDING + NODE_RADIUS;
+    const maxY = height - PADDING - NODE_RADIUS;
+
+    simulationNodes.forEach(node => {
+      if (node.x !== undefined && node.y !== undefined) {
+        node.x = Math.max(minX, Math.min(maxX, node.x));
+        node.y = Math.max(minY, Math.min(maxY, node.y));
+      }
+    });
+  });
 
   return simulation;
 }

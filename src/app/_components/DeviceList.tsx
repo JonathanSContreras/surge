@@ -1,36 +1,18 @@
 'use client';
 
 import { useState } from 'react';
-import { SEVERITY_COLORS } from './types/network-topology';
-
-interface Device {
-  id: string;
-  ip: string;
-  hostname: string;
-  status: 'Online' | 'Offline' | 'Scanning';
-  cvss: number;
-  severity: 'low' | 'medium' | 'high' | 'critical';
-}
-
-const devices: Device[] = [
-  { id: '1', ip: '192.168.1.10', hostname: 'gateway-primary', status: 'Online', cvss: 9.8, severity: 'critical' },
-  { id: '2', ip: '192.168.1.45', hostname: 'db-server-01', status: 'Scanning', cvss: 7.5, severity: 'high' },
-  { id: '3', ip: '192.168.1.67', hostname: 'web-frontend', status: 'Online', cvss: 5.2, severity: 'medium' },
-  { id: '4', ip: '192.168.1.88', hostname: 'api-service', status: 'Online', cvss: 3.1, severity: 'low' },
-  { id: '5', ip: '192.168.1.102', hostname: 'backup-storage', status: 'Offline', cvss: 6.8, severity: 'medium' },
-  { id: '6', ip: '192.168.1.124', hostname: 'mail-server', status: 'Online', cvss: 8.3, severity: 'high' },
-  { id: '7', ip: '192.168.1.156', hostname: 'dev-workstation', status: 'Online', cvss: 4.6, severity: 'medium' },
-  { id: '8', ip: '192.168.1.178', hostname: 'analytics-node', status: 'Scanning', cvss: 2.4, severity: 'low' },
-];
+import { SEVERITY_COLORS, NetworkDevice } from './types/network-topology';
+import { sampleTopology } from './data/sample-topology';
 
 const statusColors = {
-  Online: 'bg-[#00E676]/10 text-[#00E676]',
-  Offline: 'bg-[#6B7280]/10 text-[#6B7280]',
-  Scanning: 'bg-[#FFB300]/10 text-[#FFB300]',
+  online: 'bg-[#00E676]/10 text-[#00E676]',
+  offline: 'bg-[#6B7280]/10 text-[#6B7280]',
+  scanning: 'bg-[#FFB300]/10 text-[#FFB300]',
 };
 
 export function DeviceList({ onDeviceHover }: { onDeviceHover: (id: string | null) => void }) {
   const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const devices = sampleTopology.devices;
 
   const handleMouseEnter = (id: string) => {
     setHoveredId(id);
@@ -40,6 +22,11 @@ export function DeviceList({ onDeviceHover }: { onDeviceHover: (id: string | nul
   const handleMouseLeave = () => {
     setHoveredId(null);
     onDeviceHover(null);
+  };
+
+  const getStatusColor = (device: NetworkDevice) => {
+    const status = device.status || 'online';
+    return statusColors[status as keyof typeof statusColors] || statusColors.online;
   };
 
   return (
@@ -61,14 +48,12 @@ export function DeviceList({ onDeviceHover }: { onDeviceHover: (id: string | nul
             >
               <div className="flex items-start justify-between mb-2">
                 <code className="text-white font-mono text-sm">{device.ip}</code>
-                <span className="font-semibold text-white text-sm">{device.cvss}</span>
+                <span className="font-semibold text-white text-sm">{device.cvss?.toFixed(1) ?? '—'}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-[#6B7280] text-xs">{device.hostname}</span>
-                <span
-                  className={`text-xs px-2 py-0.5 rounded ${statusColors[device.status]}`}
-                >
-                  {device.status}
+                <span className="text-[#6B7280] text-xs">{device.hostname || 'Unknown'}</span>
+                <span className={`text-xs px-2 py-0.5 rounded ${getStatusColor(device)}`}>
+                  {device.status || 'online'}
                 </span>
               </div>
             </div>
