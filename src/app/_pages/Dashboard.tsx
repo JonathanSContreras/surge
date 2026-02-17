@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { DeviceList } from '../_components/DeviceList';
-import { NetworkGraph } from '../_components/NetworkGraph';
 import { NetworkGraphForce } from '../_components/NetworkGraphForce';
 import { sampleTopology } from '../_components/data/sample-topology';
 import { ActivityFeed } from '../_components/ActivityFeed';
@@ -10,35 +9,28 @@ import { StatCards } from '../_components/StatCards';
 import { VulnerabilityChart } from '../_components/VulnerabilityChart';
 import { ExploitQueue } from '../_components/ExploitQueue';
 
-// Feature flag to toggle between old and new graph
-const USE_FORCE_LAYOUT = true;
-
 export function Dashboard() {
   const [hoveredDeviceId, setHoveredDeviceId] = useState<string | null>(null);
 
   return (
     <div className="max-w-[1800px] mx-auto p-6">
       {/* Three-column main grid */}
-      <div className="grid grid-cols-12 gap-6 mb-6" style={{ height: '640px' }}>
+      <div className="grid grid-cols-12 gap-6 mb-6 h-[640px]">
         {/* Left: Device List */}
-        <div className="col-span-3">
+        <div className="col-span-3 min-h-0 overflow-hidden">
           <DeviceList onDeviceHover={setHoveredDeviceId} />
         </div>
 
         {/* Center: Network Graph */}
-        <div className="col-span-6">
-          {USE_FORCE_LAYOUT ? (
-            <NetworkGraphForce
-              topology={sampleTopology}
-              hoveredDeviceId={hoveredDeviceId}
-            />
-          ) : (
-            <NetworkGraph hoveredDeviceId={hoveredDeviceId} />
-          )}
+        <div className="col-span-6 min-h-0 overflow-hidden">
+          <NetworkGraphForce
+            topology={sampleTopology}
+            hoveredDeviceId={hoveredDeviceId}
+          />
         </div>
 
         {/* Right: Activity Feed */}
-        <div className="col-span-3">
+        <div className="col-span-3 min-h-0 overflow-hidden">
           <ActivityFeed />
         </div>
       </div>

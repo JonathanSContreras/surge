@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion } from 'motion/react';
 import { NetworkTopology, ForceNode, ForceEdge, SEVERITY_COLORS } from './types/network-topology';
 import { createForceSimulation, transformTopologyData } from './utils/force-layout';
@@ -13,13 +13,19 @@ interface NetworkGraphForceProps {
   onNodeHover?: (deviceId: string | null) => void;
 }
 
+const MIN_ZOOM = 0.2;
+const MAX_ZOOM = 5;
+const ZOOM_SENSITIVITY = 0.001;
+
 export function NetworkGraphForce({
   topology,
   hoveredDeviceId,
   onNodeClick,
   onNodeHover,
 }: NetworkGraphForceProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
+  const [dimensions, setDimensions] = useState({ width: 600, height: 400 });
   const [mode, setMode] = useState<'Live' | 'Demo'>('Live');
   const [progress, setProgress] = useState(67);
   const [elapsed, setElapsed] = useState(142);
@@ -29,7 +35,21 @@ export function NetworkGraphForce({
   const [edges, setEdges] = useState<ForceEdge[]>([]);
   const [simulationActive, setSimulationActive] = useState(false);
 
-  // Progress bar effect
+  // Pan & zoom state
+  const [viewBox, setViewBox] = useState({ x: 0, y: 0, w: 600, h: 400 });
+  const zoomRef = useRef(1);
+  const isPanningRef = useRef(false);
+  const panStartRef = useRef({ x: 0, y: 0 });
+  const viewBoxStartRef = useRef({ x: 0, y: 0 });
+  const [zoomLevel, setZoomLevel] = useState(1);
+
+  // Initialize viewBox when dimensions change
+  useEffect(() => {
+    setViewBox({ x: 0, y: 0, w: dimensions.width, h: dimensions.height });
+    zoomRef.current = 1;
+    setZoomLevel(1);
+  }, [dimensions]);
+
   useEffect(() => {
     const interval = setInterval(() => {
       setProgress((prev) => (prev >= 100 ? 0 : prev + 1));
@@ -38,11 +58,23 @@ export function NetworkGraphForce({
     return () => clearInterval(interval);
   }, []);
 
-  // Initialize force simulation
   useEffect(() => {
-    if (!svgRef.current) return;
+    const updateDimensions = () => {
+      if (containerRef.current) {
+        const { width, height } = containerRef.current.getBoundingClientRect();
+        setDimensions({ width, height });
+      }
+    };
 
-    const { width, height } = svgRef.current.getBoundingClientRect();
+    updateDimensions();
+    window.addEventListener('resize', updateDimensions);
+    return () => window.removeEventListener('resize', updateDimensions);
+  }, []);
+
+  useEffect(() => {
+    const { width, height } = dimensions;
+    if (width === 0 || height === 0) return;
+
     const { nodes: initialNodes, edges: initialEdges } = transformTopologyData(topology);
 
     setNodes(initialNodes);
@@ -51,9 +83,8 @@ export function NetworkGraphForce({
 
     const simulation = createForceSimulation(initialNodes, initialEdges, width, height);
 
-    // Throttle updates to ~30fps for better performance
     let lastUpdate = 0;
-    const throttleDelay = 33; // ~30fps
+    const throttleDelay = 33;
 
     simulation.on('tick', () => {
       const now = Date.now();
@@ -71,13 +102,120 @@ export function NetworkGraphForce({
     return () => {
       simulation.stop();
     };
-  }, [topology]);
+  }, [topology, dimensions]);
 
-  const getNodePosition = (id: string) => {
+  // --- Zoom handler (wheel) ---
+  const handleWheel = useCallback((e: WheelEvent) => {
+    e.preventDefault();
+    const container = containerRef.current;
+    if (!container) return;
+
+    const rect = container.getBoundingClientRect();
+    // Cursor position as fraction of container
+    const cursorFracX = (e.clientX - rect.left) / rect.width;
+    const cursorFracY = (e.clientY - rect.top) / rect.height;
+
+    const zoomDelta = -e.deltaY * ZOOM_SENSITIVITY;
+    const oldZoom = zoomRef.current;
+    const newZoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, oldZoom * (1 + zoomDelta)));
+
+    setViewBox((prev) => {
+      // Point in graph-space under cursor
+      const cursorGraphX = prev.x + cursorFracX * prev.w;
+      const cursorGraphY = prev.y + cursorFracY * prev.h;
+
+      const newW = dimensions.width / newZoom;
+      const newH = dimensions.height / newZoom;
+
+      // Keep the point under the cursor stationary
+      const newX = cursorGraphX - cursorFracX * newW;
+      const newY = cursorGraphY - cursorFracY * newH;
+
+      return { x: newX, y: newY, w: newW, h: newH };
+    });
+
+    zoomRef.current = newZoom;
+    setZoomLevel(newZoom);
+  }, [dimensions]);
+
+  // Attach wheel listener with passive:false
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    container.addEventListener('wheel', handleWheel, { passive: false });
+    return () => container.removeEventListener('wheel', handleWheel);
+  }, [handleWheel]);
+
+  // --- Pan handlers (mouse drag) ---
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    // Only pan on left-click on empty canvas (not on a node)
+    if (e.button !== 0) return;
+    const target = e.target as Element;
+    if (target.closest('[data-graph-node]')) return;
+
+    isPanningRef.current = true;
+    panStartRef.current = { x: e.clientX, y: e.clientY };
+    viewBoxStartRef.current = { x: viewBox.x, y: viewBox.y };
+    e.preventDefault();
+  }, [viewBox.x, viewBox.y]);
+
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    if (!isPanningRef.current || !containerRef.current) return;
+
+    const rect = containerRef.current.getBoundingClientRect();
+    // Convert pixel delta to graph-space delta
+    const dx = (e.clientX - panStartRef.current.x) / rect.width * viewBox.w;
+    const dy = (e.clientY - panStartRef.current.y) / rect.height * viewBox.h;
+
+    setViewBox((prev) => ({
+      ...prev,
+      x: viewBoxStartRef.current.x - dx,
+      y: viewBoxStartRef.current.y - dy,
+    }));
+  }, [viewBox.w, viewBox.h]);
+
+  const handleMouseUp = useCallback(() => {
+    isPanningRef.current = false;
+  }, []);
+
+  // --- Zoom controls ---
+  const zoomIn = useCallback(() => {
+    const newZoom = Math.min(MAX_ZOOM, zoomRef.current * 1.3);
+    setViewBox((prev) => {
+      const cx = prev.x + prev.w / 2;
+      const cy = prev.y + prev.h / 2;
+      const newW = dimensions.width / newZoom;
+      const newH = dimensions.height / newZoom;
+      return { x: cx - newW / 2, y: cy - newH / 2, w: newW, h: newH };
+    });
+    zoomRef.current = newZoom;
+    setZoomLevel(newZoom);
+  }, [dimensions]);
+
+  const zoomOut = useCallback(() => {
+    const newZoom = Math.max(MIN_ZOOM, zoomRef.current / 1.3);
+    setViewBox((prev) => {
+      const cx = prev.x + prev.w / 2;
+      const cy = prev.y + prev.h / 2;
+      const newW = dimensions.width / newZoom;
+      const newH = dimensions.height / newZoom;
+      return { x: cx - newW / 2, y: cy - newH / 2, w: newW, h: newH };
+    });
+    zoomRef.current = newZoom;
+    setZoomLevel(newZoom);
+  }, [dimensions]);
+
+  const resetView = useCallback(() => {
+    setViewBox({ x: 0, y: 0, w: dimensions.width, h: dimensions.height });
+    zoomRef.current = 1;
+    setZoomLevel(1);
+  }, [dimensions]);
+
+  const getNodePosition = useCallback((id: string) => {
     return nodes.find((n) => n.id === id);
-  };
+  }, [nodes]);
 
-  const getCurvedPath = (edge: ForceEdge) => {
+  const getCurvedPath = useCallback((edge: ForceEdge) => {
     const fromNode = typeof edge.source === 'object' ? edge.source : getNodePosition(edge.source);
     const toNode = typeof edge.target === 'object' ? edge.target : getNodePosition(edge.target);
 
@@ -93,7 +231,7 @@ export function NetworkGraphForce({
     return `M ${fromNode.x} ${fromNode.y} Q ${fromNode.x + dx / 2 + dr / 2} ${
       fromNode.y + dy / 2 - dr / 2
     } ${toNode.x} ${toNode.y}`;
-  };
+  }, [getNodePosition]);
 
   const handleNodeHover = (nodeId: string | null) => {
     setHoveredNode(nodeId);
@@ -110,7 +248,6 @@ export function NetworkGraphForce({
     }
   };
 
-  // Check if an edge is connected to the hovered/selected node
   const isEdgeHighlighted = (edge: ForceEdge, activeNodeId: string | null) => {
     if (!activeNodeId) return false;
 
@@ -120,9 +257,20 @@ export function NetworkGraphForce({
     return sourceId === activeNodeId || targetId === activeNodeId;
   };
 
+  // Convert graph-space coords to screen-space for tooltip positioning
+  const graphToScreen = useCallback((gx: number, gy: number) => {
+    const container = containerRef.current;
+    if (!container) return { x: gx, y: gy };
+    const rect = container.getBoundingClientRect();
+    const sx = ((gx - viewBox.x) / viewBox.w) * rect.width;
+    const sy = ((gy - viewBox.y) / viewBox.h) * rect.height;
+    return { x: sx, y: sy };
+  }, [viewBox]);
+
+  const { width, height } = dimensions;
+
   return (
     <div className="bg-[#13151C] rounded-lg h-full flex flex-col">
-      {/* Header with mode toggle */}
       <div className="p-4 flex items-center justify-between border-b border-[#1F2937]">
         <h2 className="font-semibold text-white">Network Topology</h2>
         <div className="flex items-center gap-0 bg-[#0F1117] rounded p-0.5">
@@ -145,15 +293,26 @@ export function NetworkGraphForce({
         </div>
       </div>
 
-      {/* Graph */}
-      <div className="flex-1 relative overflow-hidden">
-        {/* Grid background */}
+      <div
+        ref={containerRef}
+        className="flex-1 relative overflow-hidden"
+        style={{ cursor: isPanningRef.current ? 'grabbing' : 'grab' }}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
+      >
         <svg
           ref={svgRef}
+          viewBox={`${viewBox.x} ${viewBox.y} ${viewBox.w} ${viewBox.h}`}
+          preserveAspectRatio="xMidYMid meet"
           className="absolute inset-0 w-full h-full"
           style={{ background: 'transparent' }}
         >
           <defs>
+            <clipPath id="graph-clip">
+              <rect x="-10000" y="-10000" width="20000" height="20000" />
+            </clipPath>
             <pattern
               id="grid"
               width="40"
@@ -168,7 +327,6 @@ export function NetworkGraphForce({
                 opacity="0.3"
               />
             </pattern>
-            {/* Glow filters */}
             <filter id="glow-critical" x="-50%" y="-50%" width="200%" height="200%">
               <feGaussianBlur stdDeviation="8" result="coloredBlur" />
               <feMerge>
@@ -177,10 +335,9 @@ export function NetworkGraphForce({
               </feMerge>
             </filter>
           </defs>
-          <rect width="100%" height="100%" fill="url(#grid)" />
+          <rect x={viewBox.x} y={viewBox.y} width={viewBox.w} height={viewBox.h} fill="url(#grid)" />
 
-          {/* Edges */}
-          <g>
+          <g clipPath="url(#graph-clip)">
             {edges.map((edge, i) => {
               const activeNodeId = hoveredNode || selectedNode;
               const isHighlighted = isEdgeHighlighted(edge, activeNodeId);
@@ -204,10 +361,7 @@ export function NetworkGraphForce({
                 />
               );
             })}
-          </g>
 
-          {/* Nodes */}
-          <g>
             {nodes.map((node) => {
               if (node.x === undefined || node.y === undefined) return null;
 
@@ -215,28 +369,30 @@ export function NetworkGraphForce({
               const isSelected = selectedNode === node.id;
               const isCritical = node.severity === 'critical';
               const DeviceIcon = getDeviceIcon(node.deviceType);
+              // Scale node radius inversely with zoom so nodes stay visually consistent
+              const nodeRadius = 16 / Math.max(zoomLevel, 0.5);
+              const iconSize = 16 / Math.max(zoomLevel, 0.5);
+              const strokeW = (isHovered || isSelected ? 3 : 2) / Math.max(zoomLevel, 0.5);
 
               return (
-                <g key={node.id}>
-                  {/* Outer glow for critical */}
+                <g key={node.id} data-graph-node>
                   {isCritical && (
                     <circle
                       cx={node.x}
                       cy={node.y}
-                      r="24"
+                      r={24 / Math.max(zoomLevel, 0.5)}
                       fill={SEVERITY_COLORS[node.severity]}
                       opacity="0.15"
                       filter="url(#glow-critical)"
                     />
                   )}
-                  {/* Node circle */}
                   <motion.circle
                     cx={node.x}
                     cy={node.y}
-                    r="16"
+                    r={nodeRadius}
                     fill="#16181F"
                     stroke={SEVERITY_COLORS[node.severity]}
-                    strokeWidth={isHovered || isSelected ? "3" : "2"}
+                    strokeWidth={strokeW}
                     animate={{
                       scale: isHovered || isSelected ? 1.15 : 1,
                     }}
@@ -248,11 +404,11 @@ export function NetworkGraphForce({
                     onMouseEnter={() => handleNodeHover(node.id)}
                     onMouseLeave={() => handleNodeHover(null)}
                     onClick={() => handleNodeClick(node.id)}
+                    data-graph-node
                   />
-                  {/* Device icon */}
-                  <g transform={`translate(${node.x - 8}, ${node.y - 8})`}>
+                  <g transform={`translate(${node.x - iconSize / 2}, ${node.y - iconSize / 2})`}>
                     <DeviceIcon
-                      size={16}
+                      size={iconSize}
                       color={SEVERITY_COLORS[node.severity]}
                       style={{ pointerEvents: 'none' }}
                     />
@@ -263,10 +419,57 @@ export function NetworkGraphForce({
           </g>
         </svg>
 
+        {/* Zoom controls */}
+        <div className="absolute bottom-3 right-3 flex flex-col gap-1 z-20">
+          <button
+            onClick={zoomIn}
+            className="w-7 h-7 bg-[#1F2937]/90 hover:bg-[#374151] rounded flex items-center justify-center text-white text-sm transition-colors border border-[#374151]/50"
+            title="Zoom in"
+          >
+            +
+          </button>
+          <button
+            onClick={resetView}
+            className="w-7 h-7 bg-[#1F2937]/90 hover:bg-[#374151] rounded flex items-center justify-center text-[#9CA3AF] text-[10px] font-mono transition-colors border border-[#374151]/50"
+            title="Reset view"
+          >
+            {Math.round(zoomLevel * 100)}%
+          </button>
+          <button
+            onClick={zoomOut}
+            className="w-7 h-7 bg-[#1F2937]/90 hover:bg-[#374151] rounded flex items-center justify-center text-white text-sm transition-colors border border-[#374151]/50"
+            title="Zoom out"
+          >
+            −
+          </button>
+        </div>
+
         {/* Tooltip */}
         {(hoveredNode || selectedNode) && (() => {
           const activeNode = nodes.find(n => n.id === (hoveredNode || selectedNode));
           if (!activeNode || activeNode.x === undefined || activeNode.y === undefined) return null;
+
+          const screen = graphToScreen(activeNode.x, activeNode.y);
+          const tooltipWidth = 200;
+          const tooltipHeight = 150;
+          const offset = 30;
+
+          const containerEl = containerRef.current;
+          const cw = containerEl?.clientWidth ?? width;
+          const ch = containerEl?.clientHeight ?? height;
+
+          let left = screen.x + offset;
+          let top = screen.y - 20;
+
+          if (left + tooltipWidth > cw - 10) {
+            left = screen.x - tooltipWidth - offset;
+          }
+          if (top + tooltipHeight > ch - 10) {
+            top = ch - tooltipHeight - 10;
+          }
+          if (top < 10) {
+            top = 10;
+          }
 
           return (
             <motion.div
@@ -276,8 +479,9 @@ export function NetworkGraphForce({
               transition={{ duration: 0.15 }}
               className="absolute bg-[#1F2937] rounded-lg p-3 shadow-xl border border-[#374151] pointer-events-none z-10"
               style={{
-                left: `${activeNode.x + 30}px`,
-                top: `${activeNode.y - 20}px`,
+                left: `${left}px`,
+                top: `${top}px`,
+                maxWidth: `${tooltipWidth}px`,
               }}
             >
               <div className="flex flex-col gap-1.5 min-w-[150px]">
@@ -318,7 +522,6 @@ export function NetworkGraphForce({
         })()}
       </div>
 
-      {/* Progress bar */}
       <div className="p-4 border-t border-[#1F2937]">
         <div className="flex items-center justify-between mb-2">
           <span className="text-xs text-[#6B7280]">
