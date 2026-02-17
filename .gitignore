@@ -1,7 +1,8 @@
 .env
-model/__pycache__
+**/__pycache__/
 data/merged_cve.csv
 data/processed_cve_data.csv
+/scan_results
 
 # delete after code is fully polished
 /dump

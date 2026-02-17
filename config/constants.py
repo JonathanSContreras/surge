@@ -1,17 +1,31 @@
+# llm config
+MODEL_CONFIG = {
+    "model_name": "gpt-oss:20b",
+    "temperature": 0,
+    "timeout": 60,
+    "determinism": 1
+}
+
+# nmap scanning constants
 TIMEOUT_VAL = 3600
-SCANNING_DUMP_LOG = "./utils/scan_dumps.txt"
+
+# file/directory constants
+SCANNING_DUMP_LOG = "./log/scan_dumps.txt"
 SCAN_RESULTS_DIR = "./scan_results"
 VULN_CLASSIFICATION_TRAINING_DATA = "./data/merged_cve.csv"
-# RECON_CONVERGENCE = {
-#     "max_iterations": 5,
-#     "max_no_change_iterations": 3,
-#     "time_budget_seconds": 2000
-# }
+
+# logging constants
+LOG_FILENAME = "./log/surge_log.log"
+LOG_FORMAT = "%(asctime)s [%(levelname)s] %(filename)s/%(funcName)s >> %(message)s"
+
+# recon agent constant
 RECON_CONVERGENCE = {
     "max_iterations": 10,  # Increased from 5
     "max_no_change_iterations": 4,  # Increased from 3  
     "time_budget_seconds": 7200  # Increased to 2 hours from 33 min
 }
+
+# sanitization constants (used in /governance)
 SANITIZATION_TIER_CONFIG = {
     "low": {  # Host discovery only
         "allowed_flags": {

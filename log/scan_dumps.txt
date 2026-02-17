@@ -1,0 +1,29 @@
+STARTING RECON AGENT:
+----------------
+max iterations = 10
+max no change iterations = 4
+time budget (s): 7200
+--- ITERATION 1 [2026-02-17 16:52:34] ---
+[2026-02-17 16:52:53] LLM raw output:
+{"flags":["-sn","-T4"],"targets":["10.10.160.0/24"],"scan_type":"low","reason":"Initial host discovery on new subnet","max_runtime_s":120,"escalation":"service_scan"}
+Decision fields have been validated. [2026-02-17 16:52:53]	Running Nmap scan on ['10.10.160.0/24'] with flags: ['-sn', '-T4'].
+--- ITERATION 2 [2026-02-17 16:52:59] ---
+[2026-02-17 16:53:11] LLM raw output:
+{"flags":["-sS","-sV","-O","-A","--script=vuln","-Pn","-T4"],"targets":["10.10.160.1","10.10.160.2","10.10.160.3"],"scan_type":"high","reason":"Deep vulnerability enumeration on remaining discovered hosts","max_runtime_s":3600,"escalation":"deep_scan"}
+Decision fields have been validated. [2026-02-17 16:53:11]	Running Nmap scan on ['10.10.160.1', '10.10.160.2', '10.10.160.3'] with flags: ['-sS', '-sV', '-O', '-A', '--script=vuln', '-Pn', '-T4'].
+--- ITERATION 3 [2026-02-17 16:53:45] ---
+[2026-02-17 16:53:52] LLM raw output:
+{"flags":["-A","--script=vuln","-O","-sV","-p","1-65535","-Pn","-T4"],"targets":["10.10.160.5","10.10.160.12","10.10.160.23"],"scan_type":"high","reason":"Deep vulnerability enumeration on remaining discovered hosts","max_runtime_s":3600,"escalation":"deep_scan"}
+Decision fields have been validated. [2026-02-17 16:53:52]	Running Nmap scan on ['10.10.160.5', '10.10.160.12', '10.10.160.23'] with flags: ['-A', '--script=vuln', '-O', '-sV', '-p', '1-65535', '-Pn', '-T4'].
+--- ITERATION 4 [2026-02-17 16:53:56] ---
+--- ITERATION 5 [2026-02-17 16:53:56] ---
+--- ITERATION 6 [2026-02-17 16:53:56] ---
+--- ITERATION 7 [2026-02-17 16:53:56] ---
+--- ITERATION 8 [2026-02-17 16:53:56] ---
+--- ITERATION 9 [2026-02-17 16:53:56] ---
+--- ITERATION 10 [2026-02-17 16:53:56] ---
+
+ [OS FINGERPRINTING SCAN] [2026-02-17 16:58:30]
+Targets: ['10.10.160.79', '10.10.160.96', '10.10.160.16', '10.10.160.1', '10.10.160.202', '10.10.160.34', '10.10.160.101', '10.10.160.248']
+Flags: ['-O', '-A', '--osscan-guess', '-Pn', '--script=banner,os-fingerprint']
+Success: True
