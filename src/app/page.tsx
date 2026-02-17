@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Navbar } from './_components/Navbar';
 import { Dashboard } from './_pages/Dashboard';
 import { Scans } from './_pages/Scans';
+import { Topology } from './_pages/Topology';
 import { Exploits } from './_pages/Exploits';
 import { Reports } from './_pages/Reports';
 import { Settings } from './_pages/Settings';
@@ -17,6 +18,8 @@ export default function App() {
         return <Dashboard />;
       case 'Scans':
         return <Scans />;
+      case 'Topology':
+        return <Topology />;
       case 'Exploits':
         return <Exploits />;
       case 'Reports':

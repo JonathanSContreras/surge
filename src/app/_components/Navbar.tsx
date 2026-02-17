@@ -6,7 +6,7 @@ interface NavbarProps {
 }
 
 export function Navbar({ activeTab, onTabChange }: NavbarProps) {
-  const tabs = ['Dashboard', 'Scans', 'Exploits', 'Reports', 'Settings'];
+  const tabs = ['Dashboard', 'Scans', 'Topology', 'Exploits', 'Reports', 'Settings'];
 
   return (
     <nav className="fixed top-0 left-0 right-0 bg-[#0F1117] border-b border-[#1F2937] z-50">

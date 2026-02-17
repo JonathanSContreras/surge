@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Play, MoreVertical, ChevronDown, ChevronUp } from 'lucide-react';
+import { Play, MoreVertical } from 'lucide-react';
 
 interface Scan {
   id: string;
