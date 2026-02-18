@@ -3,7 +3,8 @@
 data/merged_cve.csv
 data/processed_cve_data.csv
 /scan_results
-/log
+log/scan_dumps.txt
+log/surge_log.log
 
 # delete after code is fully polished
 /dump
