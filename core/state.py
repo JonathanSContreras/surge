@@ -19,8 +19,8 @@ class AgentState(TypedDict):
 
     ## VULNERABILITY DATA
     vuln_raw_results: list[dict[str, Any]]  # list of CVE vulnerabilities and its score    AFTER VULN AGENT RUNS
-    vuln_formatted_results: list[CVEEntry]
-    vuln_scoring: dict[str, Any]
+    vuln_normalized_results: list[CVEEntry]
+    vuln_scoring: list[dict[str, Any]]
 
     ## FINAL OUTPUT
     network_findings: str   # REPORT AGENT CHANGES THIS STATE

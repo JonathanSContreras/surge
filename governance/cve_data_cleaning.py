@@ -74,7 +74,7 @@ def xgboost_data_cleaning(df:pd.DataFrame, catgy_cols:list, summary_col="summary
     for col in catgy_cols:
         if col in cve_data.columns:
             cve_data[col] = cve_data[col].fillna("UNKNOWN")
-            cve_data[col] = cve_data[col].astype(str).upper()
+            cve_data[col] = cve_data[col].astype(str).str.upper()
 
     # one hot encode categorical columns from prefitted model
     catgy_encode = OHE_ENCODER.fit_transform(cve_data[catgy_cols])

@@ -4,7 +4,9 @@ from agents.prompts import VULN_FORMATTING_SYSTEM_PROMPT
 from config.logging_config import get_logger
 
 import json
+from json import JSONDecodeError
 from langchain.schema import AIMessage, SystemMessage, HumanMessage
+import pandas as pd
 
 # call global log file
 logger = get_logger(__name__)
@@ -23,7 +25,6 @@ def cvss_data_formatter(state: AgentState) -> AgentState:
     {raw_input}
 
     Required Output Schema (STRICT):
-
     [
     {{
         "cve_id": "CVE-YYYY-NNNNN",
@@ -64,11 +65,25 @@ def cvss_data_formatter(state: AgentState) -> AgentState:
         HumanMessage(content=data_formatter_prompt)
     ])
 
-    # check if result answer is a string
+    # the result will be a list of dictionaries
     result = AIMessage(result) if not isinstance(result, AIMessage) else result
-    state["vuln_formatted_results"] = json.loads(result.content)
-    print("[cvss_data_formatter] vuln_formatted_results", state["vuln_formatted_results"])
 
-    logger.info("CVSS data formatter has been updated and the state has also been updated.")
+    # convert the json dump into a list to output
+    try:
+        parsed = json.loads(result.content)  # pull the AI content (content = answer to out prompt)
+    except JSONDecodeError:
+        logger.error("Failed to parse formatter LLM output as JSON")
+        logger.error(f"Raw LLM output: {result.content}")
+        raise ValueError("Formatter LLM output was not valid JSON.")
+
+    # list output
+    if not isinstance(parsed, list):
+        logger.error(f"Formatter did not return a list, instead if returned {type(parsed)}")
+        raise TypeError("Formatter output must be a list of CVE records.")
+    
+    # convert to a DataFrame
+    state["vuln_normalized_results"] = parsed
+
+    logger.info(f"CVSS data formatter has been updated with {len(parsed)} records normalized, and the state has also been updated.")
 
     return state

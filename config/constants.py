@@ -16,7 +16,7 @@ VULN_CLASSIFICATION_TRAINING_DATA = "./data/merged_cve.csv"
 
 # logging constants
 LOG_FILENAME = "./log/surge_log.log"
-LOG_FORMAT = "%(asctime)s [%(levelname)s] %(filename)s/%(funcName)s >> %(message)s"
+LOG_FORMAT = "%(asctime)s [%(levelname)s] %(name)s/%(funcName)s >> %(message)s"
 
 # recon agent constant
 RECON_CONVERGENCE = {

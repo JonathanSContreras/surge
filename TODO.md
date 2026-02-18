@@ -27,3 +27,4 @@
 
 ### Future Changes
 - change AgentState to be more per agent and not specifics (i.e. `state["recon"]`)
+- see if there is a way to make threads of nmap scans (1 thread per unique IP)

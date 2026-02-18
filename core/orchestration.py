@@ -23,7 +23,7 @@ def execute_workflow(scan_type: str, targets: list[str]) -> dict:
         "os_xml_content": "",
         "os_analysis": "",
         "vuln_raw_results": [],
-        "vuln_formatted_results": [],
+        "vuln_normalized_results": [],
         "vuln_scoring": {},
         "network_findings": ""
     }

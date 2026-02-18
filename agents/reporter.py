@@ -20,55 +20,75 @@ def reporter(state: AgentState) -> AgentState:  # takes all output from all agen
     recon_agent_results = state.get("recon_results", {})
     recon_analysis_results = state.get("recon_analysis", "")
     xml_data = state.get("all_xml_content", "")[:10000]
-    vuln_agent_results = state.get("vuln_formatted_results", [])
-    vuln_scoring_results = state.get("vuln_scoring", {})
+    os_fingerprint_results = state.get("os_fingerprint_results", {})
+    os_analysis = state.get("os_analysis", "")
+    vuln_agent_results = state.get("vuln_normalized_results", [])
+    vuln_scoring_results = state.get("vuln_scoring", [])
+
 
     reporter_prompt = f"""
-    You are given the combined outputs of all prior agents in a network vulnerability assessment workflow.
+    Below is the complete aggregated data from a multi-agent network security workflow.
 
-    Data Inputs:
+    You MUST generate a comprehensive Markdown Network Security Assessment Report
+    using ONLY the information provided below.
 
-    ### Reconnaissance Data
+    -------------------------
+    RECONNAISSANCE DATA
+    -------------------------
     {json.dumps(recon_agent_results, indent=2)}
 
-    ### Reconnaissance Analysis
+    -------------------------
+    RECONNAISSANCE ANALYSIS
+    -------------------------
     {recon_analysis_results}
 
-    ### Raw XML Data (first 10,000 chars)
-    {xml_data}
+    -------------------------
+    OPERATING SYSTEM FINGERPRINT DATA
+    -------------------------
+    {json.dumps(os_fingerprint_results, indent=2)}
 
-    ### Vulnerability Agent Results
+    -------------------------
+    OPERATING SYSTEM ANALYSIS
+    -------------------------
+    {os_analysis}
+
+    -------------------------
+    VULNERABILITY FINDINGS (Formatted)
+    -------------------------
     {json.dumps(vuln_agent_results, indent=2)}
 
-    ### Vulnerability Scoring Results
+    -------------------------
+    VULNERABILITY SCORING DATA
+    -------------------------
     {json.dumps(vuln_scoring_results, indent=2)}
 
-    ---
+    -------------------------
+    RAW XML SNIPPET (Truncated)
+    -------------------------
+    {xml_data}
 
-    Your Task:
+    -------------------------
 
-    1. Generate a **complete Network Vulnerability Assessment Report** in markdown.
-    2. Include these main sections in order:
+    REPORT GENERATION INSTRUCTIONS:
 
-    - **Executive Summary (Layman’s Terms)** – Non-technical overview of network health and risks.
-    - **Executive Risk Score Block** – Provide a concise summary table or bullet list including:
-        - Overall Risk Level (High/Medium/Low)
-        - Number of Critical Assets Affected
-        - Number of Exploitable Services
-        - Top 5 CVEs or vulnerabilities
-    - **Technical Summary** – Hosts, OS, ports, and services discovered.
-    - **Vulnerability Findings** – Enumerate vulnerabilities per host/service with CVEs, severity, and descriptions.
-    - **Risk and Impact Analysis** – Aggregate findings and highlight highest priority risks.
-    - **Remediation and Recommendations** – Actionable steps for mitigation.
-    - **Appendix** – Optional tables or summaries of raw CVE or scan data.
+    1. Generate a structured Markdown report with all required sections.
+    2. Correlate:
+    - Hosts → Services → Vulnerabilities → Scores
+    3. Calculate counts where possible (e.g., number of hosts, total vulnerabilities).
+    4. If no vulnerabilities exist, clearly state that in the Vulnerability Findings section.
+    5. Ensure the Executive Risk Score Block appears immediately after the Executive Summary.
+    6. Use Markdown tables for:
+    - Executive Risk Score Block
+    - Vulnerability summaries
+    - Host/service listings (if useful)
+    7. Do NOT include any explanation outside of the report.
+    8. Do NOT include JSON.
+    9. Do NOT include code fences.
+    10. The output must begin with a Markdown title:
 
-    3. Ensure:
-    - Professional, confident, and factual tone.
-    - Correlate vulnerabilities to hosts/services clearly.
-    - Executive Risk Score Block is prominently placed at the top for immediate comprehension.
-    - Markdown formatting, tables, and bullet lists for readability.
-    - No speculation — only summarize what is in the data.
-    4. End with a one-paragraph **Final Summary** highlighting overall network risk posture and suggested next steps.
+    # Network Security Assessment Report
+
+    End with a one-paragraph **Final Summary** describing overall security posture and next steps.
     """
 
     llm = get_llm()
