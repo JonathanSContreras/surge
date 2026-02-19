@@ -9,3 +9,4 @@ log/surge_log.log
 # delete after code is fully polished
 /dump
 /fixes
+test_dashboard_payload.py

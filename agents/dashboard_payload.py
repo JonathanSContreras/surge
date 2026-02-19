@@ -1,5 +1,6 @@
 from utils.helpers import score_conversion
 from config.logging_config import get_logger
+from execution.xml_parser import xml_parse
 
 from typing import Any
 import os
@@ -12,10 +13,6 @@ NOTES:
 """
 # define global log file
 logger = get_logger(__name__)
-
-def network_dict_build(xml_path: str) -> dict:
-    # NOTE: get all xml files and parse it into a dictionary, return the dictionary
-    pass
 
 # NOTE: do I even need to input the state?
 """
@@ -30,13 +27,8 @@ def network_dict_build(xml_path: str) -> dict:
     "cvss": 9.8,  // float from cvss scorer
     "status": "up"  //up or down
 }
-
-ID -> can be auto generated
-IP -> pull from dictionaries
-SEVERITY -> from score conversion
-DESCRIPTION -> can come from summary of parse
 """
-def build_dashboard_payload() -> list[dict[str, Any]]:
+def derive_xml_data() -> list[dict[str, Any]]:
     """
     Docstring for build_dashboard_payload
     
@@ -52,20 +44,32 @@ def build_dashboard_payload() -> list[dict[str, Any]]:
     # parse /scan_results for files that end in .xml
     xml_dir = "./scan_results"  # NOTE: make sure the os fingerprint scan goes in ./scan_results
     if os.path.isdir(xml_dir):
-        for root, dir, files in os.walk(xml_dir, topdown=True):  # root -> ./scan_results, files = list of all files in folder
-            for filename in files:
+        for root, _, files in os.walk(xml_dir, topdown=True):  # root -> ./scan_results, files = list of all files in folder
+            for filename in sorted(files):
+                file_dict = {}  # creating a new dictionary per filename parse
                 # only parse .xml files
-                if filename.endswith(".xml"):
-                    logger.info(f"Parsing {filename} in dir: {root}")
+                if not filename.endswith(".xml"):
+                    continue
 
-                    # create the full file path
-                    file_to_parse = os.path.join(root, filename)
+                # create the full file path
+                file_to_parse = os.path.join(root, filename)
+                logger.info(f"Parsing {filename} in dir: {root}")
 
-                    # call the parser
+                # call the parser
+                file_dict = xml_parse(file_to_parse)
+
+                # append the dictionary in the list
+                xml_data.append(file_dict)
 
 
+    return xml_data
 
-                
 
-    
-    pass
+## MAIN
+if __name__ == "__main__":
+    lst = derive_xml_data()
+
+    print(len(lst))
+
+    with open("lst.txt", "w+", encoding="utf-8") as f:
+        f.write(str(lst))

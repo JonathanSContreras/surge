@@ -19,6 +19,7 @@
 }
 ```
 - find a way to define the links of devices to each other
+- refactor `address_grab.py` and `xml_parser.py` files (less)
 
 
 #### Can Backburn
