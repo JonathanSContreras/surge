@@ -8,7 +8,7 @@ from agents.os_fingerprint_agent import os_fingerprint_finder
 from agents.os_analysis import os_analysis
 from agents.vuln_agent import vulnerability
 from agents.data_formatting_agent import cvss_data_formatter
-from agents.cvss_scoring import cvss_scorer
+from agents.cvss_scoring import cvss_scoring
 from agents.reporter import reporter
 
 def build_mas_graph():
@@ -25,7 +25,7 @@ def build_mas_graph():
     workflow.add_node("os_analysis", os_analysis)
     workflow.add_node("vulnerability", vulnerability)
     workflow.add_node("cvss_data_formatter", cvss_data_formatter) 
-    workflow.add_node("cvss_scorer", cvss_scorer) 
+    workflow.add_node("cvss_scoring", cvss_scoring) 
     workflow.add_node("reporter", reporter)
     
     # define workflow entry point
@@ -37,8 +37,8 @@ def build_mas_graph():
     workflow.add_edge("os_finder", "os_analysis")
     workflow.add_edge("os_analysis", "vulnerability")
     workflow.add_edge("vulnerability", "cvss_data_formatter")
-    workflow.add_edge("cvss_data_formatter", "cvss_scorer")
-    workflow.add_edge("cvss_scorer", "reporter")
+    workflow.add_edge("cvss_data_formatter", "cvss_scoring")
+    workflow.add_edge("cvss_scoring", "reporter")
     workflow.add_edge("reporter", END)
 
     return workflow.compile()
