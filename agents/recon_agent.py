@@ -122,6 +122,7 @@ def recon(state: AgentState) -> AgentState:
 
         # extract json (json = LLM response/output)
         decision = extract_json(raw_text, iteration)
+        logger.debug(f"Decision (at iter: {iteration} after prompt is {decision}")
         if not isinstance(decision, dict):
             decision = {}
 
@@ -163,7 +164,8 @@ def recon(state: AgentState) -> AgentState:
             "timeout": TIMEOUT_VAL
         })
         aggregated_logs.append(log)
-        logger.info("nmap scan finished and appended to aggregated_logs")
+        logger.info(f"nmap scan finished with flags {flags} and appended to aggregated_logs")
+        logger.debug(f".xml file saved to {log['xml_dir']}/{log['xml_file']}")
 
         # parse nmap scan output (will parse xml file to dictionary)  THIS IS AN ISSUE (the xml content is now the folder name)
         parsed = {}

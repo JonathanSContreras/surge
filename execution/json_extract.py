@@ -18,6 +18,7 @@ def extract_json(raw_text: str, iteration: int | None = None) -> Any:
     if array_match:
         try:
             parsed = json.loads(array_match.group(0))
+            print("parsed", parsed)
             print(f"[{datetime.datetime.now()}] ~ Extracted valid JSON ARRAY")
             return parsed
         except json.JSONDecodeError as e:

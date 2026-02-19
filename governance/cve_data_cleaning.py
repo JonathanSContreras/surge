@@ -62,8 +62,8 @@ def xgboost_data_cleaning(df:pd.DataFrame, catgy_cols:list, summary_col="summary
     cve_data = df.copy()
 
     # debugging prints
-    print(f"[xgboost_data_cleaning] Input shape: {df.shape}")
-    print(f"[xgboost_data_cleaning] Input columns: {df.columns}")
+    print(f"[xgboost_data_cleaning] Input shape: {cve_data.shape}")
+    print(f"[xgboost_data_cleaning] Input columns: {cve_data.columns}")
 
     # make sure cwe_code column exists
     if "cwe" in cve_data.colymns and "cwe_code" not in cve_data.columns:

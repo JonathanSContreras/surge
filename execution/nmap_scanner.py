@@ -4,6 +4,7 @@ Description: Tool method definitions for Surge MAS.
 """
 # imports
 from config.constants import TIMEOUT_VAL
+from config.logging_config import get_logger
 from governance.sanitization import sanitize_flags_for_tier
 from utils.helpers import store_xml_to_folder
 
@@ -12,6 +13,9 @@ import subprocess
 import datetime
 import time
 import shlex
+
+# define global logging file
+logger = get_logger(__name__)
 
 ## --- RECON METHOD/TOOLS --- ##
 @tool

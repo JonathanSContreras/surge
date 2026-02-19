@@ -68,6 +68,7 @@ def os_fingerprint_finder(state: AgentState) -> AgentState:
     os_results = {}
     if os_scan_log.get("success") and os_scan_log.get("xml_file"):
         xml_path = f"{os_scan_log['xml_dir']}/{os_scan_log['xml_file']}"
+        logger.info(f"xml path for OS fingerprinting is defined as: {xml_path}")
 
         # parse the XML for OS data
         parsed_data = xml_parse(xml_path)

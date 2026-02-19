@@ -55,3 +55,15 @@ def store_xml_to_folder(target: list, scan_output: str, xml_file: str, base_fold
     print(f"Successfully saved .xml file to folder {base_folder}.")
 
     return base_folder
+
+
+## --- DASHBOARD DATA CONVERSION HELPER FUNCTIONS --- ##
+def score_conversion(score: float) -> str:
+    if score >= 9.0:
+        return "critical"
+    elif score >= 7.0:
+        return "high"
+    elif score >= 5.0:
+        return "medium"
+    else:
+        return "low"

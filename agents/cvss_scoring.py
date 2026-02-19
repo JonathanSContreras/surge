@@ -1,6 +1,6 @@
 from core.state import AgentState
 from governance.cve_data_cleaning import xgboost_data_cleaning
-from execution.cvss_scorer import cvss_scorer
+from execution.cvss_regessor_model import cvss_regressor
 from config.logging_config import get_logger
 
 import pandas as pd
@@ -14,6 +14,7 @@ def cvss_scoring(state: AgentState) -> AgentState:
     """
     # get vulnerability findings
     vuln_list = state.get("vuln_normalized_results", [])  
+    logger.debug()
 
     if not vuln_list:
         state["vuln_scoring"] = []
@@ -24,6 +25,7 @@ def cvss_scoring(state: AgentState) -> AgentState:
 
     # create dataframe of vulnerability findings
     df = pd.DataFrame(vuln_list)
+    print("df", df)  # DID NOT PRINT
 
     # normalize categorical columns
     catgy_cols = ["access_authentication", "access_complexity", "access_vector", "impact_availability", "impact_confidentiality", "impact_integrity"]
@@ -40,7 +42,7 @@ def cvss_scoring(state: AgentState) -> AgentState:
     cve_data.to_csv("cvs_data_debug.csv", index=False)
 
     # will need to take the formatted data and output a score
-    vulnerability_scores= cvss_scorer(cve_data)
+    vulnerability_scores= cvss_regressor(cve_data)
 
     # get scored back to original data
     results = []

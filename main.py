@@ -25,7 +25,7 @@ if __name__ == "__main__":
     start = time.perf_counter()
 
     scan_type = "high"
-    targets = ["10.10.160.0/24"]  # whole subnet scan  HCUEngg ["10.10.162.0/24"], Apt ["192.168.1.0/24"]
+    targets = ["10.10.162.0/24"]  # whole subnet scan  HCUEngg ["10.10.162.0/24"], Apt ["192.168.1.0/24"], ["10.10.160.0/12"]
 
     final_state = execute_workflow(scan_type, targets)
 

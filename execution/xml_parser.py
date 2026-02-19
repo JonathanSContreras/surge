@@ -1,7 +1,7 @@
 import os
 import xml.etree.ElementTree as ET
 
-def xml_parse(xml_data):
+def xml_parse(xml_data) -> dict:
     """
     Parses Nmap XML output into a structured dictionary.
     Handles missing fields and multiple addresses/hostnames.

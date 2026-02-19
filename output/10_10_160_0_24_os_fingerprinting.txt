@@ -2,249 +2,134 @@
 
 # OS Fingerprinting Summary – 10.10.160.0/24
 
-| Host | OS (top match) | Accuracy | CPE(s) | Notes |
-|------|----------------|----------|--------|-------|
-| **10.10.160.79** | Windows 10 1703 / Windows 11 21H2 | 97 % | `cpe:/o:microsoft:windows_10`, `cpe:/o:microsoft:windows_11` | General‑purpose workstation/desktop |
-| **10.10.160.96** | Windows 10 1607‑11 23H2 | 99 % | `cpe:/o:microsoft:windows_10`, `cpe:/o:microsoft:windows_11` | General‑purpose workstation/desktop |
-| **10.10.160.16** | Linux 2.4.21‑2.4.25 (embedded) | 96 % | `cpe:/o:linux:linux_kernel:2.4` | Embedded device (likely router/WAP) |
-| **10.10.160.101** | iOS 15.0‑15.6 | 100 % | `cpe:/o:apple:iphone_os:15` | Mobile phone |
-| **10.10.160.248** | iOS 15.0‑15.6 | 100 % | `cpe:/o:apple:iphone_os:15` | Mobile phone |
-| **10.10.160.1** | *No detection* | 0 % | – | Unknown |
-| **10.10.160.202** | *No detection* | 0 % | – | Unknown |
-| **10.10.160.34** | *No data* | – | – | Unknown |
+| IP | OS (top match) | Accuracy | CPE | Notes |
+|----|----------------|----------|-----|-------|
+| 10.10.160.251 | Apple iOS 15 (Darwin 21.x) | 100 % | `cpe:/o:apple:iphone_os:15` | Phone |
+| 10.10.160.101 | Apple iOS 15 (Darwin 21.x) | 100 % | `cpe:/o:apple:iphone_os:15` | Phone |
+| 10.10.160.16 | Linux 2.4.x (embedded) | 96 % | `cpe:/o:linux:linux_kernel:2.4` | Likely a legacy router/firewall |
+| 10.10.160.40 | Microsoft Windows 11 21H2 | 91 % | `cpe:/o:microsoft:windows_11` | Workstation/DMZ host |
+| 10.10.160.96 | Microsoft Windows 10 1607‑23H2 / Windows 11 21H2 | 99 % | `cpe:/o:microsoft:windows_10`, `cpe:/o:microsoft:windows_11` | Server/DMZ host |
+| 10.10.160.34 | **No data** | 0 % | – | Unidentified |
+| 10.10.160.93 | **No data** | 0 % | – | Unidentified |
+| 10.10.160.64 | **No data** | 0 % | – | Unidentified |
+| 10.10.160.1 | **No data** | 0 % | – | Unidentified |
 
-> **Total hosts scanned:** 8  
-> **Successfully fingerprinted:** 5 (63 %)  
-> **Unidentified / low‑confidence:** 3 (37 %)
-
----
-
-## 1. Executive Summary
-The network is dominated by modern Windows 10/11 workstations (≈ 60 %) and a pair of iOS 15 devices. A single embedded Linux device (kernel 2.4) is present, indicating legacy hardware. Three hosts lack fingerprinting data, likely due to firewalls or minimal service exposure. The most pressing risk is the legacy Linux kernel, which is EOL and vulnerable to numerous exploits.
+> **Total hosts scanned:** 9  
+> **Successfully fingerprinted:** 5 (56 %)  
+> **Unidentified/low‑confidence:** 4 (44 %)
 
 ---
 
-## 2. OS Landscape Overview
+## 1. OS Landscape Overview
 
-| OS Family | Count | % of Fingerprinted Hosts | Key CPEs |
-|-----------|-------|--------------------------|----------|
-| **Windows** | 2 | 40 % | `cpe:/o:microsoft:windows_10`, `cpe:/o:microsoft:windows_11` |
-| **iOS** | 2 | 40 % | `cpe:/o:apple:iphone_os:15` |
-| **Linux (embedded)** | 1 | 20 % | `cpe:/o:linux:linux_kernel:2.4` |
-| **Unknown** | 3 | 60 % | – |
-
-*Note:* The “Unknown” hosts may be critical infrastructure (e.g., firewalls, routers) that simply did not respond to the fingerprinting probes.
+- **Dominant families:**  
+  - **Apple iOS** – 2 phones (100 % confidence).  
+  - **Microsoft Windows** – 2 hosts (Windows 10/11, 99–91 % confidence).  
+  - **Linux (embedded)** – 1 host (96 % confidence).  
+- **Unidentified hosts** (4) show no open ports or only closed ports, suggesting hardened appliances or firewalled devices.
 
 ---
 
-## 3. Most Common Operating Systems
-- **Windows 10/11** – 2 hosts, high confidence (≥ 97 %).  
-- **iOS 15** – 2 hosts, 100 % confidence.  
-These are the primary targets for standard vulnerability scanning (SMB, RDP, web services, mobile app exposure).
+## 2. Most Common Operating Systems
+
+| OS | Count | Confidence |
+|----|-------|------------|
+| Apple iOS 15 | 2 | 100 % |
+| Microsoft Windows 10/11 | 2 | 99–91 % |
+| Linux 2.4.x (embedded) | 1 | 96 % |
+
+> The network is a mixed environment with a small number of mobile devices and a few Windows workstations/servers.
 
 ---
 
-## 4. Unusual / Outdated OS Versions
-| Host | OS | Why it’s a concern | Suggested action |
-|------|----|---------------------|------------------|
-| **10.10.160.16** | Linux 2.4.21‑2.4.25 (embedded) | Kernel EOL (2004), no security updates, high CVSS scores for local privilege escalation and remote code execution. | Replace or upgrade firmware; isolate from critical networks. |
-| **10.10.160.96** | Windows 10 1607‑11 23H2 | While still supported, the presence of older Windows 10 1607/1511 in the match list suggests potential legacy patches. | Verify patch level; ensure latest cumulative updates. |
-| **10.10.160.79** | Windows 10 1703 / Windows 11 21H2 | Same as above; ensure no unpatched SMB/CVE‑2021‑26855 (EternalBlue) or CVE‑2021‑31166. | Patch to latest cumulative update. |
+## 3. Unusual / Outdated OS Versions
+
+| Host | OS | Why it’s a concern |
+|------|----|---------------------|
+| 10.10.160.16 | Linux 2.4.x (embedded) | Kernel 2.4 is **EOL** (end‑of‑life > 10 years). Known CVEs (CVE‑2014‑xxxx, CVE‑2015‑xxxx) still exist. |
+| 10.10.160.40 | Windows 11 21H2 | While current, the host may be a DMZ or critical service; any unpatched Windows 11 is vulnerable to CVE‑2024‑xxxx. |
+| 10.10.160.96 | Windows 10 1607‑23H2 / Windows 11 21H2 | Mixed OS family; potential for unpatched Windows 10 (CVE‑2023‑xxxx). |
+
+> **Action:** Verify patch status on the Linux router/firewall and the Windows hosts. Consider isolating the Linux device or upgrading to a supported firmware.
 
 ---
 
-## 5. Hosts with Low Confidence / No Detection
-- **10.10.160.1** – No fingerprinting data; likely a firewall or network appliance.  
-- **10.10.160.202** – Same as above.  
-- **10.10.160.34** – No data; could be a hidden or misconfigured host.  
+## 4. Low‑Confidence / Unidentified Hosts
 
-**Recommendation:** Perform targeted banner grabbing, SNMP queries, and port scans on ports 443, 22, 80, 443, 8443, 8080, and any custom ports to refine OS identification.
+| Host | Accuracy | Ports | Recommendation |
+|------|----------|-------|----------------|
+| 10.10.160.34 | 0 % | None | Perform a full port scan (TCP/UDP) and banner grab. |
+| 10.10.160.93 | 0 % | None | Likely a hardened appliance; check for management interfaces (e.g., HTTPS, SSH). |
+| 10.10.160.64 | 0 % | Closed ports 1, 40934 | Same as above; consider scanning for common management ports (443, 22, 23). |
+| 10.10.160.1 | 0 % | None | Could be a gateway or firewall; run a traceroute and check for default gateway services. |
 
----
-
-## 6. Vulnerability Scanning Priorities
-
-| Priority | Target | Rationale | Key CVE Categories |
-|----------|--------|-----------|--------------------|
-| **CRITICAL** | 10.10.160.16 (Linux 2.4) | EOL kernel, unpatched local/remote exploits | CVE‑2004‑xxxx, CVE‑2005‑xxxx |
-| **HIGH** | 10.10.160.79 & 10.10.160.96 (Windows 10/11) | SMB, RDP, web services; potential for CVE‑2021‑26855, CVE‑2021‑31166 | SMB/CVE‑2021‑26855, RDP/CVE‑2021‑31166 |
-| **MEDIUM** | 10.10.160.101 & 10.10.160.248 (iOS 15) | Mobile OS vulnerabilities, app exposure | CVE‑2021‑xxxx (iOS) |
-| **LOW** | Unknown hosts (10.10.160.1, 10.10.160.202, 10.10.160.34) | Potential network devices; scan for default credentials, firmware versions | N/A |
-
-**Scanning Tools:**  
-- **Nmap NSE scripts** (`smb-vuln*`, `rdp-vuln*`, `http-headers`, `http-php-version`)  
-- **OpenVAS / Nessus** for comprehensive CVE coverage  
-- **Apple Mobile Device Support** for iOS device enumeration
+> **Next steps:**  
+> 1. Run `nmap -A` on each unidentified host.  
+> 2. Capture TLS certificates for HTTPS services to identify device type.  
+> 3. If still ambiguous, use SNMP or NetBIOS queries (if allowed).
 
 ---
 
-## 7. Recommendations
+## 5. Vulnerability Scanning Priorities
 
-1. **Patch Management**  
-   - Verify that Windows 10/11 hosts have the latest cumulative updates (KB5005565 or later).  
-   - Ensure Windows Server 2022 (if present) is fully patched.
+| Priority | Target | Rationale |
+|----------|--------|-----------|
+| **CRITICAL** | 10.10.160.16 (Linux 2.4.x) | EOL kernel, high CVE count. |
+| **HIGH** | 10.10.160.40 & 10.10.160.96 (Windows 10/11) | Potential unpatched SMB/WinRM services; Windows 10/11 have frequent CVEs. |
+| **MEDIUM** | 10.10.160.251 & 10.10.160.101 (iOS 15) | Mobile OS; check for known iOS CVEs (e.g., CVE‑2024‑xxxx). |
+| **LOW** | Unidentified hosts | Once identified, assess based on OS. |
 
-2. **Legacy Device Replacement**  
-   - Replace the Linux 2.4 embedded device with a modern firmware or a supported OS.  
-   - If replacement is not feasible, isolate the device from critical segments and enforce strict firewall rules.
-
-3. **Network Segmentation**  
-   - Separate mobile devices (iOS) from workstation networks to limit lateral movement.  
-   - Place unknown hosts (likely firewalls) in a dedicated DMZ and perform detailed configuration reviews.
-
-4. **Continuous Monitoring**  
-   - Deploy IDS/IPS signatures for known SMB and RDP exploits.  
-   - Monitor for anomalous traffic from the legacy Linux device.
-
-5. **Further Recon**  
-   - Conduct banner grabbing on the unknown hosts to identify potential network appliances.  
-   - Use SNMP (if enabled) to retrieve device descriptions and firmware versions.
+> **Suggested scan tools:**  
+> - `nmap --script vuln` for SMB/SMBv3, RPC, and Windows-specific scripts.  
+> - `nessus` or `qualys` for comprehensive CVE coverage.  
+> - `nikto` for web services on Windows hosts.  
+> - `openvas` for embedded Linux firmware checks.
 
 ---
 
-**Bottom line:** The network is largely modern, but the presence of a legacy Linux kernel and the lack of OS data on three hosts represent the highest risk vectors. Prioritizing patching of Windows workstations and replacing the embedded device will significantly reduce the attack surface.
+### Key Takeaways
+
+- The network hosts a small but diverse set of devices, with a notable legacy Linux router/firewall that poses the highest risk.  
+- Windows hosts are modern but require patch verification.  
+- Unidentified hosts need further reconnaissance to rule out hidden critical infrastructure.  
+- Prioritize vulnerability scanning on the Linux device and Windows servers, then expand to mobile devices and any newly identified appliances.
 
 === RAW OS DATA ===
 
 {
-  "10.10.160.79": {
+  "10.10.160.93": {
+    "os_matches": [],
+    "os_classes": [],
+    "fingerprint": "",
+    "ports_used": [],
+    "accuracy": 0,
+    "cpe": [],
+    "device_type": "unknown",
+    "vendor": "unknown"
+  },
+  "10.10.160.251": {
     "os_matches": [
       {
-        "name": "Microsoft Windows 10 1703 or Windows 11 21H2",
-        "accuracy": 97,
-        "line": "74943"
-      },
-      {
-        "name": "Microsoft Windows Server 2022",
-        "accuracy": 96,
-        "line": "82093"
-      },
-      {
-        "name": "Microsoft Windows 11 21H2",
-        "accuracy": 96,
-        "line": "75551"
-      },
-      {
-        "name": "Microsoft Windows 10 1703",
-        "accuracy": 94,
-        "line": "74901"
-      },
-      {
-        "name": "Microsoft Windows 10 1507 - 1607",
-        "accuracy": 94,
-        "line": "74511"
-      },
-      {
-        "name": "Microsoft Windows 10 1607",
-        "accuracy": 94,
-        "line": "74662"
-      },
-      {
-        "name": "Microsoft Windows Server 2016",
-        "accuracy": 94,
-        "line": "81830"
-      },
-      {
-        "name": "Microsoft Windows Server 2008 R2",
-        "accuracy": 94,
-        "line": "80245"
-      },
-      {
-        "name": "Microsoft Windows 10 1511",
-        "accuracy": 94,
-        "line": "74548"
-      },
-      {
-        "name": "Microsoft Windows 10 20H2 - 21H1",
-        "accuracy": 93,
-        "line": "75329"
+        "name": "Apple iOS 15.0 - 15.6 (Darwin 21.1.0 - 21.6.0)",
+        "accuracy": 100,
+        "line": "3936"
       }
     ],
     "os_classes": [
       {
-        "type": "general purpose",
-        "vendor": "Microsoft",
-        "osfamily": "Windows",
-        "osgen": "10",
-        "accuracy": 97
-      },
-      {
-        "type": "general purpose",
-        "vendor": "Microsoft",
-        "osfamily": "Windows",
-        "osgen": "11",
-        "accuracy": 97
-      },
-      {
-        "type": "general purpose",
-        "vendor": "Microsoft",
-        "osfamily": "Windows",
-        "osgen": "2022",
-        "accuracy": 96
-      },
-      {
-        "type": "general purpose",
-        "vendor": "Microsoft",
-        "osfamily": "Windows",
-        "osgen": "11",
-        "accuracy": 96
-      },
-      {
-        "type": "general purpose",
-        "vendor": "Microsoft",
-        "osfamily": "Windows",
-        "osgen": "10",
-        "accuracy": 94
-      },
-      {
-        "type": "general purpose",
-        "vendor": "Microsoft",
-        "osfamily": "Windows",
-        "osgen": "10",
-        "accuracy": 94
-      },
-      {
-        "type": "general purpose",
-        "vendor": "Microsoft",
-        "osfamily": "Windows",
-        "osgen": "10",
-        "accuracy": 94
-      },
-      {
-        "type": "general purpose",
-        "vendor": "Microsoft",
-        "osfamily": "Windows",
-        "osgen": "2016",
-        "accuracy": 94
-      },
-      {
-        "type": "general purpose",
-        "vendor": "Microsoft",
-        "osfamily": "Windows",
-        "osgen": "2008",
-        "accuracy": 94
-      },
-      {
-        "type": "general purpose",
-        "vendor": "Microsoft",
-        "osfamily": "Windows",
-        "osgen": "10",
-        "accuracy": 94
-      },
-      {
-        "type": "general purpose",
-        "vendor": "Microsoft",
-        "osfamily": "Windows",
-        "osgen": "10",
-        "accuracy": 93
+        "type": "phone",
+        "vendor": "Apple",
+        "osfamily": "iOS",
+        "osgen": "15.X",
+        "accuracy": 100
       }
     ],
-    "fingerprint": "OS:SCAN(V=7.98%E=4%D=2/17%OT=135%CT=1%CU=43714%PV=Y%DS=1%DC=D%G=Y%M=C0BFBE%\nOS:TM=6994F272%P=i686-pc-windows-windows)SEQ(SP=100%GCD=1%ISR=101%TI=I%CI=I\nOS:%II=I%SS=S%TS=A)SEQ(SP=101%GCD=1%ISR=108%TI=I%CI=I%II=I%SS=S%TS=A)SEQ(SP\nOS:=102%GCD=1%ISR=109%TI=I%CI=I%II=I%SS=S%TS=A)SEQ(SP=102%GCD=1%ISR=10A%TI=\nOS:I%CI=I%II=I%SS=S%TS=A)SEQ(SP=108%GCD=1%ISR=10A%TI=I%CI=I%II=I%SS=S%TS=A)\nOS:OPS(O1=M5B4NW8ST11%O2=M5B4NW8ST11%O3=M5B4NW8NNT11%O4=M5B4NW8ST11%O5=M5B4\nOS:NW8ST11%O6=M5B4ST11)WIN(W1=FFFF%W2=FFFF%W3=FFFF%W4=FFFF%W5=FFFF%W6=FFFF)\nOS:ECN(R=Y%DF=Y%T=80%W=FFFF%O=M5B4NW8NNS%CC=N%Q=)T1(R=Y%DF=Y%T=80%S=O%A=S+%\nOS:F=AS%RD=0%Q=)T2(R=N)T3(R=Y%DF=Y%T=80%W=0%S=Z%A=O%F=AR%O=%RD=0%Q=)T4(R=Y%\nOS:DF=Y%T=80%W=0%S=A%A=O%F=R%O=%RD=0%Q=)T5(R=Y%DF=Y%T=80%W=0%S=Z%A=S+%F=AR%\nOS:O=%RD=0%Q=)T6(R=Y%DF=Y%T=80%W=0%S=A%A=O%F=R%O=%RD=0%Q=)T7(R=Y%DF=Y%T=80%\nOS:W=0%S=Z%A=S+%F=AR%O=%RD=0%Q=)U1(R=Y%DF=N%T=80%IPL=164%UN=0%RIPL=G%RID=G%\nOS:RIPCK=G%RUCK=G%RUD=G)IE(R=Y%DFI=N%T=80%CD=Z)\n",
+    "fingerprint": "",
     "ports_used": [
       {
         "state": "open",
         "proto": "tcp",
-        "portid": "135"
+        "portid": "62078"
       },
       {
         "state": "closed",
@@ -254,25 +139,78 @@ These are the primary targets for standard vulnerability scanning (SMB, RDP, web
       {
         "state": "closed",
         "proto": "udp",
-        "portid": "43714"
+        "portid": "36209"
       }
     ],
-    "accuracy": 97,
+    "accuracy": 100,
     "cpe": [
-      "cpe:/o:microsoft:windows_10",
-      "cpe:/o:microsoft:windows_11",
-      "cpe:/o:microsoft:windows_server_2022",
-      "cpe:/o:microsoft:windows_11",
-      "cpe:/o:microsoft:windows_10",
-      "cpe:/o:microsoft:windows_10",
-      "cpe:/o:microsoft:windows_10",
-      "cpe:/o:microsoft:windows_server_2016",
-      "cpe:/o:microsoft:windows_server_2008:r2",
-      "cpe:/o:microsoft:windows_10",
-      "cpe:/o:microsoft:windows_10"
+      "cpe:/o:apple:iphone_os:15"
     ],
-    "device_type": "general purpose",
-    "vendor": "Microsoft"
+    "device_type": "phone",
+    "vendor": "Apple"
+  },
+  "10.10.160.64": {
+    "os_matches": [],
+    "os_classes": [],
+    "fingerprint": "",
+    "ports_used": [
+      {
+        "state": "closed",
+        "proto": "tcp",
+        "portid": "1"
+      },
+      {
+        "state": "closed",
+        "proto": "udp",
+        "portid": "40934"
+      }
+    ],
+    "accuracy": 0,
+    "cpe": [],
+    "device_type": "unknown",
+    "vendor": "unknown"
+  },
+  "10.10.160.101": {
+    "os_matches": [
+      {
+        "name": "Apple iOS 15.0 - 15.6 (Darwin 21.1.0 - 21.6.0)",
+        "accuracy": 100,
+        "line": "3936"
+      }
+    ],
+    "os_classes": [
+      {
+        "type": "phone",
+        "vendor": "Apple",
+        "osfamily": "iOS",
+        "osgen": "15.X",
+        "accuracy": 100
+      }
+    ],
+    "fingerprint": "",
+    "ports_used": [
+      {
+        "state": "open",
+        "proto": "tcp",
+        "portid": "62078"
+      },
+      {
+        "state": "closed",
+        "proto": "tcp",
+        "portid": "1"
+      },
+      {
+        "state": "closed",
+        "proto": "udp",
+        "portid": "32033"
+      }
+    ],
+    "accuracy": 100,
+    "cpe": [
+      "cpe:/o:apple:iphone_os:15"
+    ],
+    "device_type": "phone",
+    "vendor": "Apple"
   },
   "10.10.160.16": {
     "os_matches": [
@@ -427,7 +365,7 @@ These are the primary targets for standard vulnerability scanning (SMB, RDP, web
         "accuracy": 96
       }
     ],
-    "fingerprint": "OS:SCAN(V=7.98%E=4%D=2/17%OT=8888%CT=1%CU=32066%PV=Y%DS=1%DC=D%G=Y%M=80482C\nOS:%TM=6994F272%P=i686-pc-windows-windows)SEQ(CI=Z%II=I)SEQ(CI=Z%II=I%TS=7)\nOS:ECN(R=N)T1(R=N)T1(R=Y%DF=Y%T=40%S=O%A=S+%F=AS%RD=0%Q=)T2(R=N)T3(R=N)T4(R\nOS:=Y%DF=Y%T=40%W=0%S=A%A=Z%F=R%O=%RD=0%Q=)T5(R=Y%DF=Y%T=40%W=0%S=Z%A=S+%F=\nOS:AR%O=%RD=0%Q=)T6(R=Y%DF=Y%T=40%W=0%S=A%A=Z%F=R%O=%RD=0%Q=)T7(R=Y%DF=Y%T=\nOS:40%W=0%S=Z%A=S+%F=AR%O=%RD=0%Q=)U1(R=Y%DF=N%T=40%IPL=164%UN=0%RIPL=G%RID\nOS:=G%RIPCK=G%RUCK=G%RUD=G)IE(R=Y%DFI=N%T=40%CD=S)\n",
+    "fingerprint": "OS:SCAN(V=7.98%E=4%D=2/18%OT=8888%CT=1%CU=37798%PV=Y%DS=1%DC=D%G=Y%M=80482C\nOS:%TM=69963EC0%P=i686-pc-windows-windows)SEQ(CI=Z%II=I)SEQ(CI=Z%II=I%TS=7)\nOS:ECN(R=N)T1(R=Y%DF=Y%T=40%S=O%A=S+%F=AS%RD=0%Q=)T2(R=N)T3(R=N)T4(R=Y%DF=Y\nOS:%T=40%W=0%S=A%A=Z%F=R%O=%RD=0%Q=)T5(R=Y%DF=Y%T=40%W=0%S=Z%A=S+%F=AR%O=%R\nOS:D=0%Q=)T6(R=Y%DF=Y%T=40%W=0%S=A%A=Z%F=R%O=%RD=0%Q=)T7(R=Y%DF=Y%T=40%W=0%\nOS:S=Z%A=S+%F=AR%O=%RD=0%Q=)U1(R=Y%DF=N%T=40%IPL=164%UN=0%RIPL=G%RID=G%RIPC\nOS:K=G%RUCK=G%RUD=G)IE(R=Y%DFI=N%T=40%CD=S)\n",
     "ports_used": [
       {
         "state": "open",
@@ -442,7 +380,7 @@ These are the primary targets for standard vulnerability scanning (SMB, RDP, web
       {
         "state": "closed",
         "proto": "udp",
-        "portid": "32066"
+        "portid": "37798"
       }
     ],
     "accuracy": 96,
@@ -463,6 +401,91 @@ These are the primary targets for standard vulnerability scanning (SMB, RDP, web
     "device_type": "general purpose",
     "vendor": "Linux"
   },
+  "10.10.160.40": {
+    "os_matches": [
+      {
+        "name": "Microsoft Windows 11 21H2",
+        "accuracy": 91,
+        "line": "75497"
+      },
+      {
+        "name": "FreeBSD 6.2-RELEASE",
+        "accuracy": 88,
+        "line": "29729"
+      },
+      {
+        "name": "Microsoft Windows 10",
+        "accuracy": 86,
+        "line": "74394"
+      },
+      {
+        "name": "Microsoft Windows Server 2008 or 2008 Beta 3",
+        "accuracy": 85,
+        "line": "80082"
+      },
+      {
+        "name": "Microsoft Windows 10 1607",
+        "accuracy": 85,
+        "line": "74770"
+      }
+    ],
+    "os_classes": [
+      {
+        "type": "general purpose",
+        "vendor": "Microsoft",
+        "osfamily": "Windows",
+        "osgen": "11",
+        "accuracy": 91
+      },
+      {
+        "type": "general purpose",
+        "vendor": "FreeBSD",
+        "osfamily": "FreeBSD",
+        "osgen": "6.X",
+        "accuracy": 88
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Microsoft",
+        "osfamily": "Windows",
+        "osgen": "10",
+        "accuracy": 86
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Microsoft",
+        "osfamily": "Windows",
+        "osgen": "2008",
+        "accuracy": 85
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Microsoft",
+        "osfamily": "Windows",
+        "osgen": "10",
+        "accuracy": 85
+      }
+    ],
+    "fingerprint": "",
+    "ports_used": [
+      {
+        "state": "open",
+        "proto": "tcp",
+        "portid": "1217"
+      }
+    ],
+    "accuracy": 91,
+    "cpe": [
+      "cpe:/o:microsoft:windows_11",
+      "cpe:/o:freebsd:freebsd:6.2",
+      "cpe:/o:microsoft:windows_10",
+      "cpe:/o:microsoft:windows_server_2008::beta3",
+      "cpe:/o:microsoft:windows_server_2008",
+      "cpe:/o:microsoft:windows_10"
+    ],
+    "device_type": "general purpose",
+    "vendor": "Microsoft"
+  },
   "10.10.160.1": {
     "os_matches": [],
     "os_classes": [],
@@ -472,111 +495,6 @@ These are the primary targets for standard vulnerability scanning (SMB, RDP, web
     "cpe": [],
     "device_type": "unknown",
     "vendor": "unknown"
-  },
-  "10.10.160.202": {
-    "os_matches": [],
-    "os_classes": [],
-    "fingerprint": "",
-    "ports_used": [
-      {
-        "state": "open",
-        "proto": "tcp",
-        "portid": "62078"
-      },
-      {
-        "state": "closed",
-        "proto": "tcp",
-        "portid": "1"
-      }
-    ],
-    "accuracy": 0,
-    "cpe": [],
-    "device_type": "unknown",
-    "vendor": "unknown"
-  },
-  "10.10.160.101": {
-    "os_matches": [
-      {
-        "name": "Apple iOS 15.0 - 15.6 (Darwin 21.1.0 - 21.6.0)",
-        "accuracy": 100,
-        "line": "3936"
-      }
-    ],
-    "os_classes": [
-      {
-        "type": "phone",
-        "vendor": "Apple",
-        "osfamily": "iOS",
-        "osgen": "15.X",
-        "accuracy": 100
-      }
-    ],
-    "fingerprint": "",
-    "ports_used": [
-      {
-        "state": "open",
-        "proto": "tcp",
-        "portid": "62078"
-      },
-      {
-        "state": "closed",
-        "proto": "tcp",
-        "portid": "1"
-      },
-      {
-        "state": "closed",
-        "proto": "udp",
-        "portid": "43454"
-      }
-    ],
-    "accuracy": 100,
-    "cpe": [
-      "cpe:/o:apple:iphone_os:15"
-    ],
-    "device_type": "phone",
-    "vendor": "Apple"
-  },
-  "10.10.160.248": {
-    "os_matches": [
-      {
-        "name": "Apple iOS 15.0 - 15.6 (Darwin 21.1.0 - 21.6.0)",
-        "accuracy": 100,
-        "line": "3936"
-      }
-    ],
-    "os_classes": [
-      {
-        "type": "phone",
-        "vendor": "Apple",
-        "osfamily": "iOS",
-        "osgen": "15.X",
-        "accuracy": 100
-      }
-    ],
-    "fingerprint": "",
-    "ports_used": [
-      {
-        "state": "open",
-        "proto": "tcp",
-        "portid": "62078"
-      },
-      {
-        "state": "closed",
-        "proto": "tcp",
-        "portid": "1"
-      },
-      {
-        "state": "closed",
-        "proto": "udp",
-        "portid": "31158"
-      }
-    ],
-    "accuracy": 100,
-    "cpe": [
-      "cpe:/o:apple:iphone_os:15"
-    ],
-    "device_type": "phone",
-    "vendor": "Apple"
   },
   "10.10.160.96": {
     "os_matches": [
@@ -591,19 +509,19 @@ These are the primary targets for standard vulnerability scanning (SMB, RDP, web
         "line": "74530"
       },
       {
-        "name": "Windows 11 21H2",
+        "name": "Windows Server 2022",
         "accuracy": 97,
+        "line": "82130"
+      },
+      {
+        "name": "Windows 11 21H2",
+        "accuracy": 96,
         "line": "75587"
       },
       {
         "name": "Microsoft Windows 10 1703",
         "accuracy": 96,
         "line": "74847"
-      },
-      {
-        "name": "Windows Server 2022",
-        "accuracy": 96,
-        "line": "82130"
       },
       {
         "name": "Microsoft Windows 10 1703 or Windows 11 21H2",
@@ -616,19 +534,19 @@ These are the primary targets for standard vulnerability scanning (SMB, RDP, web
         "line": "74920"
       },
       {
-        "name": "Microsoft Windows 11 21H2",
-        "accuracy": 95,
-        "line": "75569"
-      },
-      {
         "name": "Microsoft Windows 7 or 8.1 R1",
         "accuracy": 94,
         "line": "82755"
       },
       {
-        "name": "Microsoft Windows 10 1607",
+        "name": "Microsoft Windows 11 21H2",
         "accuracy": 94,
-        "line": "74626"
+        "line": "75569"
+      },
+      {
+        "name": "Microsoft Windows 10 1809 - 21H2",
+        "accuracy": 93,
+        "line": "75084"
       }
     ],
     "os_classes": [
@@ -657,21 +575,21 @@ These are the primary targets for standard vulnerability scanning (SMB, RDP, web
         "type": "general purpose",
         "vendor": "Microsoft",
         "osfamily": "Windows",
-        "osgen": "11",
+        "osgen": "2022",
         "accuracy": 97
       },
       {
         "type": "general purpose",
         "vendor": "Microsoft",
         "osfamily": "Windows",
-        "osgen": "10",
+        "osgen": "11",
         "accuracy": 96
       },
       {
         "type": "general purpose",
         "vendor": "Microsoft",
         "osfamily": "Windows",
-        "osgen": "2022",
+        "osgen": "10",
         "accuracy": 96
       },
       {
@@ -693,13 +611,6 @@ These are the primary targets for standard vulnerability scanning (SMB, RDP, web
         "vendor": "Microsoft",
         "osfamily": "Windows",
         "osgen": "10",
-        "accuracy": 95
-      },
-      {
-        "type": "general purpose",
-        "vendor": "Microsoft",
-        "osfamily": "Windows",
-        "osgen": "11",
         "accuracy": 95
       },
       {
@@ -727,11 +638,18 @@ These are the primary targets for standard vulnerability scanning (SMB, RDP, web
         "type": "general purpose",
         "vendor": "Microsoft",
         "osfamily": "Windows",
-        "osgen": "10",
+        "osgen": "11",
         "accuracy": 94
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Microsoft",
+        "osfamily": "Windows",
+        "osgen": "10",
+        "accuracy": 93
       }
     ],
-    "fingerprint": "OS:SCAN(V=7.98%E=4%D=2/17%OT=135%CT=1%CU=33465%PV=Y%DS=0%DC=L%G=Y%TM=6994F2\nOS:95%P=i686-pc-windows-windows)SEQ(SP=103%GCD=1%ISR=10A%TI=I%CI=I%II=I%SS=\nOS:S%TS=A)SEQ(SP=106%GCD=1%ISR=10A%TI=I%CI=I%II=I%SS=S%TS=A)SEQ(SP=107%GCD=\nOS:1%ISR=107%TI=I%CI=I%II=I%SS=S%TS=A)SEQ(SP=108%GCD=1%ISR=10A%TI=I%CI=I%II\nOS:=I%SS=S%TS=A)SEQ(SP=108%GCD=1%ISR=10C%TI=I%CI=I%II=I%SS=S%TS=A)OPS(O1=MF\nOS:FD7NW8ST11%O2=MFFD7NW8ST11%O3=MFFD7NW8NNT11%O4=MFFD7NW8ST11%O5=MFFD7NW8S\nOS:T11%O6=MFFD7ST11)WIN(W1=FFFF%W2=FFFF%W3=FFFF%W4=FFFF%W5=FFFF%W6=FFFF)ECN\nOS:(R=Y%DF=Y%T=80%W=FFFF%O=MFFD7NW8NNS%CC=N%Q=)T1(R=Y%DF=Y%T=80%S=O%A=S+%F=\nOS:AS%RD=0%Q=)T2(R=Y%DF=Y%T=80%W=0%S=Z%A=S%F=AR%O=%RD=0%Q=)T3(R=Y%DF=Y%T=80\nOS:%W=0%S=Z%A=O%F=AR%O=%RD=0%Q=)T4(R=Y%DF=Y%T=80%W=0%S=A%A=O%F=R%O=%RD=0%Q=\nOS:)T5(R=Y%DF=Y%T=80%W=0%S=Z%A=S+%F=AR%O=%RD=0%Q=)T6(R=Y%DF=Y%T=80%W=0%S=A%\nOS:A=O%F=R%O=%RD=0%Q=)T7(R=Y%DF=Y%T=80%W=0%S=Z%A=S+%F=AR%O=%RD=0%Q=)U1(R=Y%\nOS:DF=N%T=80%IPL=164%UN=0%RIPL=G%RID=G%RIPCK=Z%RUCK=G%RUD=G)IE(R=Y%DFI=N%T=\nOS:80%CD=Z)\n",
+    "fingerprint": "OS:SCAN(V=7.98%E=4%D=2/18%OT=135%CT=1%CU=39023%PV=Y%DS=0%DC=L%G=Y%TM=69963E\nOS:E3%P=i686-pc-windows-windows)SEQ(SP=106%GCD=1%ISR=10C%TI=I%CI=I%II=I%SS=\nOS:S%TS=A)SEQ(SP=F8%GCD=1%ISR=10F%TI=I%CI=I%II=I%SS=S%TS=A)SEQ(SP=FD%GCD=1%\nOS:ISR=10C%TI=I%CI=I%II=I%SS=S%TS=A)SEQ(SP=FE%GCD=1%ISR=10C%TI=I%CI=I%II=I%\nOS:SS=S%TS=A)SEQ(SP=FF%GCD=1%ISR=107%TI=I%CI=I%II=I%SS=S%TS=A)OPS(O1=MFFD7N\nOS:W8ST11%O2=MFFD7NW8ST11%O3=MFFD7NW8NNT11%O4=MFFD7NW8ST11%O5=MFFD7NW8ST11%\nOS:O6=MFFD7ST11)WIN(W1=FFFF%W2=FFFF%W3=FFFF%W4=FFFF%W5=FFFF%W6=FFFF)ECN(R=Y\nOS:%DF=Y%T=80%W=FFFF%O=MFFD7NW8NNS%CC=N%Q=)T1(R=Y%DF=Y%T=80%S=O%A=S+%F=AS%R\nOS:D=0%Q=)T2(R=Y%DF=Y%T=80%W=0%S=Z%A=S%F=AR%O=%RD=0%Q=)T3(R=Y%DF=Y%T=80%W=0\nOS:%S=Z%A=O%F=AR%O=%RD=0%Q=)T4(R=Y%DF=Y%T=80%W=0%S=A%A=O%F=R%O=%RD=0%Q=)T5(\nOS:R=Y%DF=Y%T=80%W=0%S=Z%A=S+%F=AR%O=%RD=0%Q=)T6(R=Y%DF=Y%T=80%W=0%S=A%A=O%\nOS:F=R%O=%RD=0%Q=)T7(R=Y%DF=Y%T=80%W=0%S=Z%A=S+%F=AR%O=%RD=0%Q=)U1(R=Y%DF=N\nOS:%T=80%IPL=164%UN=0%RIPL=G%RID=G%RIPCK=Z%RUCK=G%RUD=G)IE(R=Y%DFI=N%T=80%C\nOS:D=Z)\n",
     "ports_used": [
       {
         "state": "open",
@@ -746,7 +664,7 @@ These are the primary targets for standard vulnerability scanning (SMB, RDP, web
       {
         "state": "closed",
         "proto": "udp",
-        "portid": "33465"
+        "portid": "39023"
       }
     ],
     "accuracy": 99,
@@ -754,16 +672,16 @@ These are the primary targets for standard vulnerability scanning (SMB, RDP, web
       "cpe:/o:microsoft:windows_10",
       "cpe:/o:microsoft:windows_11",
       "cpe:/o:microsoft:windows_10",
-      "cpe:/o:microsoft:windows_11",
-      "cpe:/o:microsoft:windows_10",
       "cpe:/o:microsoft:windows_server_2022",
+      "cpe:/o:microsoft:windows_11",
+      "cpe:/o:microsoft:windows_10",
       "cpe:/o:microsoft:windows_10",
       "cpe:/o:microsoft:windows_11",
       "cpe:/o:microsoft:windows_10",
-      "cpe:/o:microsoft:windows_11",
       "cpe:/o:microsoft:windows_11",
       "cpe:/o:microsoft:windows_7",
       "cpe:/o:microsoft:windows_8.1:r1",
+      "cpe:/o:microsoft:windows_11",
       "cpe:/o:microsoft:windows_10"
     ],
     "device_type": "general purpose",
