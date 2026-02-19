@@ -72,7 +72,7 @@ SANITIZATION_TIER_CONFIG = {
             "--version-intensity", "--version-all", "--version-light",
             "--version-trace", "--osscan-guess"
             # Scripting / vulnerability detection
-            "--script", "--script-args", "--script-trace", "--script=banner,os-fingerprint"
+            "--script", "--script-args", "--script-trace", "--script=banner,os-fingerprint", "--script=banner", 
             # Safe, common vuln script sets
             "vuln",
             # Output
@@ -81,7 +81,7 @@ SANITIZATION_TIER_CONFIG = {
             "--max-retries", "--min-rate", "--max-rate",
             "--host-timeout", "--packet-trace", "-Pn"
             # Networking
-            "--traceroute", "--send-eth", "--send-ip", "-6",
+            "--traceroute", "--send-eth", "--send-ip", "-6", "2"
         },
         "max_port_range": 65535,
         "max_runtime_s": 5400,  # 90 min upper bound
