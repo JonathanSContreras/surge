@@ -89,6 +89,8 @@ def nmap_scanning(scan_type: str, flags: list[str], targets: list[str], timeout:
         # link that folder name to the "xml" key
         folder_path = store_xml_to_folder(targets, xml_output, file_path)
 
+        logger.info(f"Sucessful nmap scan for {targets}")
+
         log = {
             "timestamp": timestamp,
             "command": cmd,
@@ -97,7 +99,8 @@ def nmap_scanning(scan_type: str, flags: list[str], targets: list[str], timeout:
             "xml_file": file_path,
             "stderr": proc.stderr,
             "returncode": proc.returncode,
-            "success": proc.returncode == 0,
+            # "success": proc.returncode == 0,
+            "success": bool(xml_output and "<nmaprun" in xml_output),
             "max_runtime_s": round(time.time()-start_time, 2)
         }
 

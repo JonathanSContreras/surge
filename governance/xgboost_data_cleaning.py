@@ -66,7 +66,7 @@ def xgboost_data_cleaning(df:pd.DataFrame, catgy_cols:list, summary_col="summary
     print(f"[xgboost_data_cleaning] Input columns: {cve_data.columns}")
 
     # make sure cwe_code column exists
-    if "cwe" in cve_data.colymns and "cwe_code" not in cve_data.columns:
+    if "cwe" in cve_data.columns and "cwe_code" not in cve_data.columns:
         cve_data.rename(columns={"cwe": "cwe_code"}, inplace=True)
         print("[xgboost_data_cleaning] Renamed 'cwe' to 'cwe_code'")
 

@@ -20,6 +20,7 @@ def os_analysis(state: AgentState) -> AgentState:
     os_results = state.get("os_fingerprint_results", {})
     discovered_hosts = state.get("recon_results", {}).get("discovered_hosts", [])   
     logger.debug(f"There are {len(discovered_hosts)} hosts discovered -> {discovered_hosts}")
+    logger.debug(f"Results from os_fingerprint_results: {os_results}")
 
     os_analysis_prompt = f"""
     Analyze the following OS fingerprinting results and provide a structured summary.
@@ -57,6 +58,6 @@ def os_analysis(state: AgentState) -> AgentState:
         f.write("\n\n=== RAW OS DATA ===\n\n")
         f.write(json.dumps(os_results, indent=2))
     
-    logger.debug(f"OS analysis completed. Found OS data for {len(os_results)} hosts.")
+    logger.debug(f"OS analysis completed. Did OS analysis for {len(os_results)} hosts.")
     
     return state

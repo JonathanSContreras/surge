@@ -41,21 +41,33 @@ def os_fingerprint_finder(state: AgentState) -> AgentState:
     -Pn -> skip host discovery
     --script=banner -> grab the service banners for more context
     """
+    # os_scan_flags = [
+    #     "-O",
+    #     "-A",
+    #     "--osscan-guess",
+    #     "-Pn",
+    #     "--script=banner,os-fingerprint"
+    # ]
+    # POSSIBLE FIX    
     os_scan_flags = [
+        "-sS",
+        "-sV",
         "-O",
-        "-A",
         "--osscan-guess",
-        "-Pn",
-        "--script=banner,os-fingerprint"
+        "--max-retries", "4",
+        "--reason",
+        "-Pn"
     ]
 
     # run OS detection scan on all hosts
-    os_scan_log = nmap_scanning.invoke({
-        "scan_type":"high",
-        "flags":os_scan_flags,
-        "targets":discovered_hosts,
-        "timeout":TIMEOUT_VAL
-    })
+    for h in discovered_hosts:
+        logger.info(f"Starting OS detection scan for target: {h}")
+        os_scan_log = nmap_scanning.invoke({
+            "scan_type":"high",
+            "flags":os_scan_flags,
+            "targets":[h],
+            "timeout":TIMEOUT_VAL
+        })
 
     # write to scan log dump
     with open(SCANNING_DUMP_LOG, "a") as f:

@@ -10,3 +10,4 @@ log/surge_log.log
 /dump
 /fixes
 test_dashboard_payload.py
+lst.txt

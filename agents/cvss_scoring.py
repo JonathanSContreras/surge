@@ -29,10 +29,10 @@ def cvss_scoring(state: AgentState) -> AgentState:
     # normalize categorical columns
     catgy_cols = ["access_authentication", "access_complexity", "access_vector", "impact_availability", "impact_confidentiality", "impact_integrity"]
 
-    # uppercase all categorical columns
-    for col in catgy_cols:
-        if col in df.col:
-            df[col] = df[col].astype(str).str.upper()
+    # # uppercase all categorical columns
+    # for col in catgy_cols:
+    #     if col in df.columns:
+    #         df[col] = df[col].astype(str).str.upper()
     
     cve_data = xgboost_data_cleaning(df, catgy_cols)
 
@@ -49,6 +49,11 @@ def cvss_scoring(state: AgentState) -> AgentState:
         results.append({**vuln, "predicted_score": score})
         
     state["vuln_scoring"] = results
+
+    ## OUTPUT VULN SCORING IN TXT FOR NOW TO TEST DASHBOARD PAYLOAD
+    with open("vuln_scoring.txt", "w+") as f:
+        f.write(str(results))
+    ####
 
     logger.info("CVSS scoring agent has completed running and the state is updated.")
 
