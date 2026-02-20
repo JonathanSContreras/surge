@@ -72,7 +72,7 @@ SANITIZATION_TIER_CONFIG = {
             "--version-intensity", "--version-all", "--version-light",
             "--version-trace", "--osscan-guess",
             # Scripting / vulnerability detection
-            "--script", "--script-args", "--script-trace", "--script=banner,os-fingerprint", "--script=banner", 
+            "--script", "--script-args", "--script-trace", "--script=banner,os-fingerprint", "--script=banner",
             # Safe, common vuln script sets
             "vuln",
             # Output

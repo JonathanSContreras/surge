@@ -6,6 +6,14 @@ data/processed_cve_data.csv
 log/scan_dumps.txt
 log/surge_log.log
 
+# runtime artifacts
+output/
+cvs_data_debug.csv
+vuln_scoring.txt
+
+# virtual environment
+.venv/
+
 # delete after code is fully polished
 /dump
 /fixes

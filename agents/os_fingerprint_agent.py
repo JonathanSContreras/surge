@@ -59,15 +59,15 @@ def os_fingerprint_finder(state: AgentState) -> AgentState:
         "-Pn"
     ]
 
-    # run OS detection scan on all hosts
-    for h in discovered_hosts:
-        logger.info(f"Starting OS detection scan for target: {h}")
-        os_scan_log = nmap_scanning.invoke({
-            "scan_type":"high",
-            "flags":os_scan_flags,
-            "targets":[h],
-            "timeout":TIMEOUT_VAL
-        })
+    # run a single OS detection scan against all hosts at once
+    # (fixes: loop was overwriting os_scan_log each iteration, discarding all but the last host)
+    logger.info(f"Running OS detection scan for all {len(discovered_hosts)} hosts...")
+    os_scan_log = nmap_scanning.invoke({
+        "scan_type": "high",
+        "flags": os_scan_flags,
+        "targets": discovered_hosts,
+        "timeout": TIMEOUT_VAL
+    })
 
     # write to scan log dump
     with open(SCANNING_DUMP_LOG, "a") as f:
@@ -88,7 +88,7 @@ def os_fingerprint_finder(state: AgentState) -> AgentState:
         # extract the OS information
         for host_ip, host_data in parsed_data.items():
             os_info = host_data.get("os", {})
-            
+
             os_results[host_ip] = {
                 "os_matches": os_info.get("matches", []),  # List of possible OS matches
                 "os_classes": os_info.get("classes", []),   # OS classification data
