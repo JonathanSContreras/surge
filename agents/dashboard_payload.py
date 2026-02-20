@@ -86,15 +86,19 @@ def dashboard_data_grab(vuln_scoring:AgentState) -> list[dict]:
     # for each key (ip) in the xml I want to grab its equivalent value in the vuln_scoring list of dictionaries
     for n in xml_data:
         for ip in n.keys():
+        # for key in n.keys():
             # initiali dictionary 
             local_dict = {}
 
             id = str(i)
             ip = n[ip].get("ip")
             description = n[ip].get("description", "no description found")
+            # ip = n[key].get("ip")
+            # description = n[key].get("description", "no description found")
             deviceType = "idk"
             hostname = "idk"
             status = n[ip].get("status", "down")
+            # status = n[key].get("status", "down")
 
             # go through the vulnerabilities data and see if the IP exists
             cvss = 0.0

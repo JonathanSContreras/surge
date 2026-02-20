@@ -10,9 +10,11 @@ log/surge_log.log
 output/
 cvs_data_debug.csv
 vuln_scoring.txt
+final_state_result.txt
 
 # virtual environment
 .venv/
+venv/
 
 # delete after code is fully polished
 /dump
