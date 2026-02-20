@@ -103,7 +103,7 @@ def reporter(state: AgentState) -> AgentState:  # takes all output from all agen
 
     # write the analysis into a txt file
     target_ip = target_to_proper_file_name(state["targets"])
-    with open(f"./output/{target_ip}_final_report.md", "w", encoding="utf-8") as f:
+    with open(f"./report/{target_ip}_final_report.md", "w", encoding="utf-8") as f:
         f.write(result.content)
 
     logger.info("Reporter agent finished writing and updated the state.")

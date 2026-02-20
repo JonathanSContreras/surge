@@ -131,12 +131,3 @@ def dashboard_data_grab(vuln_scoring:AgentState) -> list[dict]:
             i += 1
 
     return dashboard_data 
-
-# ## MAIN
-# if __name__ == "__main__":
-#     lst = derive_xml_data()
-
-#     print(len(lst))
-
-#     with open("lst.txt", "w+", encoding="utf-8") as f:
-#         f.write(str(lst))
