@@ -1,9 +1,11 @@
 from utils.helpers import score_conversion
 from config.logging_config import get_logger
 from execution.xml_parser import xml_parse
+from core.state import AgentState
 
 from typing import Any
 import os
+import json
 
 """
 NOTES:
@@ -14,21 +16,8 @@ NOTES:
 # define global log file
 logger = get_logger(__name__)
 
-# NOTE: do I even need to input the state?
-"""
-// json output format example
-{
-    "id": "1",  // string (maybe can be order of object/index)
-    "ip": "192.168.1.1",
-    "severity": "critical",  // defining a word for a range
-    "description": "Primary gateway ...",
-    "deviceType": "router", // IoT, etc
-    "hostname": "gateway-primary",
-    "cvss": 9.8,  // float from cvss scorer
-    "status": "up"  //up or down
-}
-"""
-def derive_xml_data() -> list[dict[str, Any]]:
+## --- PREPROCESSING METHODS --- ##
+def _derive_xml_data() -> list[dict[str, Any]]:
     """
     Docstring for build_dashboard_payload
     
@@ -61,15 +50,89 @@ def derive_xml_data() -> list[dict[str, Any]]:
                 # append the dictionary in the list
                 xml_data.append(file_dict)
 
-
     return xml_data
 
+def _update_vuln_scoring(vuln_scoring: list[dict]) -> list[dict]:
+    # go through each dictionary in the list
+    for v in vuln_scoring:
+        # grab the predicted score and add the word value
+        score = v.get("predicted_score", 0.0)
+        word = score_conversion(score)
+        v["severity"] = word
 
-## MAIN
-if __name__ == "__main__":
-    lst = derive_xml_data()
+    return vuln_scoring
 
-    print(len(lst))
+# grab formatting method
+def dashboard_data_grab(vuln_scoring:AgentState) -> list[dict]:
+    """
+    // json output format example
+    {
+        "id": "1",  // string (maybe can be order of object/index)
+        "ip": "192.168.1.1",
+        "severity": "critical",  // defining a word for a range
+        "description": "Primary gateway ...",
+        "deviceType": "router", // IoT, etc
+        "hostname": "gateway-primary",
+        "cvss": 9.8,  // float from cvss scorer
+        "status": "up"  //up or down
+    }
+    """
+    # parse the xml data to get the xml data
+    xml_data = _derive_xml_data()
 
-    with open("lst.txt", "w+", encoding="utf-8") as f:
-        f.write(str(lst))
+    # initialize dashboard data list and id value
+    dashboard_data = []
+    i = 1 
+    # for each key (ip) in the xml I want to grab its equivalent value in the vuln_scoring list of dictionaries
+    for n in xml_data:
+        for ip in n.keys():
+            # initiali dictionary 
+            local_dict = {}
+
+            id = str(i)
+            ip = n[ip].get("ip")
+            description = n[ip].get("description", "no description found")
+            deviceType = "idk"
+            hostname = "idk"
+            status = n[ip].get("status", "down")
+
+            # go through the vulnerabilities data and see if the IP exists
+            cvss = 0.0
+            severity = "low"
+            cve_id = "none"
+            vuln_desc = "none"
+            for v in vuln_scoring:
+                if v["ip"] == ip:
+                    cvss = v.get("predicted_score")
+                    severity = v.get("severity")
+                    cve_id = v.get("cve_id")
+                    vuln_desc = v.get("description")
+
+            # print(n)
+            local_dict["id"] = id
+            local_dict["ip"] = ip
+            local_dict["severity"] = severity
+            local_dict["description"] = description
+            local_dict["deviceType"] = deviceType
+            local_dict["hostname"] = hostname
+            local_dict["cvss"] = cvss
+            local_dict["cve"] = cve_id
+            local_dict["vulnerability_description"] = vuln_desc
+            local_dict["status"] = status
+
+            # append the created dictionary to list
+            dashboard_data.append(local_dict)
+
+            # update i
+            i += 1
+
+    return dashboard_data 
+
+# ## MAIN
+# if __name__ == "__main__":
+#     lst = derive_xml_data()
+
+#     print(len(lst))
+
+#     with open("lst.txt", "w+", encoding="utf-8") as f:
+#         f.write(str(lst))

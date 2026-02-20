@@ -33,6 +33,11 @@ if __name__ == "__main__":
 
     final_state = execute_workflow(scan_type, targets)
 
+    ## DEBUG TXT PRINT
+    with open("final_state_result.txt", "w+") as f:
+        f.write(str(final_state))
+    ####
+    
     # logging prints
     time_in_minutes = (time.perf_counter()-start) / 60
     logger.info(f"Code finished in {time_in_minutes} minutes.") 

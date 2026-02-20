@@ -2,6 +2,7 @@ from core.state import AgentState
 from governance.xgboost_data_cleaning import xgboost_data_cleaning
 from execution.cvss_regessor_model import cvss_regressor
 from config.logging_config import get_logger
+from agents.dashboard_payload import dashboard_data_grab
 
 import pandas as pd
 
@@ -54,6 +55,18 @@ def cvss_scoring(state: AgentState) -> AgentState:
     with open("vuln_scoring.txt", "w+") as f:
         f.write(str(results))
     ####
+
+    # after the scoring run the dashboard data build method
+    dashboard_data = dashboard_data_grab(state["vuln_scoring"])
+
+    ## OUTPUT DASHBOARD DATA TO HAVE DATA FOR JONATHAN
+    import json
+    json_string = json.dumps(dashboard_data, indent=4)
+
+    with open("json_print.txt", "w+") as f:
+        f.write(json_string)
+    ####
+
 
     logger.info("CVSS scoring agent has completed running and the state is updated.")
 
