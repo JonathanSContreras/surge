@@ -46,7 +46,7 @@ def cvss_scoring(state: AgentState) -> AgentState:
     # get scored back to original data
     results = []
     for vuln, score in zip(vuln_list, vulnerability_scores):
-        results.append({**vuln, "predicted_score": score})
+        results.append({**vuln, "predicted_score": float(score)})
         
     state["vuln_scoring"] = results
 

@@ -70,16 +70,16 @@ SANITIZATION_TIER_CONFIG = {
             "-p", "--open", "--top-ports", "--exclude", "--exclude-ports",
             # Version & OS
             "--version-intensity", "--version-all", "--version-light",
-            "--version-trace", "--osscan-guess"
+            "--version-trace", "--osscan-guess",
             # Scripting / vulnerability detection
-            "--script", "--script-args", "--script-trace", "--script=banner,os-fingerprint", "--script=banner", 
+            "--script", "--script-args", "--script-trace", "--script=banner,os-fingerprint", "--script=banner",
             # Safe, common vuln script sets
             "vuln",
             # Output
             "-oX", "-oN", "-oG", "-oA", "--reason",
             # Performance
             "--max-retries", "--min-rate", "--max-rate",
-            "--host-timeout", "--packet-trace", "-Pn"
+            "--host-timeout", "--packet-trace", "-Pn",
             # Networking
             "--traceroute", "--send-eth", "--send-ip", "-6", "2"
         },
