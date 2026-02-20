@@ -8,6 +8,10 @@ from config.logging_config import get_logger
 # call global log file
 logger = get_logger(__name__)
 
+# max hosts per nmap call — keeps each scan within the timeout budget
+OS_SCAN_BATCH_SIZE = 10
+
+
 def os_fingerprint_finder(state: AgentState) -> AgentState:
     """
     Performs an aggressive OS fingerprinting on all discovered hosts.
@@ -30,25 +34,9 @@ def os_fingerprint_finder(state: AgentState) -> AgentState:
         logger.info("No hosts discovered in recon phase, skipping OS fingerprinting.")
         state["os_fingerprint_results"] = {}
         return state
-    
+
     logger.info(f"Starting OS fingerprinting for {len(discovered_hosts)} hosts...")
 
-    # prepare the OS detection flags
-    """
-    -O -> enable OS detection
-    -A -> aggressive scan
-    --osscan-guess -> guess the OS more aggressively
-    -Pn -> skip host discovery
-    --script=banner -> grab the service banners for more context
-    """
-    # os_scan_flags = [
-    #     "-O",
-    #     "-A",
-    #     "--osscan-guess",
-    #     "-Pn",
-    #     "--script=banner,os-fingerprint"
-    # ]
-    # POSSIBLE FIX    
     os_scan_flags = [
         "-sS",
         "-sV",
@@ -59,54 +47,61 @@ def os_fingerprint_finder(state: AgentState) -> AgentState:
         "-Pn"
     ]
 
-    # run a single OS detection scan against all hosts at once
-    # (fixes: loop was overwriting os_scan_log each iteration, discarding all but the last host)
-    logger.info(f"Running OS detection scan for all {len(discovered_hosts)} hosts...")
-    os_scan_log = nmap_scanning.invoke({
-        "scan_type": "high",
-        "flags": os_scan_flags,
-        "targets": discovered_hosts,
-        "timeout": TIMEOUT_VAL
-    })
+    # split hosts into batches so no single nmap call exceeds the timeout budget
+    batches = [
+        discovered_hosts[i:i + OS_SCAN_BATCH_SIZE]
+        for i in range(0, len(discovered_hosts), OS_SCAN_BATCH_SIZE)
+    ]
+    total_batches = len(batches)
+    logger.info(f"Splitting {len(discovered_hosts)} hosts into {total_batches} batch(es) of up to {OS_SCAN_BATCH_SIZE}")
 
-    # write to scan log dump
-    with open(SCANNING_DUMP_LOG, "a") as f:
-        f.write(f"\n\n [OS FINGERPRINTING SCAN] [{_now()}]")
-        f.write(f"\nTargets: {discovered_hosts}")
-        f.write(f"\nFlags: {os_scan_flags}")
-        f.write(f"\nSuccess: {os_scan_log.get('success')}\n")
-
-    # parse the OS fingerprinting results
     os_results = {}
-    if os_scan_log.get("success") and os_scan_log.get("xml_file"):
-        xml_path = f"{os_scan_log['xml_dir']}/{os_scan_log['xml_file']}"
-        logger.info(f"xml path for OS fingerprinting is defined as: {xml_path}")
+    last_log = {}
 
-        # parse the XML for OS data
+    for batch_num, batch in enumerate(batches, start=1):
+        logger.info(f"OS scan batch {batch_num}/{total_batches}: {batch}")
+        os_scan_log = nmap_scanning.invoke({
+            "scan_type": "high",
+            "flags": os_scan_flags,
+            "targets": batch,
+            "timeout": TIMEOUT_VAL
+        })
+        last_log = os_scan_log
+
+        # write to scan log dump
+        with open(SCANNING_DUMP_LOG, "a") as f:
+            f.write(f"\n\n [OS FINGERPRINTING SCAN - batch {batch_num}/{total_batches}] [{_now()}]")
+            f.write(f"\nTargets: {batch}")
+            f.write(f"\nFlags: {os_scan_flags}")
+            f.write(f"\nSuccess: {os_scan_log.get('success')}\n")
+
+        if not os_scan_log.get("success") or not os_scan_log.get("xml_file"):
+            logger.warning(f"Batch {batch_num}/{total_batches} failed or returned no XML — skipping")
+            continue
+
+        xml_path = f"{os_scan_log['xml_dir']}/{os_scan_log['xml_file']}"
+        logger.info(f"Parsing XML for batch {batch_num}: {xml_path}")
+
         parsed_data = xml_parse(xml_path)
 
-        # extract the OS information
         for host_ip, host_data in parsed_data.items():
             os_info = host_data.get("os", {})
-
             os_results[host_ip] = {
-                "os_matches": os_info.get("matches", []),  # List of possible OS matches
-                "os_classes": os_info.get("classes", []),   # OS classification data
-                "fingerprint": os_info.get("fingerprint", ""),  # TCP/IP fingerprint
-                "ports_used": os_info.get("ports_used", []),  # Ports used for detection
-                "accuracy": os_info.get("accuracy", 0),  # Detection confidence
-                "cpe": os_info.get("cpe", []),  # CPE identifiers for vuln correlation
+                "os_matches": os_info.get("matches", []),
+                "os_classes": os_info.get("classes", []),
+                "fingerprint": os_info.get("fingerprint", ""),
+                "ports_used": os_info.get("ports_used", []),
+                "accuracy": os_info.get("accuracy", 0),
+                "cpe": os_info.get("cpe", []),
                 "device_type": os_info.get("device_type", "unknown"),
                 "vendor": os_info.get("vendor", "unknown")
             }
 
-        # read and store the XML content
+        # store XML content from last successful batch
         with open(xml_path, "r", encoding="utf-8") as f:
             state["os_xml_content"] = f.read()
 
-    # store the results in state
+    logger.info(f"OS fingerprinting complete: {len(os_results)}/{len(discovered_hosts)} hosts returned OS data")
+
     state["os_fingerprint_results"] = os_results
-
-    logger.info("OS fingerprinting completed, state has also been updated")
-
     return state
