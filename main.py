@@ -34,7 +34,7 @@ if __name__ == "__main__":
     final_state = execute_workflow(scan_type, targets)
 
     ## DEBUG TXT PRINT
-    with open("final_state_result.txt", "w+") as f:
+    with open("final_state_result.json", "w+") as f:
         f.write(str(final_state))
     ####
     

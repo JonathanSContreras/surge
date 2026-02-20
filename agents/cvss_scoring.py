@@ -19,6 +19,18 @@ def cvss_scoring(state: AgentState) -> AgentState:
     if not vuln_list:
         state["vuln_scoring"] = []
         logger.info("Vulnerability list is empty.")
+
+        # run the dashboard data creation
+        dashboard_data = dashboard_data_grab(state["vuln_scoring"])
+
+        ## OUTPUT DASHBOARD DATA TO HAVE DATA FOR JONATHAN
+        import json
+        json_string = json.dumps(dashboard_data, indent=4)
+
+        with open("./report/dashboard_data.json", "w+") as f:
+            f.write(json_string)
+        ####
+
         return state
 
     logger.debug(f"Received {len(vuln_list)} vulnerabilities to score")
@@ -52,7 +64,7 @@ def cvss_scoring(state: AgentState) -> AgentState:
     state["vuln_scoring"] = results
 
     ## OUTPUT VULN SCORING IN TXT FOR NOW TO TEST DASHBOARD PAYLOAD
-    with open("vuln_scoring.txt", "w+") as f:
+    with open("./report/vuln_scoring.txt", "w+") as f:
         f.write(str(results))
     ####
 
@@ -63,10 +75,9 @@ def cvss_scoring(state: AgentState) -> AgentState:
     import json
     json_string = json.dumps(dashboard_data, indent=4)
 
-    with open("json_print.txt", "w+") as f:
+    with open("./report/dashboard_data.json", "w+") as f:
         f.write(json_string)
     ####
-
 
     logger.info("CVSS scoring agent has completed running and the state is updated.")
 

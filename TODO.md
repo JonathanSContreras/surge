@@ -1,9 +1,7 @@
 ## Week 6
-# 2/20 FIXES
-- change the OS flags
-- changed the nmap scan success definition
-- added a txt write to the cvss_scoring agent
-- added a json write data in cvss_scoring agent
+# 2/21 FIXES
+- complete refactor of the vulnerability agent
+- added dashboard data grab in eraly stop of cvss scoring
 
 #### Urgent
 - find a way to define the links of devices to each other
