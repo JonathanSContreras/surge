@@ -1,4 +1,5 @@
 import logging
+import os
 from config.constants import LOG_FILENAME, LOG_FORMAT
 
 # logging constants
@@ -11,6 +12,7 @@ def setup_logging():
     Configure global logging settings
     Is only called once (from main.py)
     """
+    os.makedirs(os.path.dirname(LOG_FILENAME), exist_ok=True)
     logging.basicConfig(
         filename=LOG_FILENAME,
         level=LEVEL,

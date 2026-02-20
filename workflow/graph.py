@@ -20,9 +20,9 @@ def build_mas_graph():
 
     # define agents (1 node = 1 agent)
     workflow.add_node("recon", recon)
-    workflow.add_node("recon_analysis", recon_analysis)
+    workflow.add_node("recon_analyzer", recon_analysis)
     workflow.add_node("os_finder", os_fingerprint_finder)
-    workflow.add_node("os_analysis", os_analysis)
+    workflow.add_node("os_analyzer", os_analysis)
     workflow.add_node("vulnerability", vulnerability)
     workflow.add_node("cvss_data_formatter", cvss_data_formatter) 
     workflow.add_node("cvss_scoring", cvss_scoring) 
@@ -32,10 +32,10 @@ def build_mas_graph():
     workflow.set_entry_point("recon")
 
     # define each edge
-    workflow.add_edge("recon", "recon_analysis")
-    workflow.add_edge("recon_analysis", "os_finder")
-    workflow.add_edge("os_finder", "os_analysis")
-    workflow.add_edge("os_analysis", "vulnerability")
+    workflow.add_edge("recon", "recon_analyzer")
+    workflow.add_edge("recon_analyzer", "os_finder")
+    workflow.add_edge("os_finder", "os_analyzer")
+    workflow.add_edge("os_analyzer", "vulnerability")
     workflow.add_edge("vulnerability", "cvss_data_formatter")
     workflow.add_edge("cvss_data_formatter", "cvss_scoring")
     workflow.add_edge("cvss_scoring", "reporter")

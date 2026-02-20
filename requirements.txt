@@ -1,0 +1,25 @@
+# Surge AI - Requirements
+# Python 3.11+ recommended (tested on 3.13.1)
+
+# LLM / Agent Framework
+langchain>=0.3.0,<0.4.0
+langchain-openai>=0.2.0,<0.3.0
+langgraph>=0.2.0,<0.3.0
+
+# ML / Data
+xgboost>=2.0.0,<3.0.0
+sentence-transformers>=3.0.0,<4.0.0
+pandas>=2.1.0,<3.0.0
+joblib>=1.3.0,<2.0.0
+scikit-learn>=1.4.0,<2.0.0
+
+# Visualization / Network Graph
+matplotlib>=3.8.0,<4.0.0
+networkx>=3.3,<4.0
+
+# Networking / Scanning
+scapy>=2.5.0,<3.0.0
+requests>=2.31.0,<3.0.0
+
+# Environment / Config
+python-dotenv>=1.0.0,<2.0.0
