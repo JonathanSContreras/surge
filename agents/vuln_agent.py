@@ -72,7 +72,10 @@ def vulnerability(state: AgentState) -> AgentState:
     # ------------------------------------------------------------------ #
     # Step 1: Extract product/service tuples from recon data              #
     # ------------------------------------------------------------------ #
-    queries = _extract_product_queries(recon_results)
+    # recon_results is {"parsed_network": {ip: {...}}, "all_logs": [...], ...}
+    # _extract_product_queries expects the parsed_network dict (keyed by IP)
+    parsed_network = recon_results.get("parsed_network", recon_results) if isinstance(recon_results, dict) else recon_results
+    queries = _extract_product_queries(parsed_network)
     logger.info(f"CVE queries to run: {len(queries)}")
 
     # ------------------------------------------------------------------ #
