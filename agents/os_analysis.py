@@ -128,7 +128,7 @@ def os_analysis(state: AgentState) -> AgentState:
 
     # write OS analysis to file (full raw data preserved here)
     target_ip = target_to_proper_file_name(state["targets"])
-    with open(f"./report/{target_ip}_os_fingerprinting.txt", "w", encoding="utf-8") as f:
+    with open(f"./report/{target_ip}_os_fingerprint_analysis.md", "w", encoding="utf-8") as f:
         f.write("=== OS FINGERPRINTING RESULTS ===\n\n")
         f.write(final_analysis)
         f.write("\n\n=== RAW OS DATA ===\n\n")

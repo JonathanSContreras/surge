@@ -5,6 +5,7 @@ from config.logging_config import get_logger
 from agents.dashboard_payload import dashboard_data_grab
 
 import pandas as pd
+import json
 
 # call global log file
 logger = get_logger(__name__)
@@ -24,9 +25,7 @@ def cvss_scoring(state: AgentState) -> AgentState:
         dashboard_data = dashboard_data_grab(state["vuln_scoring"])
 
         ## OUTPUT DASHBOARD DATA TO HAVE DATA FOR JONATHAN
-        import json
         json_string = json.dumps(dashboard_data, indent=4)
-
         with open("./report/dashboard_data.json", "w+") as f:
             f.write(json_string)
         ####
@@ -72,7 +71,6 @@ def cvss_scoring(state: AgentState) -> AgentState:
     dashboard_data = dashboard_data_grab(state["vuln_scoring"])
 
     ## OUTPUT DASHBOARD DATA TO HAVE DATA FOR JONATHAN
-    import json
     json_string = json.dumps(dashboard_data, indent=4)
 
     with open("./report/dashboard_data.json", "w+") as f:

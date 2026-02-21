@@ -109,7 +109,7 @@ def recon_analysis(state: AgentState) -> AgentState:  # this will be a simple "h
 
     # write the analysis into a txt file
     target_ip = target_to_proper_file_name(state["targets"])
-    with open(f"./report/{target_ip}_recon_analysis.txt", "w", encoding="utf-8") as f:
+    with open(f"./report/{target_ip}_recon_analysis.md", "w", encoding="utf-8") as f:
         f.write(result.content)
 
     # print(state["recon_analysis"])

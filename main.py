@@ -8,6 +8,7 @@ from config.constants import SCANNING_DUMP_LOG, LOG_FILENAME
 from execution.address_grab import build_initial_target_lists
 
 import time
+import json
 
 # call global log file
 logger = get_logger(__name__)
@@ -33,9 +34,10 @@ if __name__ == "__main__":
 
     final_state = execute_workflow(scan_type, targets)
 
-    ## DEBUG TXT PRINT
-    with open("final_state_result.json", "w+") as f:
-        f.write(str(final_state))
+    ## DEBUG JSON PRINT OF AGENT STATE
+    state_out = json.dumps(final_state, indent=2)
+    with open("./report/final_state_result.json", "w+") as f:
+        f.write(state_out)
     ####
     
     # logging prints
