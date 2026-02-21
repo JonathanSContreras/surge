@@ -32,8 +32,11 @@ def build_mas_graph():
     workflow.set_entry_point("recon")
 
     # define each edge
+    # recon fans out to both recon_analyzer and os_finder in parallel
+    # os_analyzer waits for both before proceeding (fan-in)
     workflow.add_edge("recon", "recon_analyzer")
-    workflow.add_edge("recon_analyzer", "os_finder")
+    workflow.add_edge("recon", "os_finder")
+    workflow.add_edge("recon_analyzer", "os_analyzer")
     workflow.add_edge("os_finder", "os_analyzer")
     workflow.add_edge("os_analyzer", "vulnerability")
     workflow.add_edge("vulnerability", "cvss_data_formatter")
