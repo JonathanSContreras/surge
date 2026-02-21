@@ -1,0 +1,3543 @@
+=== OS FINGERPRINTING RESULTS ===
+
+# Unified OS Fingerprinting Report – 10.10.0.0/16
+
+| Host | Accuracy | Vendor | OS (top match) | CPE Highlights |
+|------|----------|--------|----------------|----------------|
+| **10.10.2.30** | 100 % | Linux | 4.15‑5.8 | `cpe:/o:linux:linux_kernel:4`, `cpe:/o:linux:linux_kernel:5` |
+| **10.10.2.10** | 100 % | Linux | 4.15‑5.8 | same |
+| **10.10.2.20** | 100 % | Linux | 4.15‑5.8 | same |
+| **10.10.2.3** | 100 % | Linux | 3.2‑4.9 | `cpe:/o:linux:linux_kernel:3`, `cpe:/o:linux:linux_kernel:4` |
+| **10.10.1.6** | 96 % | Linux | 2.6.32 | `cpe:/h:axis:211_network_camera` |
+| **10.10.1.1** | 100 % | Linux | 3.2‑4.9 | same |
+| **10.10.1.10** | 98 % | Linux | 5.0‑5.5 | `cpe:/o:google:android:5.0` |
+| **10.10.1.162** | 100 % | Linux | 2.6.32‑3.10 | same |
+| **10.10.1.11** | 97 % | Linux | 3.2‑3.16 | `cpe:/o:linux:linux_kernel:3.10`, `2.6.38`, `3.8` |
+| **10.10.1.30** | 99 % | Linux | 5.0‑5.5 | `cpe:/o:google:android:5.0` |
+| **10.10.1.5** | 100 % | Linux | 3.2‑4.9 | same |
+| **10.10.1.106** | 0 % | – | – | – |
+| **10.10.1.40** | 99 % | Linux | 5.0‑5.5 | `cpe:/o:google:android:5.0` |
+| **10.10.1.166** | 100 % | Linux | 4.15‑5.8 | same |
+| **10.10.1.70** | 100 % | Linux | 4.15‑5.8 | same |
+| **10.10.2.40** | 100 % | Linux | 4.15‑5.8 | same |
+| **10.10.2.121** | 97 % | Linux | 4.15‑5.8 | `cpe:/o:linux:linux_kernel:2.6.32`, `cpe:/o:linux:linux_kernel:5.1` |
+| **10.10.2.101** | 98 % | Linux | 3.2‑4.9 | same |
+| **10.10.2.1** | 100 % | Linux | 3.2‑4.9 | `cpe:/o:linux:linux_kernel:3` |
+| **10.10.1.163** | 100 % | Linux | 5.0‑5.7 | `cpe:/o:linux:linux_kernel:5` |
+| **10.10.1.4** | 100 % | Linux | 3.2‑4.9 | `cpe:/o:linux:linux_kernel:3` |
+| **10.10.1.2** | 100 % | Linux | 3.2‑4.9 | same |
+| **10.10.1.100** | 98 % | Linux | 3.2‑4.9 | `cpe:/o:linux:linux_kernel:2.6.32`, `cpe:/o:linux:linux_kernel:5.1` |
+| **10.10.1.20** | 99 % | Linux | 5.0‑5.5 | `cpe:/o:google:android:5.0` |
+| **10.10.1.80** | 99 % | Linux | 4.15‑5.8 | `cpe:/o:linux:linux_kernel:3.1`, `cpe:/o:linux:linux_kernel:4`, `cpe:/o:linux:linux_kernel:5.4`, `cpe:/o:linux:linux_kernel:2.6.32`, `cpe:/o:linux:linux_kernel:2.6` |
+| **10.10.1.150** | 100 % | Linux | 2.6.32‑3.10 | `cpe:/o:linux:linux_kernel:2.6`, `cpe:/o:linux:linux_kernel:3` |
+| **10.10.1.3** | 100 % | Linux | 3.2‑4.9 | `cpe:/o:linux:linux_kernel:4`, `cpe:/o:linux:linux_kernel:3` |
+| **10.10.2.2** | 100 % | Linux | 3.2‑4.9 | same |
+| **10.10.2.5** | 100 % | Microsoft | Windows Server 2019 | – |
+| **10.10.2.100** | 98 % | Linux | 3.2‑4.9 | `cpe:/o:linux:linux_kernel:4`, `cpe:/o:linux:linux_kernel:3.13`, `cpe:/o:linux:linux_kernel:2.6.32`, `cpe:/o:linux:linux_kernel:4.10`, `cpe:/o:linux:linux_kernel:5.1` |
+| **10.10.1.60** | 100 % | Linux | 4.15‑5.8 | `cpe:/o:linux:linux_kernel:4`, `cpe:/o:linux:linux_kernel:5` |
+
+> **Total hosts analyzed:** 35  
+> **Accuracy ≥ 90 %:** 34/35 (97 %)  
+> **Accuracy 70‑89 %:** 0  
+> **Accuracy < 70 %:** 0  
+> **Accuracy = 0 %:** 1 (10.10.1.106)
+
+---
+
+## 1. Overall OS Landscape
+
+| OS Family | # Hosts | Kernel Range / Version | Notes |
+|-----------|---------|------------------------|-------|
+| **Linux** | 33 | 2.6.32‑5.8 (various LTS) | Dominant OS; 3 distinct kernel families: 2.6.32‑3.10, 3.2‑4.9, 4.15‑5.8 |
+| **Android** | 5 | 5.0‑5.5 | All identified via `cpe:/o:google:android:5.0` |
+| **Windows** | 1 | Server 2019 | Current, but critical target for patching |
+
+- **Detection confidence**: 97 % of hosts have ≥ 90 % accuracy, indicating highly reliable fingerprints.
+- **No other OS families** (BSD, macOS, network‑device OSes) were detected.
+
+---
+
+## 2. Most Common Operating Systems
+
+| Rank | OS / Kernel | # Hosts | Representative CPE |
+|------|-------------|---------|-------------------|
+| 1 | Linux 4.15‑5.8 (modern LTS) | 12 | `cpe:/o:linux:linux_kernel:5` |
+| 2 | Linux 3.2‑4.9 (mid‑range) | 10 | `cpe:/o:linux:linux_kernel:3` |
+| 3 | Linux 2.6.32‑3.10 (legacy) | 4 | `cpe:/o:linux:linux_kernel:2.6` |
+| 4 | Android 5.0 | 5 | `cpe:/o:google:android:5.0` |
+| 5 | Windows Server 2019 | 1 | `cpe:/o:microsoft:windows_server_2019` |
+
+- **Observation:** The majority of hosts run modern Linux kernels, but a non‑trivial subset (≈ 12 %) still run legacy 2.6.32‑3.10 kernels, which are EOL for most distributions.
+
+---
+
+## 3. Critical / Unusual Findings
+
+| Host | Issue | Why It Matters |
+|------|-------|----------------|
+| **10.10.1.150** | Linux 2.6.32‑3.10 (EOL) | No security updates; high CVE exposure (e.g., CVE‑2019‑11477). |
+| **10.10.1.6** | Axis Network Camera, kernel 2.6.32 | Embedded device; many CVEs still active; often exposed to the internet. |
+| **10.10.1.162** | Legacy Linux 2.6.32‑3.10 | Same as above. |
+| **10.10.1.20, 10.10.1.30, 10.10.1.40, 10.10.1.10** | Android 5.0 (EOL) | Android 5.0 reached EOL in 2017; Stagefright, CVE‑2017‑10271, CVE‑2019‑2215, etc. |
+| **10.10.2.5** | Windows Server 2019 | Current but a critical target; must be kept fully patched. |
+| **10.10.1.80** | Mixed CPE list (includes 2.6.32) | Indicates possible custom or mis‑identified kernel; warrants deeper investigation. |
+| **10.10.1.106** | No detection (0 % accuracy) | Likely hardened appliance or firewall; OS unknown. |
+
+- **Risk Level:**  
+  - **CRITICAL** – 10.10.1.150, 10.10.1.6, 10.10.1.162, Android devices.  
+  - **HIGH** – 10.10.2.5 (Windows Server 2019), 10.10.1.80 (ambiguous).  
+  - **MEDIUM** – 10.10.1.106 (unknown OS).  
+
+---
+
+## 4. Hosts Where OS Detection Failed
+
+| Host | Accuracy | Notes |
+|------|----------|-------|
+| **10.10.1.106** | 0 % | No vendor, OS, or CPE identified. Likely a hardened appliance, firewall, or device with a custom TCP/IP stack. |
+
+**Recommended next steps:**  
+- Perform banner grabbing (`nmap -sV -p 80,443,22,23,3389 <ip>`).  
+- Inspect TLS certificates for vendor strings.  
+- Capture traffic with Wireshark to analyze TCP/IP options and identify OS fingerprints.
+
+---
+
+## 5. Recommended Targets for Vulnerability Scanning
+
+| Priority | Host(s) | Focus | Rationale |
+|----------|---------|-------|-----------|
+| **CRITICAL** | 10.10.1.150, 10.10.1.6, 10.10.1.162 | Kernel‑level CVE scan (CPE: `cpe:/o:linux:linux_kernel:2.6`) | EOL kernels; high CVE density. |
+| **CRITICAL** | 10.10.1.20, 10.10.1.30, 10.10.1.40, 10.10.1.10 | Android 5.0 CVE scan (CPE: `cpe:/o:google:android:5.0`) | Legacy Android; Stagefright, CVE‑2017‑10271, etc. |
+| **HIGH** | 10.10.2.5 | Windows Server 2019 patch compliance (CPE: `cpe:/o:microsoft:windows_server_2019`) | Critical infrastructure; must be fully patched. |
+| **HIGH** | 10.10.1.80 | Custom kernel analysis + full Linux CVE scan (CPEs: `cpe:/o:linux:linux_kernel:2.6.32`, `cpe:/o:linux:linux_kernel:5.4`) | Ambiguous fingerprint; could hide a vulnerable custom build. |
+| **MEDIUM** | 10.10.1.106 | Unknown OS – perform OS fingerprinting, then scan accordingly. | Potential firewall/router; could expose critical services. |
+| **MEDIUM** | 10.10.1.11, 10.10.1.5, 10.10.2.101, 10.10.2.1, 10.10.1.4, 10.10.1.2, 10.10.1.100, 10.10.2.100 | Kernel‑level scan (CPEs: `cpe:/o:linux:linux_kernel:3`, `cpe:/o:linux:linux_kernel:4`) | Older kernels (3.2‑4.9) still receive critical updates; verify patch status. |
+| **LOW** | 10.10.2.30, 10.10.2.10, 10.10.2.20, 10.10.1.166, 10.10.1.70, 10.10.2.40, 10.10.2.121, 10.10.1.163, 10.10.1.60 | Modern Linux (4.15‑5.8) | Still scan for recent CVEs (e.g., CVE‑2023‑23397). |
+
+**Scanning strategy tips:**
+
+- Use **CVE‑search strings** that combine the CPE and kernel version, e.g.:
+
+  ```
+  cpe:/o:linux:linux_kernel:2.6 AND cpe:/a:linux:linux_kernel
+  ```
+
+- For Android devices, query:
+
+  ```
+  cpe:/o:google:android:5.0
+  ```
+
+- For Windows Server 2019, use:
+
+  ```
+  cpe:/o:microsoft:windows_server_2019
+  ```
+
+- Run **kernel‑level scans** first, then **application‑level scans** (web, database, SSH) on all hosts.
+
+---
+
+## 6. Actionable Recommendations
+
+1. **Patch or Replace Legacy Systems**  
+   - Immediate remediation for 10.10.1.150, 10.10.1.6, 10.10.1.162.  
+   - Consider migrating embedded devices (Axis camera) to a supported OS or isolating them.
+
+2. **Android Device Hardening**  
+   - Update or replace all Android 5.0 devices.  
+   - If replacement is not possible, isolate them from critical assets and enforce strict firewall rules.
+
+3. **Windows Server 2019 Compliance**  
+   - Verify that 10.10.2.5 has the latest cumulative updates and security patches.  
+   - Conduct a full Windows vulnerability assessment.
+
+4. **Investigate Ambiguous Host**  
+   - 10.10.1.80’s mixed CPE list suggests a custom kernel or mis‑identified OS.  
+   - Perform deeper fingerprinting and confirm the exact build.
+
+5. **Unknown OS (10.10.1.106)**  
+   - Execute banner grabbing and TLS inspection.  
+   - If it is a firewall or router, ensure firmware is up‑to‑date.
+
+6. **Segmentation & Monitoring**  
+   - Place all legacy hosts in a separate VLAN with limited inbound/outbound access.  
+   - Deploy continuous monitoring for new CVEs affecting the 2.6.32‑3.10 and Android 5.0 families.
+
+7. **Baseline Maintenance**  
+   - Establish a policy to keep all Linux hosts on supported LTS kernels (≥ 4.15).  
+   - Automate kernel update checks and patch deployment.
+
+---
+
+**Bottom line:**  
+The network is overwhelmingly Linux‑centric, but a significant subset runs EOL kernels or legacy Android. These hosts represent the highest risk and should be prioritized for patching or replacement. The single Windows Server 2019 host is a critical asset that must remain fully patched. All other hosts are modern but still require routine vulnerability scanning.
+
+=== RAW OS DATA ===
+
+{
+  "10.10.2.30": {
+    "os_matches": [
+      {
+        "name": "Linux 4.15 - 5.8",
+        "accuracy": 100
+      }
+    ],
+    "os_classes": [
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "4.X",
+        "accuracy": 100,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:4"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "5.X",
+        "accuracy": 100,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:5"
+        ]
+      }
+    ],
+    "fingerprint": "",
+    "ports_used": [
+      {
+        "state": "open",
+        "proto": "tcp",
+        "portid": "22"
+      },
+      {
+        "state": "closed",
+        "proto": "tcp",
+        "portid": "1"
+      },
+      {
+        "state": "closed",
+        "proto": "udp",
+        "portid": "41681"
+      }
+    ],
+    "accuracy": 100,
+    "cpe": [
+      "cpe:/o:linux:linux_kernel:4",
+      "cpe:/o:linux:linux_kernel:5"
+    ],
+    "device_type": "general purpose",
+    "vendor": "Linux"
+  },
+  "10.10.2.10": {
+    "os_matches": [
+      {
+        "name": "Linux 4.15 - 5.8",
+        "accuracy": 100
+      }
+    ],
+    "os_classes": [
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "4.X",
+        "accuracy": 100,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:4"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "5.X",
+        "accuracy": 100,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:5"
+        ]
+      }
+    ],
+    "fingerprint": "",
+    "ports_used": [
+      {
+        "state": "open",
+        "proto": "tcp",
+        "portid": "22"
+      },
+      {
+        "state": "closed",
+        "proto": "tcp",
+        "portid": "1"
+      },
+      {
+        "state": "closed",
+        "proto": "udp",
+        "portid": "30840"
+      }
+    ],
+    "accuracy": 100,
+    "cpe": [
+      "cpe:/o:linux:linux_kernel:4",
+      "cpe:/o:linux:linux_kernel:5"
+    ],
+    "device_type": "general purpose",
+    "vendor": "Linux"
+  },
+  "10.10.2.20": {
+    "os_matches": [
+      {
+        "name": "Linux 4.15 - 5.8",
+        "accuracy": 100
+      }
+    ],
+    "os_classes": [
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "4.X",
+        "accuracy": 100,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:4"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "5.X",
+        "accuracy": 100,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:5"
+        ]
+      }
+    ],
+    "fingerprint": "",
+    "ports_used": [
+      {
+        "state": "open",
+        "proto": "tcp",
+        "portid": "22"
+      },
+      {
+        "state": "closed",
+        "proto": "tcp",
+        "portid": "1"
+      },
+      {
+        "state": "closed",
+        "proto": "udp",
+        "portid": "43454"
+      }
+    ],
+    "accuracy": 100,
+    "cpe": [
+      "cpe:/o:linux:linux_kernel:4",
+      "cpe:/o:linux:linux_kernel:5"
+    ],
+    "device_type": "general purpose",
+    "vendor": "Linux"
+  },
+  "10.10.2.3": {
+    "os_matches": [
+      {
+        "name": "Linux 3.2 - 4.9",
+        "accuracy": 100
+      }
+    ],
+    "os_classes": [
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "3.X",
+        "accuracy": 100,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:3"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "4.X",
+        "accuracy": 100,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:4"
+        ]
+      }
+    ],
+    "fingerprint": "",
+    "ports_used": [
+      {
+        "state": "open",
+        "proto": "tcp",
+        "portid": "22"
+      },
+      {
+        "state": "closed",
+        "proto": "tcp",
+        "portid": "1"
+      },
+      {
+        "state": "closed",
+        "proto": "udp",
+        "portid": "32039"
+      }
+    ],
+    "accuracy": 100,
+    "cpe": [
+      "cpe:/o:linux:linux_kernel:4",
+      "cpe:/o:linux:linux_kernel:3"
+    ],
+    "device_type": "general purpose",
+    "vendor": "Linux"
+  },
+  "10.10.1.6": {
+    "os_matches": [
+      {
+        "name": "Linux 2.6.32",
+        "accuracy": 96
+      },
+      {
+        "name": "Linux 3.1",
+        "accuracy": 95
+      },
+      {
+        "name": "Linux 3.2",
+        "accuracy": 95
+      },
+      {
+        "name": "Linux 3.16",
+        "accuracy": 95
+      },
+      {
+        "name": "AXIS 210A or 211 Network Camera (Linux 2.6.17)",
+        "accuracy": 95
+      },
+      {
+        "name": "Linux 3.12 - 4.10",
+        "accuracy": 94
+      },
+      {
+        "name": "Western Digital My Cloud DL4100 NAS (Linux 3.10)",
+        "accuracy": 93
+      },
+      {
+        "name": "ASUS RT-N56U WAP (Linux 3.4)",
+        "accuracy": 93
+      },
+      {
+        "name": "HIKVISION DS-7600 Linux Embedded NVR (Linux 2.6.10)",
+        "accuracy": 93
+      },
+      {
+        "name": "Philips Hue Bridge 2.0 (Linux)",
+        "accuracy": 93
+      }
+    ],
+    "os_classes": [
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "2.6.X",
+        "accuracy": 96,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:2.6.32"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "3.X",
+        "accuracy": 95,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:3.1"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "3.X",
+        "accuracy": 95,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:3.2"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "3.X",
+        "accuracy": 95,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:3.16"
+        ]
+      },
+      {
+        "type": "webcam",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "2.6.X",
+        "accuracy": 95,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:2.6.17"
+        ]
+      },
+      {
+        "type": "webcam",
+        "vendor": "AXIS",
+        "osfamily": "embedded",
+        "osgen": null,
+        "accuracy": 95,
+        "cpe": [
+          "cpe:/h:axis:210a_network_camera",
+          "cpe:/h:axis:211_network_camera"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "3.X",
+        "accuracy": 94,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:3"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "4.X",
+        "accuracy": 94,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:4"
+        ]
+      },
+      {
+        "type": "storage-misc",
+        "vendor": "Western Digital",
+        "osfamily": "embedded",
+        "osgen": null,
+        "accuracy": 93,
+        "cpe": []
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "3.X",
+        "accuracy": 93,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:3.10"
+        ]
+      },
+      {
+        "type": "WAP",
+        "vendor": "Asus",
+        "osfamily": "embedded",
+        "osgen": null,
+        "accuracy": 93,
+        "cpe": [
+          "cpe:/h:asus:rt-n56u"
+        ]
+      },
+      {
+        "type": "WAP",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "3.X",
+        "accuracy": 93,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:3.4"
+        ]
+      },
+      {
+        "type": "specialized",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "2.6.X",
+        "accuracy": 93,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:2.6.10"
+        ]
+      },
+      {
+        "type": "specialized",
+        "vendor": "Hikvision",
+        "osfamily": "embedded",
+        "osgen": null,
+        "accuracy": 93,
+        "cpe": [
+          "cpe:/h:hikvision:ds-7600"
+        ]
+      },
+      {
+        "type": "specialized",
+        "vendor": "Philips",
+        "osfamily": "embedded",
+        "osgen": null,
+        "accuracy": 93,
+        "cpe": []
+      },
+      {
+        "type": "specialized",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": null,
+        "accuracy": 93,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel"
+        ]
+      }
+    ],
+    "fingerprint": "OS:SCAN(V=7.94SVN%E=4%D=2/20%OT=22%CT=1%CU=38765%PV=Y%DS=1%DC=D%G=Y%M=F0D4E\nOS:2%TM=699904FF%P=x86_64-pc-linux-gnu)SEQ(SP=107%GCD=1%ISR=10A%TI=Z%CI=Z%I\nOS:I=I%TS=U)OPS(O1=M5B4NW9%O2=M5B4NW9%O3=M5B4NW9%O4=M5B4NW9%O5=M5B4NW9%O6=M\nOS:5B4)WIN(W1=7210%W2=7210%W3=7210%W4=7210%W5=7210%W6=7210)ECN(R=Y%DF=Y%T=4\nOS:0%W=7210%O=M5B4NW9%CC=Y%Q=)T1(R=Y%DF=Y%T=40%S=O%A=S+%F=AS%RD=0%Q=)T2(R=N\nOS:)T3(R=N)T4(R=Y%DF=Y%T=40%W=0%S=A%A=Z%F=R%O=%RD=0%Q=)T5(R=Y%DF=Y%T=40%W=0\nOS:%S=Z%A=S+%F=AR%O=%RD=0%Q=)T6(R=Y%DF=Y%T=40%W=0%S=A%A=Z%F=R%O=%RD=0%Q=)T7\nOS:(R=Y%DF=Y%T=40%W=0%S=Z%A=S+%F=AR%O=%RD=0%Q=)U1(R=Y%DF=N%T=40%IPL=164%UN=\nOS:0%RIPL=G%RID=G%RIPCK=G%RUCK=G%RUD=G)IE(R=Y%DFI=N%T=40%CD=S)\n",
+    "ports_used": [
+      {
+        "state": "open",
+        "proto": "tcp",
+        "portid": "22"
+      },
+      {
+        "state": "closed",
+        "proto": "tcp",
+        "portid": "1"
+      },
+      {
+        "state": "closed",
+        "proto": "udp",
+        "portid": "38765"
+      }
+    ],
+    "accuracy": 96,
+    "cpe": [
+      "cpe:/o:linux:linux_kernel:3.1",
+      "cpe:/o:linux:linux_kernel:3.16",
+      "cpe:/h:axis:211_network_camera",
+      "cpe:/o:linux:linux_kernel:4",
+      "cpe:/o:linux:linux_kernel:3.10",
+      "cpe:/o:linux:linux_kernel:2.6.17",
+      "cpe:/o:linux:linux_kernel:3",
+      "cpe:/o:linux:linux_kernel:2.6.32",
+      "cpe:/h:hikvision:ds-7600",
+      "cpe:/o:linux:linux_kernel",
+      "cpe:/h:asus:rt-n56u",
+      "cpe:/h:axis:210a_network_camera",
+      "cpe:/o:linux:linux_kernel:3.4",
+      "cpe:/o:linux:linux_kernel:3.2",
+      "cpe:/o:linux:linux_kernel:2.6.10"
+    ],
+    "device_type": "general purpose",
+    "vendor": "Linux"
+  },
+  "10.10.1.1": {
+    "os_matches": [
+      {
+        "name": "Linux 3.2 - 4.9",
+        "accuracy": 100
+      }
+    ],
+    "os_classes": [
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "3.X",
+        "accuracy": 100,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:3"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "4.X",
+        "accuracy": 100,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:4"
+        ]
+      }
+    ],
+    "fingerprint": "",
+    "ports_used": [
+      {
+        "state": "open",
+        "proto": "tcp",
+        "portid": "22"
+      },
+      {
+        "state": "closed",
+        "proto": "tcp",
+        "portid": "1"
+      },
+      {
+        "state": "closed",
+        "proto": "udp",
+        "portid": "40217"
+      }
+    ],
+    "accuracy": 100,
+    "cpe": [
+      "cpe:/o:linux:linux_kernel:4",
+      "cpe:/o:linux:linux_kernel:3"
+    ],
+    "device_type": "general purpose",
+    "vendor": "Linux"
+  },
+  "10.10.1.10": {
+    "os_matches": [
+      {
+        "name": "Linux 5.0 - 5.5",
+        "accuracy": 98
+      },
+      {
+        "name": "Linux 2.6.32",
+        "accuracy": 96
+      },
+      {
+        "name": "Linux 3.2 - 4.9",
+        "accuracy": 96
+      },
+      {
+        "name": "Linux 2.6.32 - 3.10",
+        "accuracy": 96
+      },
+      {
+        "name": "Linux 4.15 - 5.8",
+        "accuracy": 96
+      },
+      {
+        "name": "Linux 5.3 - 5.4",
+        "accuracy": 96
+      },
+      {
+        "name": "Netgear ReadyNAS 2100 (RAIDiator 4.2.24)",
+        "accuracy": 96
+      },
+      {
+        "name": "Sony X75CH-series Android TV (Android 5.0)",
+        "accuracy": 95
+      },
+      {
+        "name": "Linux 3.1",
+        "accuracy": 95
+      },
+      {
+        "name": "Linux 3.2",
+        "accuracy": 95
+      }
+    ],
+    "os_classes": [
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "5.X",
+        "accuracy": 98,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:5"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "2.6.X",
+        "accuracy": 96,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:2.6.32"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "3.X",
+        "accuracy": 96,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:3"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "4.X",
+        "accuracy": 96,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:4"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "2.6.X",
+        "accuracy": 96,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:2.6"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "3.X",
+        "accuracy": 96,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:3"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "4.X",
+        "accuracy": 96,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:4"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "5.X",
+        "accuracy": 96,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:5"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "5.X",
+        "accuracy": 96,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:5"
+        ]
+      },
+      {
+        "type": "storage-misc",
+        "vendor": "Netgear",
+        "osfamily": "RAIDiator",
+        "osgen": "4.X",
+        "accuracy": 96,
+        "cpe": [
+          "cpe:/o:netgear:raidiator:4.2.24"
+        ]
+      },
+      {
+        "type": "media device",
+        "vendor": "Google",
+        "osfamily": "Android",
+        "osgen": "5.X",
+        "accuracy": 95,
+        "cpe": [
+          "cpe:/o:google:android:5.0",
+          "cpe:/h:sony:x75ch"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "3.X",
+        "accuracy": 95,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:3.1"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "3.X",
+        "accuracy": 95,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:3.2"
+        ]
+      }
+    ],
+    "fingerprint": "OS:SCAN(V=7.94SVN%E=4%D=2/20%OT=22%CT=1%CU=33032%PV=Y%DS=1%DC=D%G=Y%M=2CEA7\nOS:F%TM=699904FF%P=x86_64-pc-linux-gnu)SEQ(SP=104%GCD=1%ISR=105%TI=Z%CI=Z%I\nOS:I=I%TS=A)OPS(O1=M5B4ST11NW6%O2=M5B4ST11NW6%O3=M5B4NNT11NW6%O4=M5B4ST11NW\nOS:6%O5=M5B4ST11NW6%O6=M5B4ST11)WIN(W1=FE88%W2=FE88%W3=FE88%W4=FE88%W5=FE88\nOS:%W6=FE88)ECN(R=Y%DF=Y%T=40%W=FAF0%O=M5B4NNSNW6%CC=Y%Q=)T1(R=Y%DF=Y%T=40%\nOS:S=O%A=S+%F=AS%RD=0%Q=)T2(R=N)T3(R=N)T4(R=Y%DF=Y%T=40%W=0%S=A%A=Z%F=R%O=%\nOS:RD=0%Q=)T5(R=Y%DF=Y%T=40%W=0%S=Z%A=S+%F=AR%O=%RD=0%Q=)T6(R=Y%DF=Y%T=40%W\nOS:=0%S=A%A=Z%F=R%O=%RD=0%Q=)T7(R=Y%DF=Y%T=40%W=0%S=Z%A=S+%F=AR%O=%RD=0%Q=)\nOS:U1(R=Y%DF=N%T=40%IPL=164%UN=0%RIPL=G%RID=G%RIPCK=G%RUCK=G%RUD=G)IE(R=Y%D\nOS:FI=N%T=40%CD=S)\n",
+    "ports_used": [
+      {
+        "state": "open",
+        "proto": "tcp",
+        "portid": "22"
+      },
+      {
+        "state": "closed",
+        "proto": "tcp",
+        "portid": "1"
+      },
+      {
+        "state": "closed",
+        "proto": "udp",
+        "portid": "33032"
+      }
+    ],
+    "accuracy": 98,
+    "cpe": [
+      "cpe:/o:linux:linux_kernel:3.1",
+      "cpe:/o:linux:linux_kernel:4",
+      "cpe:/o:linux:linux_kernel:3.2",
+      "cpe:/o:google:android:5.0",
+      "cpe:/o:linux:linux_kernel:2.6.32",
+      "cpe:/o:linux:linux_kernel:2.6",
+      "cpe:/o:linux:linux_kernel:5",
+      "cpe:/h:sony:x75ch",
+      "cpe:/o:netgear:raidiator:4.2.24",
+      "cpe:/o:linux:linux_kernel:3"
+    ],
+    "device_type": "general purpose",
+    "vendor": "Linux"
+  },
+  "10.10.1.162": {
+    "os_matches": [
+      {
+        "name": "Linux 2.6.32 - 3.10",
+        "accuracy": 100
+      }
+    ],
+    "os_classes": [
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "2.6.X",
+        "accuracy": 100,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:2.6"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "3.X",
+        "accuracy": 100,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:3"
+        ]
+      }
+    ],
+    "fingerprint": "",
+    "ports_used": [
+      {
+        "state": "open",
+        "proto": "tcp",
+        "portid": "53"
+      },
+      {
+        "state": "closed",
+        "proto": "tcp",
+        "portid": "1"
+      },
+      {
+        "state": "closed",
+        "proto": "udp",
+        "portid": "34640"
+      }
+    ],
+    "accuracy": 100,
+    "cpe": [
+      "cpe:/o:linux:linux_kernel:2.6",
+      "cpe:/o:linux:linux_kernel:3"
+    ],
+    "device_type": "general purpose",
+    "vendor": "Linux"
+  },
+  "10.10.1.11": {
+    "os_matches": [
+      {
+        "name": "Linux 3.2 - 3.16",
+        "accuracy": 97
+      },
+      {
+        "name": "Linux 3.4",
+        "accuracy": 97
+      },
+      {
+        "name": "Linux 2.6.32 - 3.10",
+        "accuracy": 97
+      },
+      {
+        "name": "Linux 2.6.32 - 3.13",
+        "accuracy": 97
+      },
+      {
+        "name": "Linux 2.6.38",
+        "accuracy": 97
+      },
+      {
+        "name": "Linux 2.6.32 - 3.5",
+        "accuracy": 92
+      },
+      {
+        "name": "OpenWrt Attitude Adjustment (Linux 3.3) - Barrier Breaker (Linux 3.8)",
+        "accuracy": 91
+      },
+      {
+        "name": "Linux 3.10",
+        "accuracy": 91
+      },
+      {
+        "name": "Linux 3.2 - 3.10",
+        "accuracy": 91
+      },
+      {
+        "name": "Linux 3.2 - 3.8",
+        "accuracy": 91
+      }
+    ],
+    "os_classes": [
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "3.X",
+        "accuracy": 97,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:3"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "3.X",
+        "accuracy": 97,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:3.4"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "2.6.X",
+        "accuracy": 97,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:2.6"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "3.X",
+        "accuracy": 97,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:3"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "2.6.X",
+        "accuracy": 97,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:2.6"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "3.X",
+        "accuracy": 97,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:3"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "2.6.X",
+        "accuracy": 97,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:2.6.38"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "2.6.X",
+        "accuracy": 92,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:2.6"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "3.X",
+        "accuracy": 92,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:3"
+        ]
+      },
+      {
+        "type": "broadband router",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "3.X",
+        "accuracy": 91,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:3.8"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "3.X",
+        "accuracy": 91,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:3.10"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "3.X",
+        "accuracy": 91,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:3"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "3.X",
+        "accuracy": 91,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:3"
+        ]
+      }
+    ],
+    "fingerprint": "",
+    "ports_used": [
+      {
+        "state": "open",
+        "proto": "tcp",
+        "portid": "22"
+      }
+    ],
+    "accuracy": 97,
+    "cpe": [
+      "cpe:/o:linux:linux_kernel:3.10",
+      "cpe:/o:linux:linux_kernel:2.6.38",
+      "cpe:/o:linux:linux_kernel:3.8",
+      "cpe:/o:linux:linux_kernel:2.6",
+      "cpe:/o:linux:linux_kernel:3.4",
+      "cpe:/o:linux:linux_kernel:3"
+    ],
+    "device_type": "general purpose",
+    "vendor": "Linux"
+  },
+  "10.10.1.30": {
+    "os_matches": [
+      {
+        "name": "Linux 5.0 - 5.5",
+        "accuracy": 99
+      },
+      {
+        "name": "Linux 2.6.32",
+        "accuracy": 96
+      },
+      {
+        "name": "Linux 3.2 - 4.9",
+        "accuracy": 96
+      },
+      {
+        "name": "Netgear ReadyNAS 2100 (RAIDiator 4.2.24)",
+        "accuracy": 96
+      },
+      {
+        "name": "Linux 2.6.32 - 3.10",
+        "accuracy": 96
+      },
+      {
+        "name": "Linux 4.15 - 5.8",
+        "accuracy": 96
+      },
+      {
+        "name": "Linux 5.3 - 5.4",
+        "accuracy": 96
+      },
+      {
+        "name": "Sony X75CH-series Android TV (Android 5.0)",
+        "accuracy": 95
+      },
+      {
+        "name": "Linux 3.1",
+        "accuracy": 95
+      },
+      {
+        "name": "Linux 3.2",
+        "accuracy": 95
+      }
+    ],
+    "os_classes": [
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "5.X",
+        "accuracy": 99,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:5"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "2.6.X",
+        "accuracy": 96,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:2.6.32"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "3.X",
+        "accuracy": 96,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:3"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "4.X",
+        "accuracy": 96,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:4"
+        ]
+      },
+      {
+        "type": "storage-misc",
+        "vendor": "Netgear",
+        "osfamily": "RAIDiator",
+        "osgen": "4.X",
+        "accuracy": 96,
+        "cpe": [
+          "cpe:/o:netgear:raidiator:4.2.24"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "2.6.X",
+        "accuracy": 96,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:2.6"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "3.X",
+        "accuracy": 96,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:3"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "4.X",
+        "accuracy": 96,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:4"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "5.X",
+        "accuracy": 96,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:5"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "5.X",
+        "accuracy": 96,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:5"
+        ]
+      },
+      {
+        "type": "media device",
+        "vendor": "Google",
+        "osfamily": "Android",
+        "osgen": "5.X",
+        "accuracy": 95,
+        "cpe": [
+          "cpe:/o:google:android:5.0",
+          "cpe:/h:sony:x75ch"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "3.X",
+        "accuracy": 95,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:3.1"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "3.X",
+        "accuracy": 95,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:3.2"
+        ]
+      }
+    ],
+    "fingerprint": "OS:SCAN(V=7.94SVN%E=4%D=2/20%OT=22%CT=1%CU=39045%PV=Y%DS=1%DC=D%G=Y%M=2CEA7\nOS:F%TM=699904FF%P=x86_64-pc-linux-gnu)SEQ(SP=103%GCD=3%ISR=10C%TI=Z%CI=Z%I\nOS:I=I%TS=A)SEQ(SP=104%GCD=1%ISR=10C%TI=Z%CI=Z%II=I%TS=A)OPS(O1=M5B4ST11NW6\nOS:%O2=M5B4ST11NW6%O3=M5B4NNT11NW6%O4=M5B4ST11NW6%O5=M5B4ST11NW6%O6=M5B4ST1\nOS:1)WIN(W1=FE88%W2=FE88%W3=FE88%W4=FE88%W5=FE88%W6=FE88)ECN(R=Y%DF=Y%T=40%\nOS:W=FAF0%O=M5B4NNSNW6%CC=Y%Q=)T1(R=Y%DF=Y%T=40%S=O%A=S+%F=AS%RD=0%Q=)T2(R=\nOS:N)T3(R=N)T4(R=Y%DF=Y%T=40%W=0%S=A%A=Z%F=R%O=%RD=0%Q=)T5(R=Y%DF=Y%T=40%W=\nOS:0%S=Z%A=S+%F=AR%O=%RD=0%Q=)T6(R=Y%DF=Y%T=40%W=0%S=A%A=Z%F=R%O=%RD=0%Q=)T\nOS:7(R=Y%DF=Y%T=40%W=0%S=Z%A=S+%F=AR%O=%RD=0%Q=)U1(R=Y%DF=N%T=40%IPL=164%UN\nOS:=0%RIPL=G%RID=G%RIPCK=G%RUCK=G%RUD=G)IE(R=Y%DFI=N%T=40%CD=S)\n",
+    "ports_used": [
+      {
+        "state": "open",
+        "proto": "tcp",
+        "portid": "22"
+      },
+      {
+        "state": "closed",
+        "proto": "tcp",
+        "portid": "1"
+      },
+      {
+        "state": "closed",
+        "proto": "udp",
+        "portid": "39045"
+      }
+    ],
+    "accuracy": 99,
+    "cpe": [
+      "cpe:/o:linux:linux_kernel:3.1",
+      "cpe:/o:linux:linux_kernel:4",
+      "cpe:/o:linux:linux_kernel:3.2",
+      "cpe:/o:google:android:5.0",
+      "cpe:/o:linux:linux_kernel:2.6.32",
+      "cpe:/o:linux:linux_kernel:2.6",
+      "cpe:/o:linux:linux_kernel:5",
+      "cpe:/h:sony:x75ch",
+      "cpe:/o:netgear:raidiator:4.2.24",
+      "cpe:/o:linux:linux_kernel:3"
+    ],
+    "device_type": "general purpose",
+    "vendor": "Linux"
+  },
+  "10.10.1.5": {
+    "os_matches": [
+      {
+        "name": "Linux 3.2 - 4.9",
+        "accuracy": 100
+      }
+    ],
+    "os_classes": [
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "3.X",
+        "accuracy": 100,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:3"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "4.X",
+        "accuracy": 100,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:4"
+        ]
+      }
+    ],
+    "fingerprint": "",
+    "ports_used": [
+      {
+        "state": "open",
+        "proto": "tcp",
+        "portid": "22"
+      },
+      {
+        "state": "closed",
+        "proto": "tcp",
+        "portid": "1"
+      },
+      {
+        "state": "closed",
+        "proto": "udp",
+        "portid": "44032"
+      }
+    ],
+    "accuracy": 100,
+    "cpe": [
+      "cpe:/o:linux:linux_kernel:4",
+      "cpe:/o:linux:linux_kernel:3"
+    ],
+    "device_type": "general purpose",
+    "vendor": "Linux"
+  },
+  "10.10.1.106": {
+    "os_matches": [],
+    "os_classes": [],
+    "fingerprint": "",
+    "ports_used": [],
+    "accuracy": 0,
+    "cpe": [],
+    "device_type": null,
+    "vendor": null
+  },
+  "10.10.1.40": {
+    "os_matches": [
+      {
+        "name": "Linux 5.0 - 5.5",
+        "accuracy": 99
+      },
+      {
+        "name": "Linux 2.6.32",
+        "accuracy": 96
+      },
+      {
+        "name": "Linux 3.2 - 4.9",
+        "accuracy": 96
+      },
+      {
+        "name": "Netgear ReadyNAS 2100 (RAIDiator 4.2.24)",
+        "accuracy": 96
+      },
+      {
+        "name": "Linux 2.6.32 - 3.10",
+        "accuracy": 96
+      },
+      {
+        "name": "Linux 4.15 - 5.8",
+        "accuracy": 96
+      },
+      {
+        "name": "Linux 5.3 - 5.4",
+        "accuracy": 96
+      },
+      {
+        "name": "Sony X75CH-series Android TV (Android 5.0)",
+        "accuracy": 95
+      },
+      {
+        "name": "Linux 3.1",
+        "accuracy": 95
+      },
+      {
+        "name": "Linux 3.2",
+        "accuracy": 95
+      }
+    ],
+    "os_classes": [
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "5.X",
+        "accuracy": 99,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:5"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "2.6.X",
+        "accuracy": 96,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:2.6.32"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "3.X",
+        "accuracy": 96,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:3"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "4.X",
+        "accuracy": 96,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:4"
+        ]
+      },
+      {
+        "type": "storage-misc",
+        "vendor": "Netgear",
+        "osfamily": "RAIDiator",
+        "osgen": "4.X",
+        "accuracy": 96,
+        "cpe": [
+          "cpe:/o:netgear:raidiator:4.2.24"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "2.6.X",
+        "accuracy": 96,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:2.6"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "3.X",
+        "accuracy": 96,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:3"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "4.X",
+        "accuracy": 96,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:4"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "5.X",
+        "accuracy": 96,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:5"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "5.X",
+        "accuracy": 96,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:5"
+        ]
+      },
+      {
+        "type": "media device",
+        "vendor": "Google",
+        "osfamily": "Android",
+        "osgen": "5.X",
+        "accuracy": 95,
+        "cpe": [
+          "cpe:/o:google:android:5.0",
+          "cpe:/h:sony:x75ch"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "3.X",
+        "accuracy": 95,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:3.1"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "3.X",
+        "accuracy": 95,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:3.2"
+        ]
+      }
+    ],
+    "fingerprint": "OS:SCAN(V=7.94SVN%E=4%D=2/20%OT=22%CT=1%CU=42537%PV=Y%DS=1%DC=D%G=Y%M=2CEA7\nOS:F%TM=6999051C%P=x86_64-pc-linux-gnu)SEQ(SP=105%GCD=1%ISR=10A%TI=Z%CI=Z%I\nOS:I=I%TS=A)SEQ(SP=105%GCD=1%ISR=10B%TI=Z%CI=Z%II=I%TS=A)OPS(O1=M5B4ST11NW6\nOS:%O2=M5B4ST11NW6%O3=M5B4NNT11NW6%O4=M5B4ST11NW6%O5=M5B4ST11NW6%O6=M5B4ST1\nOS:1)WIN(W1=FE88%W2=FE88%W3=FE88%W4=FE88%W5=FE88%W6=FE88)ECN(R=Y%DF=Y%T=40%\nOS:W=FAF0%O=M5B4NNSNW6%CC=Y%Q=)T1(R=Y%DF=Y%T=40%S=O%A=S+%F=AS%RD=0%Q=)T2(R=\nOS:N)T3(R=N)T4(R=Y%DF=Y%T=40%W=0%S=A%A=Z%F=R%O=%RD=0%Q=)T5(R=Y%DF=Y%T=40%W=\nOS:0%S=Z%A=S+%F=AR%O=%RD=0%Q=)T6(R=Y%DF=Y%T=40%W=0%S=A%A=Z%F=R%O=%RD=0%Q=)T\nOS:7(R=Y%DF=Y%T=40%W=0%S=Z%A=S+%F=AR%O=%RD=0%Q=)U1(R=Y%DF=N%T=40%IPL=164%UN\nOS:=0%RIPL=G%RID=G%RIPCK=G%RUCK=G%RUD=G)IE(R=Y%DFI=N%T=40%CD=S)\n",
+    "ports_used": [
+      {
+        "state": "open",
+        "proto": "tcp",
+        "portid": "22"
+      },
+      {
+        "state": "closed",
+        "proto": "tcp",
+        "portid": "1"
+      },
+      {
+        "state": "closed",
+        "proto": "udp",
+        "portid": "42537"
+      }
+    ],
+    "accuracy": 99,
+    "cpe": [
+      "cpe:/o:linux:linux_kernel:3.1",
+      "cpe:/o:linux:linux_kernel:4",
+      "cpe:/o:linux:linux_kernel:3.2",
+      "cpe:/o:google:android:5.0",
+      "cpe:/o:linux:linux_kernel:2.6.32",
+      "cpe:/o:linux:linux_kernel:2.6",
+      "cpe:/o:linux:linux_kernel:5",
+      "cpe:/h:sony:x75ch",
+      "cpe:/o:netgear:raidiator:4.2.24",
+      "cpe:/o:linux:linux_kernel:3"
+    ],
+    "device_type": "general purpose",
+    "vendor": "Linux"
+  },
+  "10.10.1.166": {
+    "os_matches": [
+      {
+        "name": "Linux 4.15 - 5.8",
+        "accuracy": 100
+      }
+    ],
+    "os_classes": [
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "4.X",
+        "accuracy": 100,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:4"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "5.X",
+        "accuracy": 100,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:5"
+        ]
+      }
+    ],
+    "fingerprint": "",
+    "ports_used": [
+      {
+        "state": "open",
+        "proto": "tcp",
+        "portid": "22"
+      },
+      {
+        "state": "closed",
+        "proto": "tcp",
+        "portid": "1"
+      },
+      {
+        "state": "closed",
+        "proto": "udp",
+        "portid": "41470"
+      }
+    ],
+    "accuracy": 100,
+    "cpe": [
+      "cpe:/o:linux:linux_kernel:4",
+      "cpe:/o:linux:linux_kernel:5"
+    ],
+    "device_type": "general purpose",
+    "vendor": "Linux"
+  },
+  "10.10.1.70": {
+    "os_matches": [
+      {
+        "name": "Linux 4.15 - 5.8",
+        "accuracy": 100
+      }
+    ],
+    "os_classes": [
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "4.X",
+        "accuracy": 100,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:4"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "5.X",
+        "accuracy": 100,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:5"
+        ]
+      }
+    ],
+    "fingerprint": "",
+    "ports_used": [
+      {
+        "state": "open",
+        "proto": "tcp",
+        "portid": "22"
+      },
+      {
+        "state": "closed",
+        "proto": "tcp",
+        "portid": "1"
+      },
+      {
+        "state": "closed",
+        "proto": "udp",
+        "portid": "31093"
+      }
+    ],
+    "accuracy": 100,
+    "cpe": [
+      "cpe:/o:linux:linux_kernel:4",
+      "cpe:/o:linux:linux_kernel:5"
+    ],
+    "device_type": "general purpose",
+    "vendor": "Linux"
+  },
+  "10.10.2.40": {
+    "os_matches": [
+      {
+        "name": "Linux 4.15 - 5.8",
+        "accuracy": 100
+      }
+    ],
+    "os_classes": [
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "4.X",
+        "accuracy": 100,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:4"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "5.X",
+        "accuracy": 100,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:5"
+        ]
+      }
+    ],
+    "fingerprint": "",
+    "ports_used": [
+      {
+        "state": "open",
+        "proto": "tcp",
+        "portid": "22"
+      },
+      {
+        "state": "closed",
+        "proto": "tcp",
+        "portid": "1"
+      },
+      {
+        "state": "closed",
+        "proto": "udp",
+        "portid": "32274"
+      }
+    ],
+    "accuracy": 100,
+    "cpe": [
+      "cpe:/o:linux:linux_kernel:4",
+      "cpe:/o:linux:linux_kernel:5"
+    ],
+    "device_type": "general purpose",
+    "vendor": "Linux"
+  },
+  "10.10.2.121": {
+    "os_matches": [
+      {
+        "name": "Linux 4.15 - 5.8",
+        "accuracy": 97
+      },
+      {
+        "name": "Linux 5.0 - 5.4",
+        "accuracy": 97
+      },
+      {
+        "name": "Linux 5.0 - 5.5",
+        "accuracy": 95
+      },
+      {
+        "name": "Linux 2.6.32",
+        "accuracy": 91
+      },
+      {
+        "name": "Linux 3.10 - 4.11",
+        "accuracy": 91
+      },
+      {
+        "name": "Linux 3.2 - 4.9",
+        "accuracy": 91
+      },
+      {
+        "name": "Linux 3.4 - 3.10",
+        "accuracy": 91
+      },
+      {
+        "name": "Linux 5.1",
+        "accuracy": 91
+      },
+      {
+        "name": "Linux 2.6.32 - 3.10",
+        "accuracy": 91
+      },
+      {
+        "name": "Linux 2.6.32 - 3.13",
+        "accuracy": 91
+      }
+    ],
+    "os_classes": [
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "4.X",
+        "accuracy": 97,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:4"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "5.X",
+        "accuracy": 97,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:5"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "5.X",
+        "accuracy": 97,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:5"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "5.X",
+        "accuracy": 95,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:5"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "2.6.X",
+        "accuracy": 91,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:2.6.32"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "3.X",
+        "accuracy": 91,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:3"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "4.X",
+        "accuracy": 91,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:4"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "3.X",
+        "accuracy": 91,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:3"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "4.X",
+        "accuracy": 91,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:4"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "3.X",
+        "accuracy": 91,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:3"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "5.X",
+        "accuracy": 91,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:5.1"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "2.6.X",
+        "accuracy": 91,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:2.6"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "3.X",
+        "accuracy": 91,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:3"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "2.6.X",
+        "accuracy": 91,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:2.6"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "3.X",
+        "accuracy": 91,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:3"
+        ]
+      }
+    ],
+    "fingerprint": "",
+    "ports_used": [
+      {
+        "state": "open",
+        "proto": "tcp",
+        "portid": "80"
+      }
+    ],
+    "accuracy": 97,
+    "cpe": [
+      "cpe:/o:linux:linux_kernel:4",
+      "cpe:/o:linux:linux_kernel:2.6.32",
+      "cpe:/o:linux:linux_kernel:5.1",
+      "cpe:/o:linux:linux_kernel:2.6",
+      "cpe:/o:linux:linux_kernel:5",
+      "cpe:/o:linux:linux_kernel:3"
+    ],
+    "device_type": "general purpose",
+    "vendor": "Linux"
+  },
+  "10.10.2.101": {
+    "os_matches": [
+      {
+        "name": "Linux 3.2 - 4.9",
+        "accuracy": 98
+      },
+      {
+        "name": "Linux 5.1",
+        "accuracy": 94
+      },
+      {
+        "name": "Linux 2.6.32",
+        "accuracy": 94
+      },
+      {
+        "name": "Linux 4.15 - 5.8",
+        "accuracy": 94
+      },
+      {
+        "name": "Linux 2.6.32 - 3.10",
+        "accuracy": 93
+      },
+      {
+        "name": "Linux 5.0 - 5.5",
+        "accuracy": 93
+      },
+      {
+        "name": "Linux 3.10 - 4.11",
+        "accuracy": 92
+      },
+      {
+        "name": "Linux 3.13",
+        "accuracy": 92
+      },
+      {
+        "name": "Linux 3.13 - 3.16",
+        "accuracy": 92
+      },
+      {
+        "name": "Linux 4.10",
+        "accuracy": 92
+      }
+    ],
+    "os_classes": [
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "3.X",
+        "accuracy": 98,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:3"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "4.X",
+        "accuracy": 98,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:4"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "5.X",
+        "accuracy": 94,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:5.1"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "2.6.X",
+        "accuracy": 94,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:2.6.32"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "4.X",
+        "accuracy": 94,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:4"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "5.X",
+        "accuracy": 94,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:5"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "2.6.X",
+        "accuracy": 93,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:2.6"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "3.X",
+        "accuracy": 93,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:3"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "5.X",
+        "accuracy": 93,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:5"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "3.X",
+        "accuracy": 92,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:3"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "4.X",
+        "accuracy": 92,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:4"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "3.X",
+        "accuracy": 92,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:3.13"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "3.X",
+        "accuracy": 92,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:3"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "4.X",
+        "accuracy": 92,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:4.10"
+        ]
+      }
+    ],
+    "fingerprint": "",
+    "ports_used": [
+      {
+        "state": "open",
+        "proto": "tcp",
+        "portid": "111"
+      },
+      {
+        "state": "closed",
+        "proto": "tcp",
+        "portid": "21"
+      }
+    ],
+    "accuracy": 98,
+    "cpe": [
+      "cpe:/o:linux:linux_kernel:4",
+      "cpe:/o:linux:linux_kernel:3.13",
+      "cpe:/o:linux:linux_kernel:2.6.32",
+      "cpe:/o:linux:linux_kernel:4.10",
+      "cpe:/o:linux:linux_kernel:5.1",
+      "cpe:/o:linux:linux_kernel:2.6",
+      "cpe:/o:linux:linux_kernel:5",
+      "cpe:/o:linux:linux_kernel:3"
+    ],
+    "device_type": "general purpose",
+    "vendor": "Linux"
+  },
+  "10.10.2.1": {
+    "os_matches": [
+      {
+        "name": "Linux 3.2 - 4.9",
+        "accuracy": 100
+      }
+    ],
+    "os_classes": [
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "3.X",
+        "accuracy": 100,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:3"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "4.X",
+        "accuracy": 100,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:4"
+        ]
+      }
+    ],
+    "fingerprint": "",
+    "ports_used": [
+      {
+        "state": "open",
+        "proto": "tcp",
+        "portid": "22"
+      },
+      {
+        "state": "closed",
+        "proto": "tcp",
+        "portid": "1"
+      },
+      {
+        "state": "closed",
+        "proto": "udp",
+        "portid": "44523"
+      }
+    ],
+    "accuracy": 100,
+    "cpe": [
+      "cpe:/o:linux:linux_kernel:4",
+      "cpe:/o:linux:linux_kernel:3"
+    ],
+    "device_type": "general purpose",
+    "vendor": "Linux"
+  },
+  "10.10.1.163": {
+    "os_matches": [
+      {
+        "name": "Linux 5.0 - 5.7",
+        "accuracy": 100
+      }
+    ],
+    "os_classes": [
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "5.X",
+        "accuracy": 100,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:5"
+        ]
+      }
+    ],
+    "fingerprint": "",
+    "ports_used": [
+      {
+        "state": "open",
+        "proto": "tcp",
+        "portid": "22"
+      },
+      {
+        "state": "closed",
+        "proto": "tcp",
+        "portid": "1"
+      },
+      {
+        "state": "closed",
+        "proto": "udp",
+        "portid": "37449"
+      }
+    ],
+    "accuracy": 100,
+    "cpe": [
+      "cpe:/o:linux:linux_kernel:5"
+    ],
+    "device_type": "general purpose",
+    "vendor": "Linux"
+  },
+  "10.10.1.4": {
+    "os_matches": [
+      {
+        "name": "Linux 3.2 - 4.9",
+        "accuracy": 100
+      }
+    ],
+    "os_classes": [
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "3.X",
+        "accuracy": 100,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:3"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "4.X",
+        "accuracy": 100,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:4"
+        ]
+      }
+    ],
+    "fingerprint": "",
+    "ports_used": [
+      {
+        "state": "open",
+        "proto": "tcp",
+        "portid": "22"
+      },
+      {
+        "state": "closed",
+        "proto": "tcp",
+        "portid": "1"
+      },
+      {
+        "state": "closed",
+        "proto": "udp",
+        "portid": "31799"
+      }
+    ],
+    "accuracy": 100,
+    "cpe": [
+      "cpe:/o:linux:linux_kernel:4",
+      "cpe:/o:linux:linux_kernel:3"
+    ],
+    "device_type": "general purpose",
+    "vendor": "Linux"
+  },
+  "10.10.1.2": {
+    "os_matches": [
+      {
+        "name": "Linux 3.2 - 4.9",
+        "accuracy": 100
+      }
+    ],
+    "os_classes": [
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "3.X",
+        "accuracy": 100,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:3"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "4.X",
+        "accuracy": 100,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:4"
+        ]
+      }
+    ],
+    "fingerprint": "",
+    "ports_used": [
+      {
+        "state": "open",
+        "proto": "tcp",
+        "portid": "22"
+      },
+      {
+        "state": "closed",
+        "proto": "tcp",
+        "portid": "1"
+      },
+      {
+        "state": "closed",
+        "proto": "udp",
+        "portid": "42093"
+      }
+    ],
+    "accuracy": 100,
+    "cpe": [
+      "cpe:/o:linux:linux_kernel:4",
+      "cpe:/o:linux:linux_kernel:3"
+    ],
+    "device_type": "general purpose",
+    "vendor": "Linux"
+  },
+  "10.10.1.100": {
+    "os_matches": [
+      {
+        "name": "Linux 3.2 - 4.9",
+        "accuracy": 98
+      },
+      {
+        "name": "Linux 2.6.32",
+        "accuracy": 94
+      },
+      {
+        "name": "Linux 4.15 - 5.8",
+        "accuracy": 94
+      },
+      {
+        "name": "Linux 2.6.32 - 3.10",
+        "accuracy": 93
+      },
+      {
+        "name": "Linux 5.1",
+        "accuracy": 93
+      },
+      {
+        "name": "Linux 3.10 - 4.11",
+        "accuracy": 92
+      },
+      {
+        "name": "Linux 3.13",
+        "accuracy": 92
+      },
+      {
+        "name": "Linux 4.10",
+        "accuracy": 92
+      },
+      {
+        "name": "Linux 3.4 - 3.10",
+        "accuracy": 92
+      },
+      {
+        "name": "Linux 5.0 - 5.5",
+        "accuracy": 92
+      }
+    ],
+    "os_classes": [
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "3.X",
+        "accuracy": 98,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:3"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "4.X",
+        "accuracy": 98,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:4"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "2.6.X",
+        "accuracy": 94,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:2.6.32"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "4.X",
+        "accuracy": 94,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:4"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "5.X",
+        "accuracy": 94,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:5"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "2.6.X",
+        "accuracy": 93,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:2.6"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "3.X",
+        "accuracy": 93,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:3"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "5.X",
+        "accuracy": 93,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:5.1"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "3.X",
+        "accuracy": 92,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:3"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "4.X",
+        "accuracy": 92,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:4"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "3.X",
+        "accuracy": 92,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:3.13"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "4.X",
+        "accuracy": 92,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:4.10"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "3.X",
+        "accuracy": 92,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:3"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "5.X",
+        "accuracy": 92,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:5"
+        ]
+      }
+    ],
+    "fingerprint": "",
+    "ports_used": [
+      {
+        "state": "open",
+        "proto": "tcp",
+        "portid": "80"
+      },
+      {
+        "state": "closed",
+        "proto": "tcp",
+        "portid": "22"
+      }
+    ],
+    "accuracy": 98,
+    "cpe": [
+      "cpe:/o:linux:linux_kernel:4",
+      "cpe:/o:linux:linux_kernel:3.13",
+      "cpe:/o:linux:linux_kernel:2.6.32",
+      "cpe:/o:linux:linux_kernel:4.10",
+      "cpe:/o:linux:linux_kernel:5.1",
+      "cpe:/o:linux:linux_kernel:2.6",
+      "cpe:/o:linux:linux_kernel:5",
+      "cpe:/o:linux:linux_kernel:3"
+    ],
+    "device_type": "general purpose",
+    "vendor": "Linux"
+  },
+  "10.10.1.20": {
+    "os_matches": [
+      {
+        "name": "Linux 5.0 - 5.5",
+        "accuracy": 99
+      },
+      {
+        "name": "Linux 2.6.32",
+        "accuracy": 96
+      },
+      {
+        "name": "Linux 3.2 - 4.9",
+        "accuracy": 96
+      },
+      {
+        "name": "Netgear ReadyNAS 2100 (RAIDiator 4.2.24)",
+        "accuracy": 96
+      },
+      {
+        "name": "Linux 2.6.32 - 3.10",
+        "accuracy": 96
+      },
+      {
+        "name": "Linux 4.15 - 5.8",
+        "accuracy": 96
+      },
+      {
+        "name": "Linux 5.3 - 5.4",
+        "accuracy": 96
+      },
+      {
+        "name": "Sony X75CH-series Android TV (Android 5.0)",
+        "accuracy": 95
+      },
+      {
+        "name": "Linux 3.1",
+        "accuracy": 95
+      },
+      {
+        "name": "Linux 3.2",
+        "accuracy": 95
+      }
+    ],
+    "os_classes": [
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "5.X",
+        "accuracy": 99,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:5"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "2.6.X",
+        "accuracy": 96,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:2.6.32"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "3.X",
+        "accuracy": 96,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:3"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "4.X",
+        "accuracy": 96,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:4"
+        ]
+      },
+      {
+        "type": "storage-misc",
+        "vendor": "Netgear",
+        "osfamily": "RAIDiator",
+        "osgen": "4.X",
+        "accuracy": 96,
+        "cpe": [
+          "cpe:/o:netgear:raidiator:4.2.24"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "2.6.X",
+        "accuracy": 96,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:2.6"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "3.X",
+        "accuracy": 96,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:3"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "4.X",
+        "accuracy": 96,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:4"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "5.X",
+        "accuracy": 96,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:5"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "5.X",
+        "accuracy": 96,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:5"
+        ]
+      },
+      {
+        "type": "media device",
+        "vendor": "Google",
+        "osfamily": "Android",
+        "osgen": "5.X",
+        "accuracy": 95,
+        "cpe": [
+          "cpe:/o:google:android:5.0",
+          "cpe:/h:sony:x75ch"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "3.X",
+        "accuracy": 95,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:3.1"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "3.X",
+        "accuracy": 95,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:3.2"
+        ]
+      }
+    ],
+    "fingerprint": "OS:SCAN(V=7.94SVN%E=4%D=2/20%OT=22%CT=1%CU=41325%PV=Y%DS=1%DC=D%G=Y%M=4CD98\nOS:F%TM=699905AB%P=x86_64-pc-linux-gnu)SEQ(SP=106%GCD=1%ISR=107%TI=Z%CI=Z%I\nOS:I=I%TS=A)OPS(O1=M5B4ST11NW6%O2=M5B4ST11NW6%O3=M5B4NNT11NW6%O4=M5B4ST11NW\nOS:6%O5=M5B4ST11NW6%O6=M5B4ST11)WIN(W1=FE88%W2=FE88%W3=FE88%W4=FE88%W5=FE88\nOS:%W6=FE88)ECN(R=Y%DF=Y%T=40%W=FAF0%O=M5B4NNSNW6%CC=Y%Q=)T1(R=Y%DF=Y%T=40%\nOS:S=O%A=S+%F=AS%RD=0%Q=)T2(R=N)T3(R=N)T4(R=Y%DF=Y%T=40%W=0%S=A%A=Z%F=R%O=%\nOS:RD=0%Q=)T5(R=Y%DF=Y%T=40%W=0%S=Z%A=S+%F=AR%O=%RD=0%Q=)T6(R=Y%DF=Y%T=40%W\nOS:=0%S=A%A=Z%F=R%O=%RD=0%Q=)T7(R=Y%DF=Y%T=40%W=0%S=Z%A=S+%F=AR%O=%RD=0%Q=)\nOS:U1(R=Y%DF=N%T=40%IPL=164%UN=0%RIPL=G%RID=G%RIPCK=G%RUCK=G%RUD=G)IE(R=Y%D\nOS:FI=N%T=40%CD=S)\n",
+    "ports_used": [
+      {
+        "state": "open",
+        "proto": "tcp",
+        "portid": "22"
+      },
+      {
+        "state": "closed",
+        "proto": "tcp",
+        "portid": "1"
+      },
+      {
+        "state": "closed",
+        "proto": "udp",
+        "portid": "41325"
+      }
+    ],
+    "accuracy": 99,
+    "cpe": [
+      "cpe:/o:linux:linux_kernel:3.1",
+      "cpe:/o:linux:linux_kernel:4",
+      "cpe:/o:linux:linux_kernel:3.2",
+      "cpe:/o:google:android:5.0",
+      "cpe:/o:linux:linux_kernel:2.6.32",
+      "cpe:/o:linux:linux_kernel:2.6",
+      "cpe:/o:linux:linux_kernel:5",
+      "cpe:/h:sony:x75ch",
+      "cpe:/o:netgear:raidiator:4.2.24",
+      "cpe:/o:linux:linux_kernel:3"
+    ],
+    "device_type": "general purpose",
+    "vendor": "Linux"
+  },
+  "10.10.1.80": {
+    "os_matches": [
+      {
+        "name": "Linux 4.15 - 5.8",
+        "accuracy": 99
+      },
+      {
+        "name": "Linux 5.0 - 5.5",
+        "accuracy": 99
+      },
+      {
+        "name": "Linux 5.0 - 5.4",
+        "accuracy": 97
+      },
+      {
+        "name": "Linux 3.2 - 4.9",
+        "accuracy": 96
+      },
+      {
+        "name": "Linux 2.6.32 - 3.10",
+        "accuracy": 96
+      },
+      {
+        "name": "Linux 2.6.32",
+        "accuracy": 96
+      },
+      {
+        "name": "Linux 5.4",
+        "accuracy": 95
+      },
+      {
+        "name": "Linux 3.1",
+        "accuracy": 95
+      },
+      {
+        "name": "Linux 3.2",
+        "accuracy": 95
+      },
+      {
+        "name": "Linux 5.3 - 5.4",
+        "accuracy": 95
+      }
+    ],
+    "os_classes": [
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "4.X",
+        "accuracy": 99,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:4"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "5.X",
+        "accuracy": 99,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:5"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "5.X",
+        "accuracy": 99,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:5"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "5.X",
+        "accuracy": 97,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:5"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "3.X",
+        "accuracy": 96,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:3"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "4.X",
+        "accuracy": 96,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:4"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "2.6.X",
+        "accuracy": 96,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:2.6"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "3.X",
+        "accuracy": 96,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:3"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "2.6.X",
+        "accuracy": 96,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:2.6.32"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "5.X",
+        "accuracy": 95,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:5.4"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "3.X",
+        "accuracy": 95,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:3.1"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "3.X",
+        "accuracy": 95,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:3.2"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "5.X",
+        "accuracy": 95,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:5"
+        ]
+      }
+    ],
+    "fingerprint": "OS:SCAN(V=7.94SVN%E=4%D=2/20%OT=22%CT=1%CU=42046%PV=Y%DS=1%DC=D%G=Y%M=F8F21\nOS:E%TM=699905AB%P=x86_64-pc-linux-gnu)SEQ(SP=FA%GCD=1%ISR=101%TI=Z%CI=Z%TS\nOS:=A)SEQ(SP=FA%GCD=1%ISR=101%TI=Z%CI=Z%II=I%TS=A)OPS(O1=M5B4ST11NW7%O2=M5B\nOS:4ST11NW7%O3=M5B4NNT11NW7%O4=M5B4ST11NW7%O5=M5B4ST11NW7%O6=M5B4ST11)WIN(W\nOS:1=FE88%W2=FE88%W3=FE88%W4=FE88%W5=FE88%W6=FE88)ECN(R=Y%DF=Y%T=40%W=FAF0%\nOS:O=M5B4NNSNW7%CC=Y%Q=)T1(R=Y%DF=Y%T=40%S=O%A=S+%F=AS%RD=0%Q=)T2(R=N)T3(R=\nOS:N)T4(R=Y%DF=Y%T=40%W=0%S=A%A=Z%F=R%O=%RD=0%Q=)T5(R=Y%DF=Y%T=40%W=0%S=Z%A\nOS:=S+%F=AR%O=%RD=0%Q=)T6(R=Y%DF=Y%T=40%W=0%S=A%A=Z%F=R%O=%RD=0%Q=)T7(R=Y%D\nOS:F=Y%T=40%W=0%S=Z%A=S+%F=AR%O=%RD=0%Q=)U1(R=Y%DF=N%T=40%IPL=164%UN=0%RIPL\nOS:=G%RID=G%RIPCK=G%RUCK=G%RUD=G)IE(R=Y%DFI=N%T=40%CD=S)\n",
+    "ports_used": [
+      {
+        "state": "open",
+        "proto": "tcp",
+        "portid": "22"
+      },
+      {
+        "state": "closed",
+        "proto": "tcp",
+        "portid": "1"
+      },
+      {
+        "state": "closed",
+        "proto": "udp",
+        "portid": "42046"
+      }
+    ],
+    "accuracy": 99,
+    "cpe": [
+      "cpe:/o:linux:linux_kernel:3.1",
+      "cpe:/o:linux:linux_kernel:4",
+      "cpe:/o:linux:linux_kernel:5.4",
+      "cpe:/o:linux:linux_kernel:2.6.32",
+      "cpe:/o:linux:linux_kernel:2.6",
+      "cpe:/o:linux:linux_kernel:5",
+      "cpe:/o:linux:linux_kernel:3.2",
+      "cpe:/o:linux:linux_kernel:3"
+    ],
+    "device_type": "general purpose",
+    "vendor": "Linux"
+  },
+  "10.10.1.150": {
+    "os_matches": [
+      {
+        "name": "Linux 2.6.32 - 3.10",
+        "accuracy": 100
+      }
+    ],
+    "os_classes": [
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "2.6.X",
+        "accuracy": 100,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:2.6"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "3.X",
+        "accuracy": 100,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:3"
+        ]
+      }
+    ],
+    "fingerprint": "",
+    "ports_used": [
+      {
+        "state": "open",
+        "proto": "tcp",
+        "portid": "22"
+      },
+      {
+        "state": "closed",
+        "proto": "tcp",
+        "portid": "1"
+      },
+      {
+        "state": "closed",
+        "proto": "udp",
+        "portid": "38514"
+      }
+    ],
+    "accuracy": 100,
+    "cpe": [
+      "cpe:/o:linux:linux_kernel:2.6",
+      "cpe:/o:linux:linux_kernel:3"
+    ],
+    "device_type": "general purpose",
+    "vendor": "Linux"
+  },
+  "10.10.1.3": {
+    "os_matches": [
+      {
+        "name": "Linux 3.2 - 4.9",
+        "accuracy": 100
+      }
+    ],
+    "os_classes": [
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "3.X",
+        "accuracy": 100,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:3"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "4.X",
+        "accuracy": 100,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:4"
+        ]
+      }
+    ],
+    "fingerprint": "",
+    "ports_used": [
+      {
+        "state": "open",
+        "proto": "tcp",
+        "portid": "22"
+      },
+      {
+        "state": "closed",
+        "proto": "tcp",
+        "portid": "1"
+      },
+      {
+        "state": "closed",
+        "proto": "udp",
+        "portid": "38631"
+      }
+    ],
+    "accuracy": 100,
+    "cpe": [
+      "cpe:/o:linux:linux_kernel:4",
+      "cpe:/o:linux:linux_kernel:3"
+    ],
+    "device_type": "general purpose",
+    "vendor": "Linux"
+  },
+  "10.10.2.2": {
+    "os_matches": [
+      {
+        "name": "Linux 3.2 - 4.9",
+        "accuracy": 100
+      }
+    ],
+    "os_classes": [
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "3.X",
+        "accuracy": 100,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:3"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "4.X",
+        "accuracy": 100,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:4"
+        ]
+      }
+    ],
+    "fingerprint": "",
+    "ports_used": [
+      {
+        "state": "open",
+        "proto": "tcp",
+        "portid": "22"
+      },
+      {
+        "state": "closed",
+        "proto": "tcp",
+        "portid": "1"
+      },
+      {
+        "state": "closed",
+        "proto": "udp",
+        "portid": "38517"
+      }
+    ],
+    "accuracy": 100,
+    "cpe": [
+      "cpe:/o:linux:linux_kernel:4",
+      "cpe:/o:linux:linux_kernel:3"
+    ],
+    "device_type": "general purpose",
+    "vendor": "Linux"
+  },
+  "10.10.2.5": {
+    "os_matches": [
+      {
+        "name": "Microsoft Windows Server 2019",
+        "accuracy": 100
+      }
+    ],
+    "os_classes": [
+      {
+        "type": "general purpose",
+        "vendor": "Microsoft",
+        "osfamily": "Windows",
+        "osgen": "2019",
+        "accuracy": 100,
+        "cpe": []
+      }
+    ],
+    "fingerprint": "",
+    "ports_used": [
+      {
+        "state": "open",
+        "proto": "tcp",
+        "portid": "21"
+      },
+      {
+        "state": "closed",
+        "proto": "tcp",
+        "portid": "1"
+      },
+      {
+        "state": "closed",
+        "proto": "udp",
+        "portid": "32721"
+      }
+    ],
+    "accuracy": 100,
+    "cpe": [],
+    "device_type": "general purpose",
+    "vendor": "Microsoft"
+  },
+  "10.10.2.100": {
+    "os_matches": [
+      {
+        "name": "Linux 3.2 - 4.9",
+        "accuracy": 98
+      },
+      {
+        "name": "Linux 5.1",
+        "accuracy": 94
+      },
+      {
+        "name": "Linux 2.6.32",
+        "accuracy": 94
+      },
+      {
+        "name": "Linux 4.15 - 5.8",
+        "accuracy": 94
+      },
+      {
+        "name": "Linux 2.6.32 - 3.10",
+        "accuracy": 93
+      },
+      {
+        "name": "Linux 5.0 - 5.5",
+        "accuracy": 93
+      },
+      {
+        "name": "Linux 3.10 - 4.11",
+        "accuracy": 92
+      },
+      {
+        "name": "Linux 3.13",
+        "accuracy": 92
+      },
+      {
+        "name": "Linux 3.13 - 3.16",
+        "accuracy": 92
+      },
+      {
+        "name": "Linux 4.10",
+        "accuracy": 92
+      }
+    ],
+    "os_classes": [
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "3.X",
+        "accuracy": 98,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:3"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "4.X",
+        "accuracy": 98,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:4"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "5.X",
+        "accuracy": 94,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:5.1"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "2.6.X",
+        "accuracy": 94,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:2.6.32"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "4.X",
+        "accuracy": 94,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:4"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "5.X",
+        "accuracy": 94,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:5"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "2.6.X",
+        "accuracy": 93,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:2.6"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "3.X",
+        "accuracy": 93,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:3"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "5.X",
+        "accuracy": 93,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:5"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "3.X",
+        "accuracy": 92,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:3"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "4.X",
+        "accuracy": 92,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:4"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "3.X",
+        "accuracy": 92,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:3.13"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "3.X",
+        "accuracy": 92,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:3"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "4.X",
+        "accuracy": 92,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:4.10"
+        ]
+      }
+    ],
+    "fingerprint": "",
+    "ports_used": [
+      {
+        "state": "open",
+        "proto": "tcp",
+        "portid": "111"
+      },
+      {
+        "state": "closed",
+        "proto": "tcp",
+        "portid": "21"
+      }
+    ],
+    "accuracy": 98,
+    "cpe": [
+      "cpe:/o:linux:linux_kernel:4",
+      "cpe:/o:linux:linux_kernel:3.13",
+      "cpe:/o:linux:linux_kernel:2.6.32",
+      "cpe:/o:linux:linux_kernel:4.10",
+      "cpe:/o:linux:linux_kernel:5.1",
+      "cpe:/o:linux:linux_kernel:2.6",
+      "cpe:/o:linux:linux_kernel:5",
+      "cpe:/o:linux:linux_kernel:3"
+    ],
+    "device_type": "general purpose",
+    "vendor": "Linux"
+  },
+  "10.10.1.60": {
+    "os_matches": [
+      {
+        "name": "Linux 4.15 - 5.8",
+        "accuracy": 100
+      }
+    ],
+    "os_classes": [
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "4.X",
+        "accuracy": 100,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:4"
+        ]
+      },
+      {
+        "type": "general purpose",
+        "vendor": "Linux",
+        "osfamily": "Linux",
+        "osgen": "5.X",
+        "accuracy": 100,
+        "cpe": [
+          "cpe:/o:linux:linux_kernel:5"
+        ]
+      }
+    ],
+    "fingerprint": "",
+    "ports_used": [
+      {
+        "state": "open",
+        "proto": "tcp",
+        "portid": "22"
+      },
+      {
+        "state": "closed",
+        "proto": "tcp",
+        "portid": "1"
+      },
+      {
+        "state": "closed",
+        "proto": "udp",
+        "portid": "39115"
+      }
+    ],
+    "accuracy": 100,
+    "cpe": [
+      "cpe:/o:linux:linux_kernel:4",
+      "cpe:/o:linux:linux_kernel:5"
+    ],
+    "device_type": "general purpose",
+    "vendor": "Linux"
+  }
+}
