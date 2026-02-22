@@ -32,8 +32,7 @@ def os_fingerprint_finder(state: AgentState) -> AgentState:
 
     if not discovered_hosts:
         logger.info("No hosts discovered in recon phase, skipping OS fingerprinting.")
-        state["os_fingerprint_results"] = {}
-        return state
+        return {"os_fingerprint_results": {}}
 
     logger.info(f"Starting OS fingerprinting for {len(discovered_hosts)} hosts...")
 
@@ -57,6 +56,7 @@ def os_fingerprint_finder(state: AgentState) -> AgentState:
 
     os_results = {}
     last_log = {}
+    os_xml_content = ""
 
     for batch_num, batch in enumerate(batches, start=1):
         logger.info(f"OS scan batch {batch_num}/{total_batches}: {batch}")
@@ -99,9 +99,8 @@ def os_fingerprint_finder(state: AgentState) -> AgentState:
 
         # store XML content from last successful batch
         with open(xml_path, "r", encoding="utf-8") as f:
-            state["os_xml_content"] = f.read()
+            os_xml_content = f.read()
 
     logger.info(f"OS fingerprinting complete: {len(os_results)}/{len(discovered_hosts)} hosts returned OS data")
 
-    state["os_fingerprint_results"] = os_results
-    return state
+    return {"os_fingerprint_results": os_results, "os_xml_content": os_xml_content}

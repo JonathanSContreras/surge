@@ -116,4 +116,4 @@ def recon_analysis(state: AgentState) -> AgentState:  # this will be a simple "h
 
     logger.info("Recon analysis agent finished analysis and updated the state.")
 
-    return state
+    return {"recon_analysis": result.content}
