@@ -12,21 +12,6 @@ import time
 
 logger = get_logger(__name__)
 
-# Conservative port -> (vendor, product) fallback for when nmap service banners
-# are absent. These are rough guesses — service banner data from parsed_network
-# takes priority and will override these via deduplication.
-PORT_TO_PRODUCT = {
-    "21":   ("", "ftp"),
-    "22":   ("openbsd", "openssh"),
-    "53":   ("", "bind"),
-    "80":   ("", "apache"),
-    "111":  ("", "rpcbind"),
-    "443":  ("", "openssl"),
-    "445":  ("microsoft", "smb"),
-    "3306": ("mysql", "mysql"),
-    "5432": ("postgresql", "postgresql"),
-}
-
 
 def _cpe_specificity(cpe: str) -> int:
     """Higher score = more specific (more version info in the CPE string)."""
@@ -62,17 +47,20 @@ def _parse_cpe(cpe_str: str) -> dict | None:
 def _extract_product_queries(os_fingerprint: dict, parsed_network: dict | list) -> list[dict]:
     """
     Build a deduplicated list of (host, vendor, product, version, source) CVE
-    query tuples from two complementary sources:
+    query tuples from three complementary sources:
 
     Source A — OS fingerprint CPEs (higher precision, runs first):
         1. Non-generic device/OS CPEs (IoT, Android, Netgear, AXIS, etc.)
-        2. Pinned-version Linux kernel CPEs (e.g., 2.6.32.x; rejects major-only)
-        3. Open port -> known service product fallback via PORT_TO_PRODUCT
-        4. Windows Server special case
+        2. Pinned-version Linux kernel CPEs (e.g., 4.4.x; accepts major.minor+)
+        3. Windows Server special case
 
-    Source B — Nmap service banners from parsed_network (runs second):
-        Catches specific software versions that OS fingerprinting misses
-        (e.g., Apache/2.4.51, OpenSSH_8.9p1). Skipped if already seen.
+    Source B — Service-level CPEs from parsed_network (runs second):
+        Application CPEs (type 'a') from nmap service detection. Most precise
+        source for software CVEs (e.g., cpe:/a:mysql:mysql:5.7.33).
+
+    Source C — Nmap service banners from parsed_network (runs last):
+        Catches product/version strings not covered by CPEs. Falls back to
+        the nmap service name (e.g., "mysql", "ssh") when product is absent.
     """
     queries   = []
     seen_keys = set()
@@ -90,17 +78,17 @@ def _extract_product_queries(os_fingerprint: dict, parsed_network: dict | list) 
             "source":  source,
         })
 
+    hosts_list = parsed_network if isinstance(parsed_network, list) else list(parsed_network.values())
+
     # ------------------------------------------------------------------ #
-    # Source A: OS fingerprint CPEs + port-based fallback                 #
+    # Source A: OS fingerprint CPEs                                       #
     # ------------------------------------------------------------------ #
     for ip, data in os_fingerprint.items():
         if not data or not isinstance(data, dict):
             continue
 
-        cpes       = data.get("cpe", [])
-        ports_used = data.get("ports_used", [])
+        cpes = data.get("cpe", [])
 
-        # Pass 1: Categorize CPEs by specificity
         non_generic_cpes     = []
         specific_kernel_cpes = []
 
@@ -114,16 +102,12 @@ def _extract_product_queries(os_fingerprint: dict, parsed_network: dict | list) 
             version = parsed["version"]
             ctype   = parsed["cpe_type"]
 
-            # Hardware CPEs for known IoT/device vendors
             if ctype == "h":
                 non_generic_cpes.append(parsed)
-
-            # Non-Linux OS with a real product name (e.g., netgear:raidiator, google:android)
             elif ctype == "o" and vendor not in ("linux", ""):
                 non_generic_cpes.append(parsed)
-
-            # Linux kernel: only if version is pinned (e.g., 2.6.32), not just major (e.g., "3")
-            elif product == "linux_kernel" and version and re.match(r"^\d+\.\d+\.\d+", version):
+            # Accept major.minor (e.g., 4.4) and above — previously required X.Y.Z
+            elif product == "linux_kernel" and version and re.match(r"^\d+\.\d+", version):
                 specific_kernel_cpes.append(parsed)
 
         for p in non_generic_cpes:
@@ -133,33 +117,42 @@ def _extract_product_queries(os_fingerprint: dict, parsed_network: dict | list) 
             best = max(specific_kernel_cpes, key=lambda x: _cpe_specificity(x["raw"]))
             add_query(ip, best["vendor"], best["product"], best["version"], "cpe_kernel")
 
-        # Pass 2: Open ports -> known service products (low-precision fallback)
-        open_ports = [p["portid"] for p in ports_used if p.get("state") == "open"]
-        for portid in open_ports:
-            if portid in PORT_TO_PRODUCT:
-                svc_vendor, svc_product = PORT_TO_PRODUCT[portid]
-                add_query(ip, svc_vendor, svc_product, "", f"port_{portid}")
-
-        # Pass 3: Windows Server special case
         os_name = (data.get("os_matches") or [{}])[0].get("name", "").lower()
         if "windows server 2019" in os_name:
             add_query(ip, "microsoft", "windows_server_2019", "2019", "os_windows")
 
     # ------------------------------------------------------------------ #
-    # Source B: Nmap service banners from parsed_network                  #
+    # Source B: Service-level CPEs from parsed_network (application CPEs) #
     # ------------------------------------------------------------------ #
-    hosts = parsed_network if isinstance(parsed_network, list) else list(parsed_network.values())
-    for host in hosts:
-        ip       = host.get("host") or host.get("ip", "unknown")
-        services = host.get("services") or host.get("ports") or []
+    for host in hosts_list:
+        ip       = host.get("ip", "unknown")
+        services = host.get("services") or []
         for svc in services:
-            product = svc.get("product") or svc.get("name", "")
+            if svc.get("state") != "open":
+                continue
+            for cpe_str in svc.get("cpe", []):
+                parsed = _parse_cpe(cpe_str)
+                if not parsed or parsed["cpe_type"] != "a" or not parsed["product"]:
+                    continue
+                add_query(ip, parsed["vendor"], parsed["product"], parsed["version"], "svc_cpe")
+
+    # ------------------------------------------------------------------ #
+    # Source C: Nmap service banners (product strings + service names)    #
+    # ------------------------------------------------------------------ #
+    for host in hosts_list:
+        ip       = host.get("ip", "unknown")
+        services = host.get("services") or []
+        for svc in services:
+            if svc.get("state") != "open":
+                continue
+            # Fall back to nmap service name (e.g., "mysql", "ssh") if no product string
+            product = svc.get("product") or svc.get("service", "")
             vendor  = svc.get("vendor", "")
             version = svc.get("version", "")
-            if product:
+            if product and product not in ("unknown", "tcpwrapped"):
                 add_query(ip, vendor, product, version, "nmap_banner")
 
-    logger.info(f"Extracted {len(queries)} unique CVE queries (OS CPE + nmap banners)")
+    logger.info(f"Extracted {len(queries)} unique CVE queries (OS CPE + svc CPE + nmap banners)")
     return queries
 
 
