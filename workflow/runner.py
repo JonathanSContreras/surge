@@ -16,7 +16,7 @@ def run_workflow(initial_state: dict) -> dict:
     graph = build_mas_graph()
 
     # COMMENT OUT (this is just so we can get a visual)
-    # output_graph_png(graph)
+    output_graph_png(graph)
 
     final_state = graph.invoke(initial_state)
 

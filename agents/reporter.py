@@ -43,11 +43,6 @@ def reporter(state: AgentState) -> AgentState:  # takes all output from all agen
     {recon_analysis_results}
 
     -------------------------
-    OPERATING SYSTEM FINGERPRINT DATA
-    -------------------------
-    {json.dumps(os_fingerprint_results, indent=2)}
-
-    -------------------------
     OPERATING SYSTEM ANALYSIS
     -------------------------
     {os_analysis}
@@ -99,12 +94,19 @@ def reporter(state: AgentState) -> AgentState:  # takes all output from all agen
 
     # check if result answer is a string
     result = AIMessage(result) if not isinstance(result, AIMessage) else result
-    state["network_findings"] = result.content
+    content = result.content
+
+    if not content or not content.strip():
+        logger.error("Reporter LLM returned empty content — context window likely exceeded. File not written.")
+        state["network_findings"] = ""
+        return state
+
+    state["network_findings"] = content
 
     # write the analysis into a txt file
     target_ip = target_to_proper_file_name(state["targets"])
     with open(f"./report/{target_ip}_final_report.md", "w", encoding="utf-8") as f:
-        f.write(result.content)
+        f.write(content)
 
     logger.info("Reporter agent finished writing and updated the state.")
 
