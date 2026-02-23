@@ -93,7 +93,8 @@ def xgboost_data_cleaning(df:pd.DataFrame, catgy_cols:list, summary_col="summary
     merged_cve_data = pd.concat([cve_data.drop(columns=[summary_col]), embeddings_df], axis=1)
 
     # vectorize cve name field from prefitted TFIDF vectorizer
-    cwe_name_feat = TFIDF_ENCODER.fit_transform(cve_data["cwe_name"])
+    cve_data["cwe_name"] = cve_data["cwe_name"].fillna("UNKNOWN")
+    cwe_name_feat = TFIDF_ENCODER.transform(cve_data["cwe_name"])
     name_feat_df = pd.DataFrame(
         cwe_name_feat.toarray(),
         columns=[f"tfidf_name_{i}" for i in range(cwe_name_feat.shape[1])]
