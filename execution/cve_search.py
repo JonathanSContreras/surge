@@ -14,14 +14,35 @@ def cve_search(product: str, vendor: str="") -> list:
 
     try:
         response = requests.get(url, timeout=15)
-        if response.status_code == 200:
-            data = response.json()
-            print("cve_search", data)
-            return [
-                {"id": item["id"], "summary": item["summary"]}
-                for item in data.get("data", [])[:10]
-            ]        
-        return {"data": [], "error": f"Failed to fetch CVEs for {product}"}
+        if response.status_code != 200:
+            return []
+
+        data = response.json()
+
+        # New CIRCL API format: {"results": {"fkie_nvd": [[id, cve_dict], ...], ...}}
+        results_map = data.get("results", {})
+
+        # Prefer fkie_nvd (most complete NVD mirror), fall back to nvd or cvelistv5
+        entries = (
+            results_map.get("fkie_nvd")
+            or results_map.get("nvd")
+            or results_map.get("cvelistv5")
+            or []
+        )
+
+        cves = []
+        for entry in entries[:10]:
+            _, cve_dict = entry
+            cve_id = cve_dict.get("id", "")
+            summary = ""
+            for desc in cve_dict.get("descriptions", []):
+                if desc.get("lang") == "en":
+                    summary = desc.get("value", "")
+                    break
+            if cve_id:
+                cves.append({"id": cve_id, "summary": summary})
+
+        return cves
 
     except Exception as e:
-        return {"error": str(e)}
+        return []
