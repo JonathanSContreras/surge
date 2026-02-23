@@ -70,6 +70,16 @@ def xgboost_data_cleaning(df:pd.DataFrame, catgy_cols:list, summary_col="summary
         cve_data.rename(columns={"cwe": "cwe_code"}, inplace=True)
         print("[xgboost_data_cleaning] Renamed 'cwe' to 'cwe_code'")
 
+    # convert cwe_code to numeric (handles "CWE-79", "79", None, etc.)
+    if "cwe_code" in cve_data.columns:
+        cve_data["cwe_code"] = (
+            cve_data["cwe_code"]
+            .astype(str)
+            .str.extract(r"(\d+)")[0]
+        )
+        cve_data["cwe_code"] = pd.to_numeric(cve_data["cwe_code"], errors="coerce").fillna(0).astype(int)
+        print("[xgboost_data_cleaning] Converted 'cwe_code' to numeric")
+
     # fill na categorical columns as "UNKNOWN"
     for col in catgy_cols:
         if col in cve_data.columns:
