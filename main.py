@@ -36,7 +36,7 @@ if __name__ == "__main__":
 
     ## DEBUG JSON PRINT OF AGENT STATE
     state_out = json.dumps(final_state, indent=2)
-    with open("./report/final_state_result.json", "w+") as f:
+    with open(f"{final_state['run_dir']}/final_state_result.json", "w+") as f:
         f.write(state_out)
     ####
     

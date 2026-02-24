@@ -1,7 +1,6 @@
 from core.state import AgentState
 from core.llm import get_llm
 from agents.prompts import REPORTER_SYSTEM_PROMPT
-from utils.helpers import target_to_proper_file_name
 from config.logging_config import get_logger
 
 import json
@@ -103,9 +102,9 @@ def reporter(state: AgentState) -> AgentState:  # takes all output from all agen
 
     state["network_findings"] = content
 
-    # write the analysis into a txt file
-    target_ip = target_to_proper_file_name(state["targets"])
-    with open(f"./report/{target_ip}_final_report.md", "w", encoding="utf-8") as f:
+    # write the analysis into the run's output directory
+    run_dir = state["run_dir"]
+    with open(f"{run_dir}/final_report.md", "w", encoding="utf-8") as f:
         f.write(content)
 
     logger.info("Reporter agent finished writing and updated the state.")

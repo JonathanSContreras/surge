@@ -1,7 +1,6 @@
 from core.state import AgentState
 from core.llm import get_llm
 from agents.prompts import RECON_ANALYSIS_SYSTEM_PROMPT
-from utils.helpers import target_to_proper_file_name
 from config.logging_config import get_logger
 
 from langchain.schema import AIMessage, SystemMessage, HumanMessage
@@ -108,8 +107,8 @@ def recon_analysis(state: AgentState) -> AgentState:  # this will be a simple "h
     state["recon_analysis"] = result.content
 
     # write the analysis into a txt file
-    target_ip = target_to_proper_file_name(state["targets"])
-    with open(f"./report/{target_ip}_recon_analysis.md", "w", encoding="utf-8") as f:
+    run_dir = state["run_dir"]
+    with open(f"{run_dir}/recon_analysis.md", "w", encoding="utf-8") as f:
         f.write(result.content)
 
     # print(state["recon_analysis"])

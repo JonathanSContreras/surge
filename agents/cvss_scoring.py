@@ -26,7 +26,7 @@ def cvss_scoring(state: AgentState) -> AgentState:
 
         ## OUTPUT DASHBOARD DATA TO HAVE DATA FOR JONATHAN
         json_string = json.dumps(dashboard_data, indent=4)
-        with open("./report/dashboard_data.json", "w+") as f:
+        with open(f"{state['run_dir']}/dashboard_data.json", "w+") as f:
             f.write(json_string)
         ####
 
@@ -62,8 +62,10 @@ def cvss_scoring(state: AgentState) -> AgentState:
         
     state["vuln_scoring"] = results
 
+    run_dir = state["run_dir"]
+
     ## OUTPUT VULN SCORING IN TXT FOR NOW TO TEST DASHBOARD PAYLOAD
-    with open("./report/vuln_scoring.txt", "w+") as f:
+    with open(f"{run_dir}/vuln_scoring.txt", "w+") as f:
         f.write(str(results))
     ####
 
@@ -73,7 +75,7 @@ def cvss_scoring(state: AgentState) -> AgentState:
     ## OUTPUT DASHBOARD DATA TO HAVE DATA FOR JONATHAN
     json_string = json.dumps(dashboard_data, indent=4)
 
-    with open("./report/dashboard_data.json", "w+") as f:
+    with open(f"{run_dir}/dashboard_data.json", "w+") as f:
         f.write(json_string)
     ####
 

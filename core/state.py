@@ -22,5 +22,8 @@ class AgentState(TypedDict):
     vuln_normalized_results: list[CVEEntry]
     vuln_scoring: list[dict[str, Any]]
 
+    ## RUN METADATA
+    run_dir: str  # timestamped output directory for this run
+
     ## FINAL OUTPUT
     network_findings: str   # REPORT AGENT CHANGES THIS STATE

@@ -1,6 +1,5 @@
 from core.state import AgentState
 from core.llm import get_llm
-from utils.helpers import target_to_proper_file_name
 from agents.prompts import OS_FINGERPRINT_SYSTEM_PROMPT
 from config.logging_config import get_logger
 
@@ -127,8 +126,8 @@ def os_analysis(state: AgentState) -> AgentState:
     state["os_analysis"] = final_analysis
 
     # write OS analysis to file (full raw data preserved here)
-    target_ip = target_to_proper_file_name(state["targets"])
-    with open(f"./report/{target_ip}_os_fingerprint_analysis.md", "w", encoding="utf-8") as f:
+    run_dir = state["run_dir"]
+    with open(f"{run_dir}/os_fingerprint_analysis.md", "w", encoding="utf-8") as f:
         f.write("=== OS FINGERPRINTING RESULTS ===\n\n")
         f.write(final_analysis)
         f.write("\n\n=== RAW OS DATA ===\n\n")
