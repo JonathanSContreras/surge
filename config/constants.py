@@ -1,12 +1,8 @@
 # llm config — fast tier (local gpt_oss:20b via Tailscale/Ollama)
 MODEL_CONFIG = {
-    # "model_name": "gpt-oss:20b",
-    # "temperature": 0,
-    # "timeout": 60,
-    # "determinism": 1
-    "model_name": "meta-llama/llama-3.3-70b-instruct",
+    "model_name": "gpt-oss:20b",
     "temperature": 0,
-    "timeout": 120,
+    "timeout": 60,
     "determinism": 1
 }
 
