@@ -85,6 +85,9 @@ def dashboard_data_grab(vuln_scoring:AgentState) -> list[dict]:
     i = 1 
     # for each key (ip) in the xml I want to grab its equivalent value in the vuln_scoring list of dictionaries
     for n in xml_data:
+        if "error" in n:
+            logger.warning(f"Skipping unparseable XML: {n['error']}")
+            continue
         for ip in n.keys():
         # for key in n.keys():
             # initiali dictionary 
@@ -106,11 +109,11 @@ def dashboard_data_grab(vuln_scoring:AgentState) -> list[dict]:
             cve_id = "none"
             vuln_desc = "none"
             for v in vuln_scoring:
-                if v["ip"] == ip:
+                if v.get("host", v.get("ip")) == ip:
                     cvss = v.get("predicted_score")
                     severity = v.get("severity")
                     cve_id = v.get("cve_id")
-                    vuln_desc = v.get("description")
+                    vuln_desc = v.get("summary")
 
             # print(n)
             local_dict["id"] = id
