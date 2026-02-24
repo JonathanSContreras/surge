@@ -96,7 +96,7 @@ def recon_analysis(state: AgentState) -> AgentState:  # this will be a simple "h
     """
 
     # call the llm
-    llm = get_llm()
+    llm = get_llm(tier="analysis")
     result = llm.invoke([
         SystemMessage(content=RECON_ANALYSIS_SYSTEM_PROMPT),
         HumanMessage(content=analysis_prompt)

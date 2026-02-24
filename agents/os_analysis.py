@@ -103,7 +103,7 @@ def os_analysis(state: AgentState) -> AgentState:
     slimmed = _slim_os_results(os_results)
     logger.debug(f"Slimmed OS results for {len(slimmed)} hosts (removed fingerprint/os_classes/ports_used)")
 
-    llm = get_llm()
+    llm = get_llm(tier="analysis")
 
     # FIX 3: batch if host count exceeds BATCH_SIZE, otherwise single call
     batches = _chunk(slimmed, BATCH_SIZE)

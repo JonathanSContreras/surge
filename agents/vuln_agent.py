@@ -283,7 +283,7 @@ def vulnerability(state: AgentState) -> AgentState:
     - Output a raw JSON array ONLY. No markdown. No explanation. No preamble.
     """
 
-    llm = get_llm()
+    llm = get_llm(tier="analysis")
     vuln_result = llm.invoke([
         SystemMessage(content=VULN_AGENT_SYSTEM_PROMPT),
         HumanMessage(content=vuln_llm_prompt),

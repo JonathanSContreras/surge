@@ -85,7 +85,7 @@ def reporter(state: AgentState) -> AgentState:  # takes all output from all agen
     End with a one-paragraph **Final Summary** describing overall security posture and next steps.
     """
 
-    llm = get_llm()
+    llm = get_llm(tier="analysis")
     result = llm.invoke([
         SystemMessage(content=REPORTER_SYSTEM_PROMPT),
         HumanMessage(content=reporter_prompt)

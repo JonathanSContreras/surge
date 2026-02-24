@@ -1,10 +1,24 @@
-# llm config
+# llm config — fast tier (local gpt_oss:20b via Tailscale/Ollama)
 MODEL_CONFIG = {
-    "model_name": "gpt-oss:20b",
+    # "model_name": "gpt-oss:20b",
+    # "temperature": 0,
+    # "timeout": 60,
+    # "determinism": 1
+    "model_name": "meta-llama/llama-3.3-70b-instruct",
     "temperature": 0,
-    "timeout": 60,
+    "timeout": 120,
     "determinism": 1
 }
+
+# llm config — analysis tier (OpenRouter GLM-5 for heavy reasoning tasks)
+ANALYSIS_MODEL_CONFIG = {
+    # "model_name": "z-ai/glm-5",
+    "model_name": "meta-llama/llama-3.3-70b-instruct",
+    "temperature": 0,
+    "timeout": 120,
+}
+
+OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 
 # nmap scanning constants
 TIMEOUT_VAL = 3600

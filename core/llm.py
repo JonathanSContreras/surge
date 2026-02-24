@@ -1,21 +1,30 @@
 import os
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
-from config.constants import MODEL_CONFIG
+from config.constants import MODEL_CONFIG, ANALYSIS_MODEL_CONFIG, OPENROUTER_BASE_URL
 
 load_dotenv()
 BASE_URL = os.getenv("TAILSCALE_URL")
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 
-def get_llm():
+def get_llm(tier: str = "fast"):
     """
     Central LLM factory.
-    Allows environment-based configuration.
+
+    tier="fast"     → local gpt_oss:20b via Tailscale/Ollama (structured tasks, tool calling)
+    tier="analysis" → OpenRouter GLM-5 (heavy reasoning, synthesis, report generation)
     """
+    if tier == "analysis":
+        return ChatOpenAI(
+            base_url=OPENROUTER_BASE_URL,
+            model=ANALYSIS_MODEL_CONFIG["model_name"],
+            api_key=OPENROUTER_API_KEY,
+            temperature=ANALYSIS_MODEL_CONFIG["temperature"],
+        )
     return ChatOpenAI(
         base_url=BASE_URL,
         model=MODEL_CONFIG["model_name"],
-        api_key="ollama",  # unused placeholder value
+        api_key="ollama",
         temperature=MODEL_CONFIG["temperature"],
-        top_p=MODEL_CONFIG["determinism"]
-        # timeout=MODEL_CONFIG["timeout"],
+        top_p=MODEL_CONFIG["determinism"],
     )
