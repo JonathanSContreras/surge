@@ -139,6 +139,14 @@ def _extract_product_queries(os_fingerprint: dict, parsed_network: dict | list) 
     # ------------------------------------------------------------------ #
     # Source C: Nmap service banners (product strings + service names)    #
     # ------------------------------------------------------------------ #
+    # Generic protocol/service names that map to many unrelated vendors in CIRCL.
+    # Querying CIRCL for these with no vendor produces CVEs for the wrong device.
+    _GENERIC_PRODUCT_BLOCKLIST = frozenset({
+        "http", "https", "ssh", "ftp", "smtp", "snmp", "telnet", "dns",
+        "smb", "netbios", "msrpc", "nfs", "ldap", "rdp", "vnc",
+        "tcpwrapped", "unknown", "ssl", "tls",
+    })
+
     for host in hosts_list:
         ip       = host.get("ip", "unknown")
         services = host.get("services") or []
@@ -149,7 +157,13 @@ def _extract_product_queries(os_fingerprint: dict, parsed_network: dict | list) 
             product = svc.get("product") or svc.get("service", "")
             vendor  = svc.get("vendor", "")
             version = svc.get("version", "")
-            if product and product not in ("unknown", "tcpwrapped"):
+            if not product:
+                continue
+            # Skip generic protocol names with no vendor — CIRCL returns wrong-vendor CVEs
+            if product.lower() in _GENERIC_PRODUCT_BLOCKLIST and not vendor:
+                logger.debug(f"Skipping generic product query: {product!r} (no vendor)")
+                continue
+            if product not in ("unknown", "tcpwrapped"):
                 add_query(ip, vendor, product, version, "nmap_banner")
 
     logger.info(f"Extracted {len(queries)} unique CVE queries (OS CPE + svc CPE + nmap banners)")

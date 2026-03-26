@@ -33,6 +33,7 @@ def recon(state: AgentState) -> AgentState:
     # --- VARIABLES ---
     discovered_hosts = state["recon_seen_hosts"]
     aggregated_logs = []
+    cumulative_network = {}  # merged {ip: host_dict} across all iterations
     iteration = 0
 
     with open(SCANNING_DUMP_LOG, "a") as file:
@@ -147,6 +148,17 @@ def recon(state: AgentState) -> AgentState:
             state["recon_no_change_count"] += 1
             continue
 
+        # EFFICIENCY GUARD: for medium/high scans, restrict targets to already-discovered IPs.
+        # This prevents the LLM from re-scanning broad CIDR ranges after the initial discovery pass,
+        # which generates hundreds of ghost "up" entries for IPs that never responded.
+        current_scan_type = decision.get("scan_type", state["scan_type"])
+        if current_scan_type != "low" and discovered_hosts:
+            narrowed = [t for t in dec_targets if t in discovered_hosts]
+            if len(narrowed) < len(dec_targets):
+                removed = set(dec_targets) - set(narrowed)
+                logger.warning(f"Target narrowing: removed {removed} (not in discovered_hosts). Using {narrowed or list(discovered_hosts)}")
+            dec_targets = narrowed if narrowed else list(discovered_hosts)
+
         # run validated nmap scan
         logger.debug(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Running Nmap scan: {dec_targets} with flags {flags}")
 
@@ -171,6 +183,9 @@ def recon(state: AgentState) -> AgentState:
         parsed = {}
         if log.get("success"):
             parsed = xml_parse(f"{log['xml_dir']}/{log['xml_file']}")  # NOTE: might need to concate the folder name and file name
+
+        # merge into cumulative network (deduplicates by IP, newer data wins)
+        cumulative_network.update(parsed)
 
         # DELTA DETECTION
         new_hosts = set(parsed.keys()) - discovered_hosts
@@ -205,7 +220,7 @@ def recon(state: AgentState) -> AgentState:
         # UPDATE AGENT STATE
         state["recon_results"] = {
             "last_log": log,
-            "parsed_network": parsed,
+            "parsed_network": cumulative_network,
             "all_logs": aggregated_logs,
             "discovered_hosts": list(discovered_hosts),
             "iteration": iteration,

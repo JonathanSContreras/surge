@@ -8,8 +8,8 @@ MODEL_CONFIG = {
 
 # llm config — analysis tier (OpenRouter GLM-5 for heavy reasoning tasks)
 ANALYSIS_MODEL_CONFIG = {
-    # "model_name": "z-ai/glm-5",
-    "model_name": "meta-llama/llama-3.3-70b-instruct",
+    "model_name": "z-ai/glm-5",
+    # "model_name": "deepseek/deepseek-chat",
     "temperature": 0,
     "timeout": 120,
 }

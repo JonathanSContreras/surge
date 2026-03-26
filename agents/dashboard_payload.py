@@ -63,7 +63,11 @@ def _update_vuln_scoring(vuln_scoring: list[dict]) -> list[dict]:
     return vuln_scoring
 
 # grab formatting method
-def dashboard_data_grab(vuln_scoring:AgentState) -> list[dict]:
+def dashboard_data_grab(
+    vuln_scoring: AgentState,
+    discovered_hosts: set | list | None = None,
+    parsed_network: dict | None = None,
+) -> list[dict]:
     """
     // json output format example
     {
@@ -77,60 +81,82 @@ def dashboard_data_grab(vuln_scoring:AgentState) -> list[dict]:
         "status": "up"  //up or down
     }
     """
-    # parse the xml data to get the xml data
-    xml_data = _derive_xml_data()
+    # compute severity from predicted_score for every entry before building dashboard
+    vuln_scoring = _update_vuln_scoring(vuln_scoring)
 
-    # initialize dashboard data list and id value
+    # Prefer the cumulative parsed_network from state — it's already deduplicated by IP
+    # and contains the richest service data across all recon iterations.
+    # Fall back to reading all XML files from disk only when no in-memory data is available.
+    if parsed_network:
+        host_dicts = list(parsed_network.values())
+        logger.info(f"Building dashboard from in-memory parsed_network ({len(host_dicts)} hosts)")
+    else:
+        logger.warning("No parsed_network in state — falling back to reading all XML files from disk")
+        xml_data = _derive_xml_data()
+        host_dicts = []
+        seen_ips: set = set()
+        for n in xml_data:
+            if "error" in n:
+                logger.warning(f"Skipping unparseable XML: {n['error']}")
+                continue
+            for key in n.keys():
+                host = n[key]
+                ip = host.get("ip")
+                if ip and ip not in seen_ips:
+                    seen_ips.add(ip)
+                    host_dicts.append(host)
+
+    # normalize discovered_hosts to a set for O(1) lookup; None means no filter
+    host_filter = set(discovered_hosts) if discovered_hosts is not None else None
+
     dashboard_data = []
-    i = 1 
-    # for each key (ip) in the xml I want to grab its equivalent value in the vuln_scoring list of dictionaries
-    for n in xml_data:
-        if "error" in n:
-            logger.warning(f"Skipping unparseable XML: {n['error']}")
+    i = 1
+    for host in host_dicts:
+        ip          = host.get("ip")
+        status      = host.get("status", "down")
+        description = host.get("description", "no description found")
+        services    = host.get("services", [])
+        os_info     = host.get("os", {})
+        hostnames   = host.get("hostnames", [])
+
+        if not ip:
             continue
-        for ip in n.keys():
-        # for key in n.keys():
-            # initiali dictionary 
-            local_dict = {}
 
-            id = str(i)
-            ip = n[ip].get("ip")
-            description = n[ip].get("description", "no description found")
-            # ip = n[key].get("ip")
-            # description = n[key].get("description", "no description found")
-            deviceType = "idk"
-            hostname = "idk"
-            status = n[ip].get("status", "down")
-            # status = n[key].get("status", "down")
+        # skip IPs not confirmed by the recon delta-detection loop
+        if host_filter is not None and ip not in host_filter:
+            continue
 
-            # go through the vulnerabilities data and see if the IP exists
-            cvss = 0.0
-            severity = "low"
-            cve_id = "none"
-            vuln_desc = "none"
-            for v in vuln_scoring:
-                if v.get("host", v.get("ip")) == ip:
-                    cvss = v.get("predicted_score")
-                    severity = v.get("severity")
-                    cve_id = v.get("cve_id")
-                    vuln_desc = v.get("summary")
+        # skip ghost hosts: nmap marked up via -Pn with no actual open ports
+        if not services:
+            logger.debug(f"Skipping ghost host {ip} — no services detected")
+            continue
 
-            # print(n)
-            local_dict["id"] = id
-            local_dict["ip"] = ip
-            local_dict["severity"] = severity
-            local_dict["description"] = description
-            local_dict["deviceType"] = deviceType
-            local_dict["hostname"] = hostname
-            local_dict["cvss"] = cvss
-            local_dict["cve"] = cve_id
-            local_dict["vulnerability_description"] = vuln_desc
-            local_dict["status"] = status
+        deviceType = os_info.get("device_type") or "idk"
+        hostname   = hostnames[0] if hostnames else "idk"
 
-            # append the created dictionary to list
-            dashboard_data.append(local_dict)
+        cvss      = 0.0
+        severity  = "low"
+        cve_id    = "none"
+        vuln_desc = "none"
+        for v in vuln_scoring:
+            if v.get("host", v.get("ip")) == ip:
+                cvss      = v.get("predicted_score")
+                severity  = v.get("severity")
+                cve_id    = v.get("cve_id")
+                vuln_desc = v.get("summary")
 
-            # update i
-            i += 1
+        dashboard_data.append({
+            "id":                       str(i),
+            "ip":                       ip,
+            "severity":                 severity,
+            "description":              description,
+            "deviceType":               deviceType,
+            "hostname":                 hostname,
+            "cvss":                     cvss,
+            "cve":                      cve_id,
+            "vulnerability_description": vuln_desc,
+            "status":                   status,
+        })
+        i += 1
 
-    return dashboard_data 
+    return dashboard_data

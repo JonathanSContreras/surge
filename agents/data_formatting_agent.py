@@ -69,8 +69,14 @@ def cvss_data_formatter(state: AgentState) -> AgentState:
     result = AIMessage(result) if not isinstance(result, AIMessage) else result
 
     # convert the json dump into a list to output
+    content = result.content.strip()
+    if not content:
+        logger.warning("Formatter LLM returned empty response, defaulting to empty list.")
+        state["vuln_normalized_results"] = []
+        return state
+
     try:
-        parsed = json.loads(result.content)  # pull the AI content (content = answer to out prompt)
+        parsed = json.loads(content)
     except JSONDecodeError:
         logger.error("Failed to parse formatter LLM output as JSON")
         logger.error(f"Raw LLM output: {result.content}")

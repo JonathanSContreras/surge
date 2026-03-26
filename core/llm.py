@@ -7,17 +7,22 @@ load_dotenv()
 BASE_URL = os.getenv("TAILSCALE_URL")
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 
+USE_ONLINE = os.getenv("USE_ONLINE", "0") == "1"
+
 def get_llm(tier: str = "fast"):
     """
     Central LLM factory.
 
     tier="fast"     → local gpt_oss:20b via Tailscale/Ollama (structured tasks, tool calling)
-    tier="analysis" → OpenRouter GLM-5 (heavy reasoning, synthesis, report generation)
+    tier="analysis" → OpenRouter (heavy reasoning, synthesis, report generation)
+
+    Set USE_ONLINE=1 in .env to route ALL tiers through OpenRouter (for testing).
     """
-    if tier == "analysis":
+    if tier == "analysis" or USE_ONLINE:
+        model = ANALYSIS_MODEL_CONFIG["model_name"]
         return ChatOpenAI(
             base_url=OPENROUTER_BASE_URL,
-            model=ANALYSIS_MODEL_CONFIG["model_name"],
+            model=model,
             api_key=OPENROUTER_API_KEY,
             temperature=ANALYSIS_MODEL_CONFIG["temperature"],
         )

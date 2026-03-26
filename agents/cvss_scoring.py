@@ -22,7 +22,10 @@ def cvss_scoring(state: AgentState) -> AgentState:
         logger.info("Vulnerability list is empty.")
 
         # run the dashboard data creation
-        dashboard_data = dashboard_data_grab(state["vuln_scoring"])
+        recon = state.get("recon_results", {})
+        discovered_hosts  = recon.get("discovered_hosts", [])
+        parsed_network    = recon.get("parsed_network", {})
+        dashboard_data = dashboard_data_grab(state["vuln_scoring"], discovered_hosts=discovered_hosts, parsed_network=parsed_network)
 
         ## OUTPUT DASHBOARD DATA TO HAVE DATA FOR JONATHAN
         json_string = json.dumps(dashboard_data, indent=4)
@@ -70,7 +73,10 @@ def cvss_scoring(state: AgentState) -> AgentState:
     ####
 
     # after the scoring run the dashboard data build method
-    dashboard_data = dashboard_data_grab(state["vuln_scoring"])
+    recon = state.get("recon_results", {})
+    discovered_hosts  = recon.get("discovered_hosts", [])
+    parsed_network    = recon.get("parsed_network", {})
+    dashboard_data = dashboard_data_grab(state["vuln_scoring"], discovered_hosts=discovered_hosts, parsed_network=parsed_network)
 
     ## OUTPUT DASHBOARD DATA TO HAVE DATA FOR JONATHAN
     json_string = json.dumps(dashboard_data, indent=4)
