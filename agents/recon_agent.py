@@ -148,10 +148,15 @@ def recon(state: AgentState) -> AgentState:
             state["recon_no_change_count"] += 1
             continue
 
+        # Ensure --traceroute is always included for medium/high scans regardless of LLM output.
+        # This guarantees hop data in nmap XML for topology graph construction.
+        current_scan_type = decision.get("scan_type", state["scan_type"])
+        if current_scan_type in ("medium", "high") and "--traceroute" not in flags:
+            flags = flags + ["--traceroute"]
+
         # EFFICIENCY GUARD: for medium/high scans, restrict targets to already-discovered IPs.
         # This prevents the LLM from re-scanning broad CIDR ranges after the initial discovery pass,
         # which generates hundreds of ghost "up" entries for IPs that never responded.
-        current_scan_type = decision.get("scan_type", state["scan_type"])
         if current_scan_type != "low" and discovered_hosts:
             narrowed = [t for t in dec_targets if t in discovered_hosts]
             if len(narrowed) < len(dec_targets):

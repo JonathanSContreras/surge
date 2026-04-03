@@ -265,6 +265,52 @@ def _extract_host_scripts(host: ET.Element) -> dict[str, str]:
     return _extract_scripts(hs_elem)
 
 
+def _extract_trace(host: ET.Element) -> dict | None:
+    """
+    Extract traceroute data from <trace> element(s) inside a <host>.
+    If multiple <trace> elements exist, keep the one with the most hops.
+    Returns None if no <trace> element is present.
+    """
+    best_trace = None
+    best_hop_count = -1
+
+    for trace_elem in host.findall("trace"):
+        hops = []
+        for hop in trace_elem.findall("hop"):
+            ip_raw = hop.attrib.get("ipaddr", "").strip()
+            # Treat empty or 0.0.0.0 as None — gap is topologically meaningful
+            ip = ip_raw if (ip_raw and ip_raw != "0.0.0.0") else None
+
+            rtt_raw = hop.attrib.get("rtt")
+            try:
+                rtt = float(rtt_raw) if rtt_raw is not None else None
+            except ValueError:
+                rtt = None
+
+            ttl_raw = hop.attrib.get("ttl")
+            try:
+                ttl = int(ttl_raw) if ttl_raw is not None else None
+            except ValueError:
+                ttl = None
+
+            hops.append({
+                "ttl":  ttl,
+                "ip":   ip,
+                "rtt":  rtt,
+                "host": hop.attrib.get("host") or None,
+            })
+
+        if len(hops) > best_hop_count:
+            best_hop_count = len(hops)
+            best_trace = {
+                "port":  trace_elem.attrib.get("port") or None,
+                "proto": trace_elem.attrib.get("proto") or None,
+                "hops":  hops,
+            }
+
+    return best_trace
+
+
 def _synthesize_description(
     os_info: dict,
     mac_vendor: str | None,
@@ -318,6 +364,7 @@ def _process_host(host: ET.Element) -> tuple[str | None, dict]:
     uptime   = _extract_uptime(host)
     distance = _extract_distance(host)
     host_scripts = _extract_host_scripts(host)
+    trace        = _extract_trace(host)
     description  = _synthesize_description(os_info, mac_vendor, services)
 
     entry = {
@@ -342,6 +389,9 @@ def _process_host(host: ET.Element) -> tuple[str | None, dict]:
 
         # Host-level NSE script output
         "host_scripts": host_scripts,
+
+        # Traceroute path (None if --traceroute was not used)
+        "trace": trace,
     }
 
     return ipv4_addr, entry
@@ -442,9 +492,15 @@ def xml_parse(xml_data: str) -> dict:
             # Keep whichever has more open services; merge host_scripts
             if len(entry["services"]) >= len(existing["services"]):
                 entry["host_scripts"] = {**existing["host_scripts"], **entry["host_scripts"]}
+                # Preserve trace data from an earlier scan if this scan lacked --traceroute
+                if entry["trace"] is None and existing.get("trace") is not None:
+                    entry["trace"] = existing["trace"]
                 network_config[ipv4_key] = entry
             else:
                 existing["host_scripts"].update(entry["host_scripts"])
+                # Carry forward richer trace data if newer scan has it
+                if existing["trace"] is None and entry.get("trace") is not None:
+                    existing["trace"] = entry["trace"]
 
     return network_config
 

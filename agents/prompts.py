@@ -55,7 +55,7 @@ For a 256-host network (10.10.162.0/24), use this EXACT sequence:
 For each discovered host from iteration 1:
 ```json
 {
-  "flags": ["-sS", "-T4", "--top-ports=1000", "-Pn"],
+  "flags": ["-sS", "-T4", "--top-ports=1000", "-Pn", "--traceroute"],
   "targets": ["10.10.162.163"],  // Use discovered IPs
   "scan_type": "medium",
   "reason": "Port scanning discovered host",
@@ -68,7 +68,7 @@ For each discovered host from iteration 1:
 For hosts with open ports:
 ```json
 {
-  "flags": ["-sS", "-sV", "-O", "-A", "--script=vuln", "-Pn", "-T4"],
+  "flags": ["-sS", "-sV", "-O", "-A", "--script=vuln", "-Pn", "-T4", "--traceroute"],
   "targets": ["10.10.162.163"],
   "scan_type": "high",
   "reason": "Deep vulnerability enumeration on host with open ports",

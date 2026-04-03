@@ -25,5 +25,8 @@ class AgentState(TypedDict):
     ## RUN METADATA
     run_dir: str  # timestamped output directory for this run
 
+    ## TOPOLOGY DATA
+    topology: dict[str, Any]  # network graph built by utils/topology.py: nodes, links, metadata
+
     ## FINAL OUTPUT
     network_findings: str   # REPORT AGENT CHANGES THIS STATE

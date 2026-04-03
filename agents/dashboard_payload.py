@@ -1,4 +1,5 @@
 from utils.helpers import score_conversion
+from utils.topology import build_topology
 from config.logging_config import get_logger
 from execution.xml_parser import xml_parse
 from core.state import AgentState
@@ -67,7 +68,7 @@ def dashboard_data_grab(
     vuln_scoring: AgentState,
     discovered_hosts: set | list | None = None,
     parsed_network: dict | None = None,
-) -> list[dict]:
+) -> dict:
     """
     // json output format example
     {
@@ -159,4 +160,6 @@ def dashboard_data_grab(
         })
         i += 1
 
-    return dashboard_data
+    topology = build_topology(parsed_network or {}, discovered_hosts)
+
+    return {"hosts": dashboard_data, "topology": topology}
