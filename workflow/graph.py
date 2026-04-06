@@ -32,16 +32,19 @@ def build_mas_graph():
     workflow.set_entry_point("recon")
 
     # define each edge
-    # recon fans out to both recon_analyzer and os_finder in parallel
-    # os_analyzer waits for both before proceeding (fan-in)
+    # recon fans out to recon_analyzer and os_finder in parallel
+    # os_analyzer is the fan-in for both recon_analyzer and os_finder
+    # os_analyzer then fans out to reporter and vulnerability chain in parallel
+    # reporter is the final fan-in: waits for os_analyzer and cvss_scoring (same fan-out origin)
     workflow.add_edge("recon", "recon_analyzer")
     workflow.add_edge("recon", "os_finder")
-    workflow.add_edge("recon_analyzer", "os_analyzer")
-    workflow.add_edge("os_finder", "os_analyzer")
-    workflow.add_edge("os_analyzer", "vulnerability")
+    workflow.add_edge("recon_analyzer", "os_analyzer")    # fan-in at os_analyzer
+    workflow.add_edge("os_finder", "os_analyzer")         # fan-in at os_analyzer
+    workflow.add_edge("os_analyzer", "reporter")          # branch 1: direct to reporter
+    workflow.add_edge("os_analyzer", "vulnerability")     # branch 2: vuln chain
     workflow.add_edge("vulnerability", "cvss_data_formatter")
     workflow.add_edge("cvss_data_formatter", "cvss_scoring")
-    workflow.add_edge("cvss_scoring", "reporter")
+    workflow.add_edge("cvss_scoring", "reporter")         # branch 2 fan-in at reporter
     workflow.add_edge("reporter", END)
 
     return workflow.compile()

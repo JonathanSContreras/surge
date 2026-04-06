@@ -97,10 +97,7 @@ def reporter(state: AgentState) -> AgentState:  # takes all output from all agen
 
     if not content or not content.strip():
         logger.error("Reporter LLM returned empty content — context window likely exceeded. File not written.")
-        state["network_findings"] = ""
-        return state
-
-    state["network_findings"] = content
+        return {"network_findings": ""}
 
     # write the analysis into the run's output directory
     run_dir = state["run_dir"]
@@ -109,4 +106,4 @@ def reporter(state: AgentState) -> AgentState:  # takes all output from all agen
 
     logger.info("Reporter agent finished writing and updated the state.")
 
-    return state
+    return {"network_findings": content}

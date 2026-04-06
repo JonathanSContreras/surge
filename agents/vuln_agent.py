@@ -195,8 +195,7 @@ def vulnerability(state: AgentState) -> AgentState:
 
     if not os_fingerprint and not parsed_network:
         logger.warning("No OS fingerprint or recon data available; skipping vulnerability agent.")
-        state["vuln_raw_results"] = []
-        return state
+        return {"vuln_raw_results": []}
 
     # ------------------------------------------------------------------ #
     # Step 1: Extract targeted CVE queries from both data sources         #
@@ -205,8 +204,7 @@ def vulnerability(state: AgentState) -> AgentState:
 
     if not queries:
         logger.warning("No CVE queries extracted; skipping CVE fetch.")
-        state["vuln_raw_results"] = []
-        return state
+        return {"vuln_raw_results": []}
 
     # ------------------------------------------------------------------ #
     # Step 2: Fetch real CVEs from CIRCL for each unique product          #
@@ -310,7 +308,6 @@ def vulnerability(state: AgentState) -> AgentState:
         logger.warning("Vulnerability agent returned invalid JSON; defaulting to []")
         parsed = []
 
-    state["vuln_raw_results"] = parsed
     logger.info(f"Vulnerability agent complete — {len(parsed)} CVE entries stored.")
 
-    return state
+    return {"vuln_raw_results": parsed}

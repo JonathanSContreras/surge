@@ -134,4 +134,4 @@ def os_analysis(state: AgentState) -> AgentState:
         f.write(json.dumps(os_results, indent=2))
 
     logger.info(f"OS analysis completed for {len(os_results)} hosts across {total_batches} batch(es).")
-    return state
+    return {"os_analysis": final_analysis}

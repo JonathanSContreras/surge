@@ -72,8 +72,7 @@ def cvss_data_formatter(state: AgentState) -> AgentState:
     content = result.content.strip()
     if not content:
         logger.warning("Formatter LLM returned empty response, defaulting to empty list.")
-        state["vuln_normalized_results"] = []
-        return state
+        return {"vuln_normalized_results": []}
 
     try:
         parsed = json.loads(content)
@@ -88,8 +87,6 @@ def cvss_data_formatter(state: AgentState) -> AgentState:
         raise TypeError("Formatter output must be a list of CVE records.")
     
     # convert to a DataFrame
-    state["vuln_normalized_results"] = parsed
-
     logger.info(f"CVSS data formatter has been updated with {len(parsed)} records normalized, and the state has also been updated.")
 
-    return state
+    return {"vuln_normalized_results": parsed}
