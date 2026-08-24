@@ -1,3 +1,20 @@
+> ## ⚠️ Status: describes the superseded two-host split
+>
+> The HCU Linux server VM never came up, so **everything now runs on a single
+> Apple M2 Mac mini (8 GB)** — backend, model, Postgres and frontend together.
+>
+> What that changes from the instructions below:
+> - Part A (HCU server) no longer applies. There is no second host.
+> - `DATABASE_URL` and the Ollama endpoint become `localhost`, not tailnet addresses.
+> - **Run Postgres natively via Homebrew, not Docker** — Docker Desktop's Linux
+>   VM costs 1-2 GB, which is unaffordable at 8 GB.
+> - `NEXT_PUBLIC_API_URL` still needs the Mac mini's *tailnet* address, because
+>   the browser is remote even though everything else is local.
+>
+> Part B (Mac mini) is still accurate and is the part you want. `deploy/macmini/`
+> holds the launchd units, including `com.surge.schedule.plist` for the 09:00 /
+> 15:00 weekday runs.
+
 # Deploying Surge — HCU server + Mac mini
 
 Split deployment. The two hosts have different jobs and only one of them scans:
