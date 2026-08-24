@@ -1,0 +1,432 @@
+{
+    "hosts": [
+        {
+            "id": "1",
+            "ip": "10.10.160.79",
+            "severity": "low",
+            "description": "Services: tcpwrapped",
+            "deviceType": "idk",
+            "hostname": "idk",
+            "cvss": 0.0,
+            "cve": "none",
+            "vulnerability_description": "none",
+            "status": "up"
+        },
+        {
+            "id": "2",
+            "ip": "10.10.160.101",
+            "severity": "low",
+            "description": "Services: tcpwrapped",
+            "deviceType": "idk",
+            "hostname": "idk",
+            "cvss": 0.0,
+            "cve": "none",
+            "vulnerability_description": "none",
+            "status": "up"
+        },
+        {
+            "id": "3",
+            "ip": "10.10.160.131",
+            "severity": "medium",
+            "description": "Microsoft Windows 11 21H2 (general purpose) \u2014 Intel Corporate NIC",
+            "deviceType": "general purpose",
+            "hostname": "idk",
+            "cvss": 6.236286640167236,
+            "cve": "CVE-2025-55753",
+            "vulnerability_description": "Integer overflow in ACME certificate renewal causes backoff timer to become zero, leading to rapid retry attempts.",
+            "status": "up"
+        },
+        {
+            "id": "4",
+            "ip": "10.10.160.160",
+            "severity": "low",
+            "description": "Apple iOS 15.0 - 15.6 (Darwin 21.1.0 - 21.6.0) (phone)",
+            "deviceType": "phone",
+            "hostname": "idk",
+            "cvss": 0.0,
+            "cve": "none",
+            "vulnerability_description": "none",
+            "status": "up"
+        },
+        {
+            "id": "5",
+            "ip": "10.10.160.206",
+            "severity": "medium",
+            "description": "Microsoft Windows 11 21H2 (general purpose) \u2014 Intel Corporate NIC",
+            "deviceType": "general purpose",
+            "hostname": "idk",
+            "cvss": 6.98228120803833,
+            "cve": "CVE-2011-5279",
+            "vulnerability_description": "CRLF injection in IIS CGI allows remote attackers to modify environment variables via newline in HTTP header.",
+            "status": "up"
+        },
+        {
+            "id": "6",
+            "ip": "10.10.161.120",
+            "severity": "low",
+            "description": "Apple iOS 15.0 - 15.6 (Darwin 21.1.0 - 21.6.0) (phone)",
+            "deviceType": "phone",
+            "hostname": "idk",
+            "cvss": 0.0,
+            "cve": "none",
+            "vulnerability_description": "none",
+            "status": "up"
+        },
+        {
+            "id": "7",
+            "ip": "10.10.162.163",
+            "severity": "low",
+            "description": "Linux 2.6.23 - 2.6.38 (general purpose)",
+            "deviceType": "general purpose",
+            "hostname": "idk",
+            "cvss": 0.0,
+            "cve": "none",
+            "vulnerability_description": "none",
+            "status": "up"
+        },
+        {
+            "id": "8",
+            "ip": "10.10.163.109",
+            "severity": "medium",
+            "description": "Apple macOS 11 (Big Sur) - 13 (Ventura) or iOS 16 (Darwin 20.6.0 - 22.4.0) (general purpose)",
+            "deviceType": "general purpose",
+            "hostname": "idk",
+            "cvss": 6.354519844055176,
+            "cve": "CVE-2025-12781",
+            "vulnerability_description": "base64 decode functions accept characters outside altchars alphabet, potentially causing data integrity issues.",
+            "status": "up"
+        },
+        {
+            "id": "9",
+            "ip": "10.10.163.146",
+            "severity": "medium",
+            "description": "Linux 4.15 - 5.19 (general purpose) \u2014 Raspberry Pi (Trading) NIC",
+            "deviceType": "general purpose",
+            "hostname": "idk",
+            "cvss": 5.032745361328125,
+            "cve": "CVE-2024-54952",
+            "vulnerability_description": "MikroTik RouterOS SMB service memory corruption allows remote unauthenticated attackers to cause denial of service.",
+            "status": "up"
+        },
+        {
+            "id": "10",
+            "ip": "10.10.163.189",
+            "severity": "low",
+            "description": "Apple iOS 15.0 - 15.6 (Darwin 21.1.0 - 21.6.0) (phone)",
+            "deviceType": "phone",
+            "hostname": "idk",
+            "cvss": 0.0,
+            "cve": "none",
+            "vulnerability_description": "none",
+            "status": "up"
+        },
+        {
+            "id": "11",
+            "ip": "10.10.161.105",
+            "severity": "low",
+            "description": "Apple macOS 12 (Monterey) (Darwin 21.1.0 - 21.6.0) (general purpose)",
+            "deviceType": "general purpose",
+            "hostname": "idk",
+            "cvss": 4.979923725128174,
+            "cve": "CVE-2015-2575",
+            "vulnerability_description": "Unspecified vulnerability in MySQL Connectors allows authenticated users to affect confidentiality and integrity.",
+            "status": "up"
+        }
+    ],
+    "topology": {
+        "nodes": [
+            {
+                "id": "scanner",
+                "ip": null,
+                "label": "Scanner",
+                "nodeType": "scanner",
+                "deviceType": null,
+                "mac_vendor": null,
+                "os": null,
+                "status": "up",
+                "isIntermediate": false,
+                "services": 0
+            },
+            {
+                "id": "10.10.160.1",
+                "ip": "10.10.160.1",
+                "label": "10.10.160.1",
+                "nodeType": "host",
+                "deviceType": null,
+                "mac_vendor": "Palo Alto Networks",
+                "os": null,
+                "status": "up",
+                "isIntermediate": false,
+                "services": 0
+            },
+            {
+                "id": "10.10.160.64",
+                "ip": "10.10.160.64",
+                "label": "10.10.160.64",
+                "nodeType": "host",
+                "deviceType": null,
+                "mac_vendor": null,
+                "os": null,
+                "status": "up",
+                "isIntermediate": false,
+                "services": 0
+            },
+            {
+                "id": "10.10.160.79",
+                "ip": "10.10.160.79",
+                "label": "10.10.160.79",
+                "nodeType": "host",
+                "deviceType": null,
+                "mac_vendor": null,
+                "os": null,
+                "status": "up",
+                "isIntermediate": false,
+                "services": 5
+            },
+            {
+                "id": "10.10.160.101",
+                "ip": "10.10.160.101",
+                "label": "10.10.160.101",
+                "nodeType": "host",
+                "deviceType": null,
+                "mac_vendor": null,
+                "os": null,
+                "status": "up",
+                "isIntermediate": false,
+                "services": 2
+            },
+            {
+                "id": "10.10.160.131",
+                "ip": "10.10.160.131",
+                "label": "10.10.160.131",
+                "nodeType": "host",
+                "deviceType": "general purpose",
+                "mac_vendor": "Intel Corporate",
+                "os": "Microsoft Windows 11 21H2",
+                "status": "up",
+                "isIntermediate": false,
+                "services": 9
+            },
+            {
+                "id": "10.10.160.160",
+                "ip": "10.10.160.160",
+                "label": "10.10.160.160",
+                "nodeType": "host",
+                "deviceType": "phone",
+                "mac_vendor": null,
+                "os": "Apple iOS 15.0 - 15.6 (Darwin 21.1.0 - 21.6.0)",
+                "status": "up",
+                "isIntermediate": false,
+                "services": 2
+            },
+            {
+                "id": "10.10.160.206",
+                "ip": "10.10.160.206",
+                "label": "10.10.160.206",
+                "nodeType": "host",
+                "deviceType": "general purpose",
+                "mac_vendor": "Intel Corporate",
+                "os": "Microsoft Windows 11 21H2",
+                "status": "up",
+                "isIntermediate": false,
+                "services": 5
+            },
+            {
+                "id": "10.10.161.99",
+                "ip": "10.10.161.99",
+                "label": "10.10.161.99",
+                "nodeType": "host",
+                "deviceType": null,
+                "mac_vendor": null,
+                "os": null,
+                "status": "up",
+                "isIntermediate": false,
+                "services": 0
+            },
+            {
+                "id": "10.10.161.120",
+                "ip": "10.10.161.120",
+                "label": "10.10.161.120",
+                "nodeType": "host",
+                "deviceType": "phone",
+                "mac_vendor": null,
+                "os": "Apple iOS 15.0 - 15.6 (Darwin 21.1.0 - 21.6.0)",
+                "status": "up",
+                "isIntermediate": false,
+                "services": 2
+            },
+            {
+                "id": "10.10.161.180",
+                "ip": "10.10.161.180",
+                "label": "10.10.161.180",
+                "nodeType": "host",
+                "deviceType": null,
+                "mac_vendor": null,
+                "os": null,
+                "status": "up",
+                "isIntermediate": false,
+                "services": 0
+            },
+            {
+                "id": "10.10.162.163",
+                "ip": "10.10.162.163",
+                "label": "10.10.162.163",
+                "nodeType": "host",
+                "deviceType": "general purpose",
+                "mac_vendor": null,
+                "os": "Linux 2.6.23 - 2.6.38",
+                "status": "up",
+                "isIntermediate": false,
+                "services": 3
+            },
+            {
+                "id": "10.10.163.41",
+                "ip": "10.10.163.41",
+                "label": "10.10.163.41",
+                "nodeType": "host",
+                "deviceType": null,
+                "mac_vendor": "Intel Corporate",
+                "os": null,
+                "status": "up",
+                "isIntermediate": false,
+                "services": 0
+            },
+            {
+                "id": "10.10.163.109",
+                "ip": "10.10.163.109",
+                "label": "10.10.163.109",
+                "nodeType": "host",
+                "deviceType": "general purpose",
+                "mac_vendor": null,
+                "os": "Apple macOS 11 (Big Sur) - 13 (Ventura) or iOS 16 (Darwin 20.6.0 - 22.4.0)",
+                "status": "up",
+                "isIntermediate": false,
+                "services": 4
+            },
+            {
+                "id": "10.10.163.146",
+                "ip": "10.10.163.146",
+                "label": "10.10.163.146",
+                "nodeType": "host",
+                "deviceType": "general purpose",
+                "mac_vendor": "Raspberry Pi (Trading)",
+                "os": "Linux 4.15 - 5.19",
+                "status": "up",
+                "isIntermediate": false,
+                "services": 2
+            },
+            {
+                "id": "10.10.163.189",
+                "ip": "10.10.163.189",
+                "label": "10.10.163.189",
+                "nodeType": "host",
+                "deviceType": "phone",
+                "mac_vendor": null,
+                "os": "Apple iOS 15.0 - 15.6 (Darwin 21.1.0 - 21.6.0)",
+                "status": "up",
+                "isIntermediate": false,
+                "services": 2
+            },
+            {
+                "id": "10.10.161.105",
+                "ip": "10.10.161.105",
+                "label": "10.10.161.105",
+                "nodeType": "host",
+                "deviceType": "general purpose",
+                "mac_vendor": null,
+                "os": "Apple macOS 12 (Monterey) (Darwin 21.1.0 - 21.6.0)",
+                "status": "up",
+                "isIntermediate": false,
+                "services": 7
+            }
+        ],
+        "links": [
+            {
+                "source": "scanner",
+                "target": "10.10.161.105",
+                "type": "traced"
+            },
+            {
+                "source": "scanner",
+                "target": "10.10.160.1",
+                "type": "traced"
+            },
+            {
+                "source": "scanner",
+                "target": "10.10.160.160",
+                "type": "traced"
+            },
+            {
+                "source": "scanner",
+                "target": "10.10.163.41",
+                "type": "traced"
+            },
+            {
+                "source": "scanner",
+                "target": "10.10.161.99",
+                "type": "traced"
+            },
+            {
+                "source": "scanner",
+                "target": "10.10.163.146",
+                "type": "traced"
+            },
+            {
+                "source": "scanner",
+                "target": "10.10.160.206",
+                "type": "traced"
+            },
+            {
+                "source": "scanner",
+                "target": "10.10.163.189",
+                "type": "traced"
+            },
+            {
+                "source": "scanner",
+                "target": "10.10.160.131",
+                "type": "traced"
+            },
+            {
+                "source": "scanner",
+                "target": "10.10.160.64",
+                "type": "traced"
+            },
+            {
+                "source": "scanner",
+                "target": "10.10.163.109",
+                "type": "traced"
+            },
+            {
+                "source": "scanner",
+                "target": "10.10.160.79",
+                "type": "traced"
+            },
+            {
+                "source": "scanner",
+                "target": "10.10.162.163",
+                "type": "traced"
+            },
+            {
+                "source": "scanner",
+                "target": "10.10.161.120",
+                "type": "traced"
+            },
+            {
+                "source": "scanner",
+                "target": "10.10.160.101",
+                "type": "traced"
+            },
+            {
+                "source": "scanner",
+                "target": "10.10.161.180",
+                "type": "traced"
+            }
+        ],
+        "metadata": {
+            "total_nodes": 17,
+            "total_links": 16,
+            "has_trace_data": true,
+            "gateway_ip": null
+        }
+    }
+}

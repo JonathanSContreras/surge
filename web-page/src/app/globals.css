@@ -1,0 +1,119 @@
+@import "tailwindcss";
+
+:root {
+  --font-size: 16px;
+
+  --background: #0F1117;
+  --foreground: #ededed;
+
+  --surface-1: #13151C;
+  --surface-2: #16181F;
+  --surface-3: #1A1D26;
+
+  --border: #1F2937;
+  --border-light: #2D3748;
+
+  --muted: #6B7280;
+  --muted-foreground: #9CA3AF;
+
+  --severity-low: #00E676;
+  --severity-medium: #FFB300;
+  --severity-high: #FF6F00;
+  --severity-critical: #FF1744;
+
+  --accent: #00E676;
+  --accent-hover: #00BFA5;
+
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+html.light {
+  --background: #F5F0E8;
+  --foreground: #1C1610;
+  --surface-1: #FAF7F0;
+  --surface-2: #EDE8DC;
+  --surface-3: #E0D9CC;
+  --border: #C8BEAA;
+  --border-light: #D8D0BC;
+  --muted: #7A6E5A;
+  --muted-foreground: #5A5040;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface-1: var(--surface-1);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-border: var(--border);
+  --color-border-light: var(--border-light);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-severity-low: var(--severity-low);
+  --color-severity-medium: var(--severity-medium);
+  --color-severity-high: var(--severity-high);
+  --color-severity-critical: var(--severity-critical);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    font-size: var(--font-size);
+  }
+
+  h1 {
+    font-size: var(--text-2xl);
+    font-weight: 500;
+    line-height: 1.5;
+  }
+
+  h2 {
+    font-size: var(--text-xl);
+    font-weight: 500;
+    line-height: 1.5;
+  }
+
+  h3 {
+    font-size: var(--text-lg);
+    font-weight: 500;
+    line-height: 1.5;
+  }
+
+  h4 {
+    font-size: var(--text-base);
+    font-weight: 500;
+    line-height: 1.5;
+  }
+
+  label {
+    font-size: var(--text-base);
+    font-weight: 500;
+    line-height: 1.5;
+  }
+
+  button {
+    font-size: var(--text-base);
+    font-weight: 500;
+    line-height: 1.5;
+  }
+
+  input {
+    font-size: var(--text-base);
+    font-weight: 400;
+    line-height: 1.5;
+  }
+}
