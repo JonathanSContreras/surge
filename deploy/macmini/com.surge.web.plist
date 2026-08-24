@@ -15,6 +15,12 @@
   Remember: NEXT_PUBLIC_* are baked in at BUILD time. This plist only *serves*
   an already-built app. Changing the API address means re-running `npm run build`
   and then `launchctl kickstart -k system/com.surge.web`.
+  LOGS: these go to /opt/surge/logs/, not /var/log/. This daemon drops to a
+  normal user via UserName, and launchd opens StandardOutPath/StandardErrorPath
+  AS THAT USER. /var/log is root-owned, so the open fails and launchd aborts the
+  job with exit code 78 (EX_CONFIG) before the program ever runs -- and with no
+  log file, since creating it is exactly what failed. Create the directory first:
+      sudo mkdir -p /opt/surge/logs && sudo chown <user> /opt/surge/logs
 -->
 <plist version="1.0">
 <dict>
@@ -53,8 +59,8 @@
     <true/>
 
     <key>StandardOutPath</key>
-    <string>/var/log/surge-web.log</string>
+    <string>/opt/surge/logs/surge-web.log</string>
     <key>StandardErrorPath</key>
-    <string>/var/log/surge-web.err.log</string>
+    <string>/opt/surge/logs/surge-web.err.log</string>
 </dict>
 </plist>

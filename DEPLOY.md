@@ -153,6 +153,8 @@ Dashboard: `http://<that same address>:3000`
 ## 6. Install the services
 
 ```bash
+mkdir -p /opt/surge/logs
+
 sudo cp deploy/macmini/com.surge.api.plist      /Library/LaunchDaemons/
 sudo cp deploy/macmini/com.surge.web.plist      /Library/LaunchDaemons/
 sudo cp deploy/macmini/com.surge.schedule.plist /Library/LaunchDaemons/
