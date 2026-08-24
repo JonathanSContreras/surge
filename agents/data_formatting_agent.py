@@ -2,6 +2,7 @@ from core.state import AgentState
 from core.llm import get_llm
 from agents.prompts import VULN_FORMATTING_SYSTEM_PROMPT
 from config.logging_config import get_logger
+from api.activity import emit_activity_sync
 
 import json
 from json import JSONDecodeError
@@ -17,6 +18,7 @@ def cvss_data_formatter(state: AgentState) -> AgentState:
     Normalizes vulnerability results into standardized CVEEntry format for ML models.
     """
     logger.info("CVSS data formatting started")
+    emit_activity_sync("Formatting CVE data for scoring", agent_node="cvss_data_formatter")
 
     data_formatter_prompt = """
     Normalize the following raw vulnerability data into the exact schema below.
@@ -87,6 +89,11 @@ def cvss_data_formatter(state: AgentState) -> AgentState:
         raise TypeError("Formatter output must be a list of CVE records.")
     
     # convert to a DataFrame
+    emit_activity_sync(
+        f"CVE formatting complete — {len(parsed)} record{'s' if len(parsed) != 1 else ''} normalized",
+        event_type="success",
+        agent_node="cvss_data_formatter",
+    )
     logger.info(f"CVSS data formatter has been updated with {len(parsed)} records normalized, and the state has also been updated.")
 
     return {"vuln_normalized_results": parsed}

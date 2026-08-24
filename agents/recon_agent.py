@@ -6,6 +6,7 @@ from execution.json_extract import extract_json
 from execution.nmap_scanner import nmap_scanning
 from execution.xml_parser import xml_parse, all_xml_output_to_txt
 from config.logging_config import get_logger
+from api.activity import emit_activity_sync
 
 from langchain.schema import AIMessage, SystemMessage, HumanMessage
 import time
@@ -17,11 +18,12 @@ logger = get_logger(__name__)
 # RECON AGENT #
 def recon(state: AgentState) -> AgentState:
     """
-    Progressive recon loop that calls nmap commands to map out the full network. 
+    Progressive recon loop that calls nmap commands to map out the full network.
     Identifies open ports, devices, etc.
     Repeat until stop condition is met or no new hosts are found.
     """
     logger.info("Recon agent started")
+    emit_activity_sync("Recon agent running — scanning network", agent_node="recon")
 
     ## STATE INITIALIZATION
     state.setdefault("recon_seen_hosts", set())
@@ -59,47 +61,71 @@ def recon(state: AgentState) -> AgentState:
 
         # LLM DECISIONS
         if state["recon_no_change_count"] >= 2:
-            logger.info("No new data last iteartion (skipping LLM escalation).")
+            logger.info("No new data last iteration (skipping LLM escalation).")
+            state["recon_no_change_count"] += 1
             continue
 
         # prompt LLM to ensure correct output
+        # NOTE ON THIS PROMPT (rewritten): the previous version told the model
+        # "MUST use the previous scan_type unless explicitly changing strategy"
+        # and then immediately handed it an "Adaptive Scanning Rules" block that
+        # pushed aggressive escalation. Those two fight, and which one wins
+        # depends on the model: a 4B dropped medium -> low with `-sn` while
+        # still claiming escalation="service_scan"; a 7B jumped medium -> high
+        # with `--script=vuln` on iteration 2, which is the path that turns Deep
+        # scans into 3-5 hour runs. Replaced with one ordered decision ladder so
+        # the tier is a function of observed state, not of model temperament.
         llm_input = f"""
-        You are an autonomous network reconnaissance specialist.
-        You MUST use the previous scan_type when responding unless explicitly changing strategy.
-        You MUST produce only JSON in the specified schema, no explanations, code fences, or extra text.
+        You are an autonomous network reconnaissance specialist deciding the NEXT nmap scan.
 
-        ### Context summary
-        - Known hosts discovered so far: {len(discovered_hosts)}
-        - Total scan iterations completed: {len(aggregated_logs)}
-        - Active targets under analysis: {', '.join(state['targets'])}
-        - Last scan_type: {state['scan_type']}
+        ### Observed state
+        - Iteration: {iteration} of {RECON_CONVERGENCE['max_iterations']}
+        - Current scan_type: {state['scan_type']}
+        - Hosts discovered so far: {len(discovered_hosts)}
+        - Open ports seen so far: {len(state['recon_seen_ports'])}
+        - Services identified so far: {len(state['recon_seen_services'])}
+        - Consecutive iterations with no new findings: {state['recon_no_change_count']}
+        - Targets: {', '.join(state['targets'])}
 
+        ### Decision ladder — evaluate IN ORDER, use the FIRST rule that matches
+        1. Hosts discovered == 0
+           -> scan_type "low", flags ["-sn","-T4"], escalation "none"
+              (Find out what is alive before doing anything else.)
+        2. Hosts discovered > 0 AND services identified == 0
+           -> scan_type "medium", escalation "service_scan"
+              flags: ["-sS","-sV","-O","--top-ports","1000","-T4"]
+              (Enumerate what is listening on the hosts you already found.)
+        3. Services identified > 0 AND no-new-findings count == 0
+           -> scan_type "medium", escalation "none"
+              Narrow the scan: target only hosts with incomplete data, widen
+              ports (e.g. ["-sS","-sV","--top-ports","4000","-T4"]).
+        4. Services identified > 0 AND no-new-findings count >= 1
+           -> scan_type "high", escalation "deep_scan"
+              flags: ["-sS","-sV","-O","--script=vuln","-T4"]
+              (Breadth is exhausted; only now is a vuln-script pass justified.)
 
-        ### Adaptive Scanning Rules
-        1. **Low scans**: Host discovery only (`-sn`). Use for new subnets or fallback scans.
-        2. **Medium scans**: Targeted port/service enumeration (`-sS`, `-sV`, `-O`). Collect banners, OS info, and light scripts (`-sC`).
-        3. **High scans**: Aggressive, deep scans (`-A`, `--script vuln`, `-O`, `-sV`, full port range). Collect all metadata, vulnerability info, and OS fingerprints.
+        ### Hard constraints
+        - scan_type and escalation MUST agree:
+            escalation "none"          -> scan_type is unchanged from Current
+            escalation "service_scan"  -> scan_type MUST be "medium"
+            escalation "deep_scan"     -> scan_type MUST be "high"
+        - NEVER lower scan_type. "{state['scan_type']}" is a floor, not a suggestion.
+          low -> medium -> high only. Going back down is always wrong.
+        - Do NOT use "-sn" unless rule 1 matched. "-sn" skips ports entirely, so
+          emitting it at medium or high throws away the whole iteration.
+        - Use "--script=vuln" ONLY under rule 4, and only once. It is the single
+          most expensive thing you can request.
+        - Multi-token flags must be separate list items: ["--top-ports","1000"],
+          never ["--top-ports 1000"]. Value-style flags use "=": "--script=vuln".
+        - max_runtime_s ceilings by tier: low 180, medium 1200, high 5400.
+          Anything above the ceiling for your chosen scan_type is rejected.
 
-        - Escalate automatically if new hosts or services are discovered and metadata is incomplete.
-        - Switch strategies automatically if no new hosts or open ports are found after 2 iterations.
-        - Always prefer narrow incremental scans first, and avoid repeating the same scan on unchanged hosts.
-        - Adjust timing (`-T`), port ranges (`-p`, `--top-ports`), and protocols (`-sS`, `-sU`) according to scan_type.
-        - When in high scans, always include at least one vuln script (`--script vuln` or other default nmap scripts) and metadata flags (`-O`, `--traceroute`, `--reason`).
-
-        ### Output Requirements
-        - `flags`: nmap flags appropriate to scan_type
-        - `targets`: hosts or CIDRs to focus on
-        - `scan_type`: maintain current scan_type unless escalating
-        - `reason`: concise rationale for this scan decision
-        - `max_runtime_s`: upper limit for scan duration, based on the flags you provide give a resonable amount of time to scan
-        - `escalation`: "none", "service_scan", or "deep_scan"
-
-        ### JSON Schema Example
+        ### JSON Schema
         {{
         "flags": [string],
         "targets": [string],
-        "scan_type": "{state['scan_type']}",
-        "reason": "string",
+        "scan_type": "low" | "medium" | "high",
+        "reason": "string — name the rule number you applied",
         "max_runtime_s": int,
         "escalation": "none" | "service_scan" | "deep_scan"
         }}
@@ -153,6 +179,22 @@ def recon(state: AgentState) -> AgentState:
         current_scan_type = decision.get("scan_type", state["scan_type"])
         if current_scan_type in ("medium", "high") and "--traceroute" not in flags:
             flags = flags + ["--traceroute"]
+
+        # For high/deep scans, force the aggressive flags the LLM might omit.
+        # Without these, "deep" scan degrades silently to a light port scan.
+        if current_scan_type == "high":
+            # Full port range — LLM tends to pick --top-ports instead
+            if "-p-" not in flags and not any(f.startswith("-p") for f in flags):
+                flags = flags + ["-p-"]
+            # Vuln scripts — the whole point of a deep scan
+            has_script = any("--script" in f for f in flags)
+            if not has_script:
+                flags = flags + ["--script", "vuln"]
+            # Service + OS detection
+            if "-sV" not in flags:
+                flags = flags + ["-sV"]
+            if "-O" not in flags:
+                flags = flags + ["-O"]
 
         # EFFICIENCY GUARD: for medium/high scans, restrict targets to already-discovered IPs.
         # This prevents the LLM from re-scanning broad CIDR ranges after the initial discovery pass,
@@ -208,6 +250,22 @@ def recon(state: AgentState) -> AgentState:
                 if svc_id not in state["recon_seen_services"]:
                     new_services.add(svc_id)
 
+        # Emit escalation/de-escalation event if scan type changed
+        scan_order = {"low": 0, "medium": 1, "high": 2, "deep": 3}
+        prev_scan_type = state.get("scan_type", "low")
+        if current_scan_type != prev_scan_type:
+            direction = (
+                "Escalating" if scan_order.get(current_scan_type, 0) > scan_order.get(prev_scan_type, 0)
+                else "De-escalating"
+            )
+            emit_activity_sync(
+                f"{direction} to {current_scan_type} scan",
+                event_type="info",
+                agent_node="recon",
+                detail=decision.get("reason"),
+            )
+            state["scan_type"] = current_scan_type
+
         # UPDATE STATE + CONVERGENCE
         if new_hosts or new_ports or new_services:
             logger.debug(
@@ -218,9 +276,30 @@ def recon(state: AgentState) -> AgentState:
             state["recon_seen_ports"].update(new_ports)
             state["recon_seen_services"].update(new_services)
             state["recon_no_change_count"] = 0
+
+            # Emit discovery delta
+            parts = []
+            if new_hosts:
+                parts.append(f"{len(new_hosts)} new host{'s' if len(new_hosts) != 1 else ''}")
+            if new_ports:
+                parts.append(f"{len(new_ports)} new port{'s' if len(new_ports) != 1 else ''}")
+            if new_services:
+                parts.append(f"{len(new_services)} new service{'s' if len(new_services) != 1 else ''}")
+            emit_activity_sync(
+                f"Discovered {', '.join(parts)}",
+                event_type="info",
+                agent_node="recon",
+                detail=decision.get("reason"),
+            )
         else:
             logger.info("No new hosts, ports, or services.")
             state["recon_no_change_count"] += 1
+            if state["recon_no_change_count"] >= 2:
+                emit_activity_sync(
+                    "No new data — holding scan strategy",
+                    event_type="info",
+                    agent_node="recon",
+                )
 
         # UPDATE AGENT STATE
         state["recon_results"] = {
@@ -245,5 +324,11 @@ def recon(state: AgentState) -> AgentState:
         with open(xml_content_path, "r", encoding="utf-8") as f:
             state["all_xml_content"] += f.read()
 
+    host_count = len(state.get("recon_results", {}).get("discovered_hosts", []))
+    emit_activity_sync(
+        f"Recon complete — {host_count} host{'s' if host_count != 1 else ''} discovered across {iteration} iteration{'s' if iteration != 1 else ''}",
+        event_type="success",
+        agent_node="recon",
+    )
     logger.info("Recon agent finished cleanly.")
     return state

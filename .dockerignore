@@ -1,0 +1,10 @@
+__pycache__
+*.pyc
+.git
+.env
+surge.db
+log/*
+scan_results/*
+output/*
+notebooks
+*.md

@@ -3,7 +3,7 @@ from core.cve import CVEEntry
 
 ## --- AGENTSTATE --- ##
 class AgentState(TypedDict):
-    ## INPUTS 
+    ## INPUTS
     scan_type: str  # e.g. "low"/"medium"/"high"  GIVEN BY USER
     targets: list[str]  # e.g. ["10.10.160.0/24"]  GIVEN BY USER
 

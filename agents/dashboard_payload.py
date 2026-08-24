@@ -128,11 +128,13 @@ def dashboard_data_grab(
             continue
 
         # skip ghost hosts: nmap marked up via -Pn with no actual open ports
-        if not services:
-            logger.debug(f"Skipping ghost host {ip} — no services detected")
+        # but keep hosts that have vulnerabilities (real hosts behind a firewall)
+        has_vulns = any(v.get("host", v.get("ip")) == ip for v in vuln_scoring)
+        if not services and not has_vulns:
+            logger.debug(f"Skipping ghost host {ip} — no services or vulnerabilities detected")
             continue
 
-        deviceType = os_info.get("device_type") or "idk"
+        deviceType = os_info.get("device_type") or None
         hostname   = hostnames[0] if hostnames else "idk"
 
         cvss      = 0.0
@@ -162,4 +164,4 @@ def dashboard_data_grab(
 
     topology = build_topology(parsed_network or {}, discovered_hosts)
 
-    return {"hosts": dashboard_data, "topology": topology}
+    return {"hosts": dashboard_data, "topology": topology, "vulns": vuln_scoring}

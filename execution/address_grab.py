@@ -176,12 +176,15 @@ def build_initial_target_lists() -> dict:
     # ARP sweep local /24 — fast confirmation we're on the network
     octets   = local_ip.split(".")
     local_24 = f"{octets[0]}.{octets[1]}.{octets[2]}.0/24"
-    arp_hits = _arp_scan(local_24)
-
-    logger.info(
-        f"ARP sweep of {local_24} found {len(arp_hits)} hosts: "
-        f"{[h['ip'] for h in arp_hits]}"
-    )
+    try:
+        arp_hits = _arp_scan(local_24)
+        logger.info(
+            f"ARP sweep of {local_24} found {len(arp_hits)} hosts: "
+            f"{[h['ip'] for h in arp_hits]}"
+        )
+    except Exception as e:
+        logger.warning(f"ARP sweep skipped (requires root on macOS): {e}")
+        arp_hits = []
 
     targets = _derive_targets(local_ip, gateway_ip)
 

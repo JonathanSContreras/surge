@@ -23,3 +23,12 @@ test_dashboard_payload.py
 fake_vuln_data.py
 json_print.txt
 lst.txt
+
+report
+log
+# local database + OS cruft
+*.db
+*.sqlite
+*.sqlite3
+.DS_Store
+**/.DS_Store

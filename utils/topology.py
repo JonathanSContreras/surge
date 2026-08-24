@@ -25,6 +25,51 @@ _GATEWAY_VENDORS = {
 
 _GATEWAY_DEVICE_TYPES = {"router", "firewall", "switch", "WAP"}
 
+_SERVER_PORTS      = {21, 22, 25, 80, 110, 143, 443, 3306, 5432, 6379, 8080, 8443, 8888, 27017}
+_ROUTER_PORTS      = {23, 161, 162, 179, 520, 521}   # telnet, SNMP, BGP, RIP
+_IOT_PORTS         = {1883, 8883, 5683}               # MQTT, CoAP
+_SERVER_VENDORS    = {"vmware", "xen", "qemu", "amazon", "microsoft azure", "proxmox"}
+_WORKSTATION_VENDORS = {"apple", "intel nuc", "dell", "lenovo", "hewlett", "microsoft surface"}
+_IOT_VENDORS       = {"raspberry pi", "espressif", "arduino", "particle", "tuya"}
+
+
+def _infer_device_type(ip: str, host: dict) -> str | None:
+    """Infer device type from MAC vendor, open ports, and hostname when nmap has no osclass."""
+    vendor = (host.get("mac_vendor") or "").lower()
+
+    if any(g in vendor for g in _GATEWAY_VENDORS):
+        return "router"
+    if any(v in vendor for v in _SERVER_VENDORS):
+        return "server"
+    if any(v in vendor for v in _WORKSTATION_VENDORS):
+        return "workstation"
+    if any(v in vendor for v in _IOT_VENDORS):
+        return "iot"
+
+    services = host.get("services") or []
+    open_ports = {
+        int(s["port"]) for s in services
+        if s.get("state") == "open" and str(s.get("port", "")).isdigit()
+    }
+    if open_ports & _ROUTER_PORTS:
+        return "router"
+    if open_ports & _SERVER_PORTS:
+        return "server"
+    if open_ports & _IOT_PORTS:
+        return "iot"
+
+    hostnames = host.get("hostnames") or []
+    label = (hostnames[0] if hostnames else "").lower()
+    for kw, dtype in [
+        ({"router", "gateway", "gw", "rtr", "fw", "firewall"}, "router"),
+        ({"switch", "sw-", "-sw"}, "switch"),
+        ({"server", "srv", "db", "web", "mail", "smtp", "api"}, "server"),
+    ]:
+        if any(k in label for k in kw):
+            return dtype
+
+    return None
+
 
 # ---------------------------------------------------------------------------
 # Internal helpers
@@ -42,7 +87,7 @@ def _node_from_host(ip: str, host: dict, intermediate: bool = False) -> dict:
         "ip":           ip,
         "label":        label,
         "nodeType":     "host",          # refined later
-        "deviceType":   os_info.get("device_type"),
+        "deviceType":   os_info.get("device_type") or _infer_device_type(ip, host),
         "mac_vendor":   host.get("mac_vendor"),
         "os":           os_info.get("name"),
         "status":       host.get("status", "unknown"),
@@ -62,6 +107,21 @@ def _scanner_node() -> dict:
         "os":           None,
         "status":       "up",
         "isIntermediate": False,
+        "services":     0,
+    }
+
+
+def _subnet_node(net: str) -> dict:
+    return {
+        "id":           f"subnet:{net}",
+        "ip":           None,
+        "label":        net,
+        "nodeType":     "subnet",
+        "deviceType":   "subnet",
+        "mac_vendor":   None,
+        "os":           None,
+        "status":       "up",
+        "isIntermediate": True,
         "services":     0,
     }
 
@@ -210,6 +270,7 @@ def _build_fallback_topology(
     """
     Infer topology from /24 subnet grouping and gateway heuristics.
     Used when no traceroute data is available.
+    Emits virtual subnet nodes so the graph shows: scanner → subnet → hosts.
     """
     nodes: dict[str, dict] = {"scanner": _scanner_node()}
     link_set: set[tuple[str, str]] = set()
@@ -226,33 +287,25 @@ def _build_fallback_topology(
             net = "unknown"
         subnets.setdefault(net, []).append(ip)
 
-    # For each subnet, find the best gateway candidate
-    for _subnet, ips in subnets.items():
-        subnet_gateway = None
+    for net, ips in subnets.items():
+        subnet_id = f"subnet:{net}"
+        nodes[subnet_id] = _subnet_node(net)
+        link_set.add(("scanner", subnet_id))
 
-        # Prefer explicit gateway by device type / vendor
+        subnet_gateway = None
         for ip in ips:
-            host = parsed_network[ip]
-            if _is_gateway_candidate(ip, host):
+            if _is_gateway_candidate(ip, parsed_network[ip]):
                 subnet_gateway = ip
                 break
 
         for ip in ips:
-            host = parsed_network[ip]
-            nodes[ip] = _node_from_host(ip, host)
+            nodes[ip] = _node_from_host(ip, parsed_network[ip])
+            link_set.add((subnet_id, ip))
 
         if subnet_gateway:
             nodes[subnet_gateway]["nodeType"] = "gateway"
-            link_set.add(("scanner", subnet_gateway))
             if gateway_ip is None:
                 gateway_ip = subnet_gateway
-            for ip in ips:
-                if ip != subnet_gateway:
-                    link_set.add((subnet_gateway, ip))
-        else:
-            # No gateway found — connect all hosts directly to scanner
-            for ip in ips:
-                link_set.add(("scanner", ip))
 
     return nodes, list(link_set), gateway_ip
 

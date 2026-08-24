@@ -4,6 +4,7 @@ from utils.helpers import _now
 from execution.nmap_scanner import nmap_scanning
 from execution.xml_parser import xml_parse
 from config.logging_config import get_logger
+from api.activity import emit_activity_sync
 
 # call global log file
 logger = get_logger(__name__)
@@ -27,6 +28,7 @@ def os_fingerprint_finder(state: AgentState) -> AgentState:
     ARGS
         state: passed AgentState, current pipeline state with discovered hosts from recon
     """
+    emit_activity_sync("OS fingerprinting hosts", agent_node="os_finder")
     # extracted discovered hosts from recon results
     discovered_hosts = state.get("recon_results", {}).get("discovered_hosts", [])
 
@@ -102,5 +104,9 @@ def os_fingerprint_finder(state: AgentState) -> AgentState:
             os_xml_content = f.read()
 
     logger.info(f"OS fingerprinting complete: {len(os_results)}/{len(discovered_hosts)} hosts returned OS data")
-
+    emit_activity_sync(
+        f"OS fingerprinting complete — {len(os_results)}/{len(discovered_hosts)} hosts identified",
+        event_type="success",
+        agent_node="os_finder",
+    )
     return {"os_fingerprint_results": os_results, "os_xml_content": os_xml_content}

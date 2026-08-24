@@ -2,6 +2,7 @@ from core.state import AgentState
 from core.llm import get_llm
 from agents.prompts import OS_FINGERPRINT_SYSTEM_PROMPT
 from config.logging_config import get_logger
+from api.activity import emit_activity_sync
 
 import json
 from langchain.schema import AIMessage, SystemMessage, HumanMessage
@@ -94,6 +95,7 @@ def os_analysis(state: AgentState) -> AgentState:
     the model's 131K context window.
     """
     logger.info("OS analysis started")
+    emit_activity_sync("Identifying operating systems", agent_node="os_analyzer")
 
     os_results = state.get("os_fingerprint_results", {})
     discovered_hosts = state.get("recon_results", {}).get("discovered_hosts", [])
@@ -133,5 +135,10 @@ def os_analysis(state: AgentState) -> AgentState:
         f.write("\n\n=== RAW OS DATA ===\n\n")
         f.write(json.dumps(os_results, indent=2))
 
+    emit_activity_sync(
+        f"OS analysis complete — {len(os_results)} host{'s' if len(os_results) != 1 else ''} analyzed",
+        event_type="success",
+        agent_node="os_analyzer",
+    )
     logger.info(f"OS analysis completed for {len(os_results)} hosts across {total_batches} batch(es).")
     return {"os_analysis": final_analysis}

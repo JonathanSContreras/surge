@@ -3,6 +3,7 @@ from governance.xgboost_data_cleaning import xgboost_data_cleaning
 from execution.cvss_regessor_model import cvss_regressor
 from config.logging_config import get_logger
 from agents.dashboard_payload import dashboard_data_grab
+from api.activity import emit_activity_sync
 
 import pandas as pd
 import json
@@ -14,8 +15,9 @@ def cvss_scoring(state: AgentState) -> AgentState:
     """
     Calls the XGBoost classifier model and outputs the vulnerability with its label.
     """
+    emit_activity_sync("Scoring vulnerabilities with ML model", event_type="warning", agent_node="cvss_scoring")
     # get vulnerability findings
-    vuln_list = state.get("vuln_normalized_results", [])  
+    vuln_list = state.get("vuln_normalized_results", [])
 
     if not vuln_list:
         logger.info("Vulnerability list is empty.")
@@ -85,6 +87,11 @@ def cvss_scoring(state: AgentState) -> AgentState:
         f.write(json_string)
     ####
 
+    emit_activity_sync(
+        f"CVSS scoring complete — {len(results)} vulnerabilit{'ies' if len(results) != 1 else 'y'} scored",
+        event_type="success",
+        agent_node="cvss_scoring",
+    )
     logger.info("CVSS scoring agent has completed running and the state is updated.")
 
     return {"vuln_scoring": results, "topology": dashboard_data["topology"]}

@@ -1,7 +1,9 @@
 from core.state import AgentState
 from core.llm import get_llm
 from agents.prompts import RECON_ANALYSIS_SYSTEM_PROMPT
+from agents.dashboard_payload import dashboard_data_grab
 from config.logging_config import get_logger
+from api.activity import emit_activity_sync
 
 from langchain.schema import AIMessage, SystemMessage, HumanMessage
 import json
@@ -45,6 +47,7 @@ def recon_analysis(state: AgentState) -> AgentState:  # this will be a simple "h
         • Suggest next scan strategies or validation steps
     """
     logger.info("Recon analysis agent started")
+    emit_activity_sync("Analyzing recon results", agent_node="recon_analyzer")
 
     # define what things the analysis agent will need to give for a full analysis
     recon_results = state["recon_results"]
@@ -111,8 +114,27 @@ def recon_analysis(state: AgentState) -> AgentState:  # this will be a simple "h
     with open(f"{run_dir}/recon_analysis.md", "w", encoding="utf-8") as f:
         f.write(result.content)
 
-    # print(state["recon_analysis"])
+    # Write an early dashboard snapshot — topology + devices, no vuln data yet.
+    # The frontend live view will pick this up immediately so the network graph
+    # populates as soon as recon is done rather than waiting for CVSS scoring.
+    try:
+        recon = state.get("recon_results", {})
+        snapshot = dashboard_data_grab(
+            [],
+            discovered_hosts=recon.get("discovered_hosts", []),
+            parsed_network=recon.get("parsed_network", {}),
+        )
+        with open(f"{run_dir}/dashboard_data.json", "w") as f:
+            json.dump(snapshot, f, indent=4)
+        logger.info("Early dashboard snapshot written after recon analysis.")
+    except Exception as e:
+        logger.warning(f"Failed to write early dashboard snapshot: {e}")
 
+    emit_activity_sync(
+        "Recon analysis complete",
+        event_type="success",
+        agent_node="recon_analyzer",
+    )
     logger.info("Recon analysis agent finished analysis and updated the state.")
 
     return {"recon_analysis": result.content}

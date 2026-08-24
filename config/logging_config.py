@@ -5,6 +5,16 @@ from config.constants import LOG_FILENAME, LOG_FORMAT
 # logging constants
 LEVEL = logging.DEBUG
 
+# Third-party libraries that flood the log with low-value DEBUG lines
+_QUIET_LOGGERS = [
+    "aiosqlite",
+    "sqlalchemy.engine",
+    "sqlalchemy.pool",
+    "uvicorn.access",
+    "httpx",
+    "httpcore",
+]
+
 
 # create a logger for all modules to use
 def setup_logging():
@@ -19,6 +29,11 @@ def setup_logging():
         format=LOG_FORMAT,
         filemode="a"
     )
+
+    # Silence noisy third-party loggers — keep them at WARNING so real errors
+    # still surface, but cursor/pool/request chatter is suppressed.
+    for name in _QUIET_LOGGERS:
+        logging.getLogger(name).setLevel(logging.WARNING)
 
 def get_logger(name: str) -> logging.Logger:
     """
