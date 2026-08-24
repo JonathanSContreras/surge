@@ -1,172 +1,122 @@
-> ## ⚠️ Status: describes the superseded two-host split
->
-> The HCU Linux server VM never came up, so **everything now runs on a single
-> Apple M2 Mac mini (8 GB)** — backend, model, Postgres and frontend together.
->
-> What that changes from the instructions below:
-> - Part A (HCU server) no longer applies. There is no second host.
-> - `DATABASE_URL` and the Ollama endpoint become `localhost`, not tailnet addresses.
-> - **Run Postgres natively via Homebrew, not Docker** — Docker Desktop's Linux
->   VM costs 1-2 GB, which is unaffordable at 8 GB.
-> - `NEXT_PUBLIC_API_URL` still needs the Mac mini's *tailnet* address, because
->   the browser is remote even though everything else is local.
->
-> Part B (Mac mini) is still accurate and is the part you want. `deploy/macmini/`
-> holds the launchd units, including `com.surge.schedule.plist` for the 09:00 /
-> 15:00 weekday runs.
+# Deploying Surge to the Mac mini
 
-# Deploying Surge — HCU server + Mac mini
+Everything runs on one machine: an Apple M2 Mac mini with 8 GB of unified
+memory. Backend, agent graph, nmap, Postgres, the local fallback model, and the
+Next.js dashboard.
 
-Split deployment. The two hosts have different jobs and only one of them scans:
-
-| | HCU server | Mac mini |
+| Component | How it runs | Why |
 |---|---|---|
-| **Runs** | Postgres (Docker) + Ollama (native) | FastAPI + agent graph + nmap, Next.js dashboard |
-| **Holds** | all scan state, the LLM | the scan artifacts for runs in progress |
-| **Needs** | to be reachable on the tailnet | to sit on the network you intend to scan |
-| **Docker?** | yes, for Postgres | **no** — see "Why the Mac mini can't use Docker" |
+| FastAPI + agent graph + nmap | native, **as root**, launchd | nmap needs raw sockets; see [Why root](#why-the-api-runs-as-root) |
+| Postgres | native, Homebrew | Docker Desktop's Linux VM costs 1-2 GB we don't have |
+| Next.js dashboard | native, launchd | one less moving part |
+| Ollama (fallback model only) | native | only used when OpenRouter credits run out |
 
-They find each other over Tailscale. Nothing here is exposed to the campus network.
+> **An earlier plan split this across an HCU Linux server and the Mac mini.**
+> That server's VM never came up. Nothing is split any more — if you find a
+> reference to `hcu-server`, `SERVER_ADDR`, or `docker-compose.hcu.yml`, it is
+> stale and predates 2026-08-24.
 
-> **Read this before wiring anything:** the XGBoost scorer and the SBERT
-> embedding model are *not* on the HCU server, despite it being "the model box."
-> `execution/cvss_regessor_model.py` loads `model/xgb_regressor.json` in-process
-> at import, and `governance/xgboost_data_cleaning.py` loads
-> `SentenceTransformer("all-MiniLM-L6-v2")` the same way. Both run inside the
-> Python backend, so both live on the **Mac mini**. Only the LLM can be remote,
-> because it's the only one behind an HTTP endpoint. The 37 MB `data/cve.csv` is
-> *training* data and isn't needed at inference — it only has to be wherever you
-> retrain.
+## Why Docker is not used for the backend
 
----
+`network_mode: host` and `cap_add: NET_RAW` are Linux-kernel features. On macOS,
+Docker runs containers inside a Linux VM, so a "host-networked" container is
+host-networked *to the VM*, not to the Mac. nmap would scan the VM's private
+network and report one or two phantom hosts. The same reasoning rules out
+containerising Postgres here — not correctness, just the VM's memory cost on an
+8 GB box.
 
-## Why the Mac mini can't use Docker
+## The 8 GB memory budget
 
-The old single-host `docker-compose.yml` ran the backend with
-`network_mode: host` + `cap_add: NET_RAW`. Both are Linux-kernel features.
-On macOS, Docker runs containers inside a Linux VM, so a "host-networked"
-container is host-networked *to the VM*, not to the Mac. nmap would scan the
-VM's private network and come back with one or two phantom hosts.
+Measured, not guessed. The Python stack (torch + sentence-transformers + MiniLM
++ the XGBoost booster) peaks at **485 MB** resident.
 
-So on the Mac mini the backend runs natively, as root, under launchd. The
-frontend could go either way; it runs natively too, for one less moving part.
+| | |
+|---|---|
+| macOS baseline | ~2.5 GB |
+| Backend (FastAPI + ML stack) | ~0.7-0.9 GB |
+| Postgres | ~0.3 GB |
+| Next.js production server | ~0.2 GB |
+| nmap mid-scan | ~0.1-0.3 GB |
+| **Headroom for a local model** | **~4 GB** |
 
----
-
-# Part A — HCU server (Postgres + Ollama)
-
-## A1. Install Docker
-
-```bash
-sudo apt-get update
-sudo apt-get install -y ca-certificates curl
-sudo install -m 0755 -d /etc/apt/keyrings
-sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
-sudo chmod a+r /etc/apt/keyrings/docker.asc
-echo \
-  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] \
-  https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" \
-  | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-sudo apt-get update
-sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-sudo usermod -aG docker $USER    # log out/in for this to take effect
-```
-
-## A2. Start Postgres
-
-```bash
-tailscale ip -4          # note this — it goes in HCU_TAILSCALE_IP
-
-cd /path/to/surge
-cp .env.example .env
-nano .env                # fill in POSTGRES_PASSWORD and HCU_TAILSCALE_IP
-
-docker compose -f docker-compose.hcu.yml up -d
-docker compose -f docker-compose.hcu.yml ps
-```
-
-Postgres binds to the Tailscale IP only. Do **not** change this to `0.0.0.0` —
-that publishes the database to the campus network.
-
-## A3. Open Ollama to the tailnet
-
-Ollama binds `127.0.0.1:11434` by default, so the Mac mini can't reach it.
-
-```bash
-sudo systemctl edit ollama
-```
-
-```ini
-[Service]
-Environment="OLLAMA_HOST=0.0.0.0:11434"
-```
-
-```bash
-sudo systemctl daemon-reload && sudo systemctl restart ollama
-ollama pull gpt-oss:20b
-curl http://$(tailscale ip -4):11434/api/tags     # must respond, not just localhost
-```
-
-`0.0.0.0` is acceptable here where it wasn't for Postgres: check that the
-campus firewall isn't forwarding 11434, and rely on the tailnet ACL. If you want
-it airtight, bind to the Tailscale IP explicitly instead.
-
-## A4. Verify from the Mac mini
-
-Run these **on the Mac mini** — they're the whole contract between the hosts:
-
-```bash
-nc -vz hcu-server.your-tailnet.ts.net 5432
-curl http://hcu-server.your-tailnet.ts.net:11434/api/tags
-```
-
-Both must succeed before Part B is worth attempting.
+That is why the local model is `qwen3:4b` (~2.5 GB at Q4_K_M) and not
+`gpt-oss:20b` (~12-13 GB, does not fit at any quantisation).
 
 ---
 
-# Part B — Mac mini (scanner + site)
+# Setup
 
-## B1. Prerequisites
+## 1. Prerequisites
 
 ```bash
-brew install nmap python@3.12 node
+brew install nmap python@3.12 node postgresql@16 ollama
 sudo tailscale up
-tailscale ip -4          # note this — it goes in NEXT_PUBLIC_API_URL
+tailscale ip -4          # note this — the dashboard build needs it
 ```
 
-## B2. Backend
+## 2. Postgres
+
+```bash
+brew services start postgresql@16        # 'services', not 'postgres -D' — see note below
+createuser -s surge
+createdb -O surge surge
+psql -d surge -c "ALTER USER surge WITH PASSWORD 'pick-something';"
+psql -U surge -d surge -c "select version();"   # verify
+```
+
+Use `brew services start`, not a manual `pg_ctl`/`postgres` invocation. Only the
+former registers a launchd job, and without it Postgres will not come back after
+a reboot — which you will discover during the first power outage, not before.
+
+The database stays on `localhost`. It needs no network exposure at all now that
+nothing connects from another host.
+
+## 3. Backend
 
 ```bash
 cd /opt/surge/surge-ai              # adjust to wherever the repo lives
 python3.12 -m venv .venv
 .venv/bin/pip install -r requirements.txt -r requirements-api.txt
-
-cp ../.env .env                     # backend reads ./.env from surge-ai/
+cp ../.env.example .env
+nano .env                           # fill in DATABASE_URL and OPENROUTER_API_KEY
 ```
 
-Confirm the DB and LLM point at the HCU server, not localhost:
-
-```bash
-grep -E 'DATABASE_URL|TAILSCALE_URL' .env
-```
-
-Smoke-test before installing the service — running in the foreground surfaces
-connection errors that launchd would bury in a log file:
+Smoke-test in the foreground first — launchd would bury a connection error in a
+log file:
 
 ```bash
 sudo .venv/bin/uvicorn api.main:app --host 0.0.0.0 --port 8000
-# another terminal:
-curl http://localhost:8000/health
+curl http://localhost:8000/health   # {"status":"ok"}
 ```
 
-`sudo` is not optional — see B4.
+The first start creates the schema. Confirm it actually did — this failed
+silently in an earlier version and the fix is easy to regress:
 
-## B3. Frontend
+```bash
+psql -U surge -d surge -c "\dt"     # expect 6 tables, not "Did not find any relations"
+```
 
-`NEXT_PUBLIC_*` are compiled into the bundle, so the address has to be right
-*before* you build. Write `.env.local` with only the two public vars — do **not**
-copy the root `.env` here. It carries `POSTGRES_PASSWORD` and `OPENROUTER_API_KEY`, which have
-no business sitting in the frontend's working directory:
+## 4. Local fallback model
+
+Only used when the OpenRouter balance drops below `SURGE_CREDIT_FLOOR`.
+
+```bash
+ollama serve &                      # binds 127.0.0.1:11434, which is all we need
+ollama pull qwen3:4b
+```
+
+Keep thinking mode off. `MODEL_CONFIG["timeout"]` is 60 s and a reasoning trace
+on this hardware will blow through it.
+
+## 5. Dashboard
+
+`NEXT_PUBLIC_*` are compiled into the bundle, so the address must be right
+*before* you build. It is the Mac mini's **tailnet** address, not `localhost` —
+the browser is on someone else's laptop, where `localhost` would mean their
+machine.
+
+Write `.env.local` with only the two public vars; do not copy the root `.env`,
+which carries the Postgres password and the OpenRouter key:
 
 ```bash
 cd /opt/surge/web-page
@@ -183,29 +133,58 @@ npm start -- --hostname 0.0.0.0 --port 3000
 
 Dashboard: `http://macmini.your-tailnet.ts.net:3000`
 
-## B4. Install as services
+## 6. Install the services
 
 ```bash
-sudo cp deploy/macmini/com.surge.api.plist /Library/LaunchDaemons/
-sudo cp deploy/macmini/com.surge.web.plist /Library/LaunchDaemons/
-sudo nano /Library/LaunchDaemons/com.surge.web.plist    # set UserName
-# both plists assume /opt/surge — edit the paths if the repo lives elsewhere
+sudo cp deploy/macmini/com.surge.api.plist      /Library/LaunchDaemons/
+sudo cp deploy/macmini/com.surge.web.plist      /Library/LaunchDaemons/
+sudo cp deploy/macmini/com.surge.schedule.plist /Library/LaunchDaemons/
+
+# set UserName in the web and schedule plists; fix paths if not /opt/surge
+sudo nano /Library/LaunchDaemons/com.surge.web.plist
+sudo nano /Library/LaunchDaemons/com.surge.schedule.plist
 
 sudo launchctl load -w /Library/LaunchDaemons/com.surge.api.plist
 sudo launchctl load -w /Library/LaunchDaemons/com.surge.web.plist
+sudo launchctl load -w /Library/LaunchDaemons/com.surge.schedule.plist
 sudo launchctl list | grep surge
 ```
 
-**The API daemon runs as root on purpose.** `config/constants.py` allows `-sS`
-and `-O` in the medium and high sanitizer tiers, and the recon agent escalates
-to `-A --script=vuln` on Deep scans. All of those need raw sockets. Without root
-nmap exits with "You requested a scan type which requires root privileges" and
-discovery returns nothing — which looks exactly like "the network is empty."
+### Why the API runs as root
 
-macOS may also prompt for Full Disk Access the first time the daemon writes to
-`report/`. Grant it under System Settings → Privacy & Security.
+`config/constants.py` allows `-sS` and `-O` in the medium and high sanitiser
+tiers, and the recon agent escalates to `--script=vuln` on the deepest tier. All
+of those need raw sockets. Without root, nmap exits with "You requested a scan
+type which requires root privileges" and discovery returns nothing — which looks
+exactly like a quiet network rather than a permissions failure.
 
----
+The web and schedule daemons do **not** need root and drop to a normal user via
+`UserName`. Only the API is privileged.
+
+`com.surge.api.plist` also sets `PATH` explicitly: launchd's default is
+`/usr/bin:/bin:/usr/sbin:/sbin`, which does not include Homebrew's nmap.
+
+## 7. The schedule
+
+`com.surge.schedule.plist` runs a Quick scan at **09:00 and 15:00, Mon-Fri**
+(10 firings/week). `deploy/macmini/scheduled_scan.py` gates each one:
+
+1. **Overlap guard** — skips if a scan is already running. The slots are 6 h
+   apart but a Deep scan runs 3-5 h, so they can collide. This is also why the
+   scheduled type is `quick`.
+2. **Credit check** — below `SURGE_CREDIT_FLOOR` (default $2), flips the API to
+   offline so scans degrade to the local model rather than failing.
+3. Only then does it POST the scan.
+
+```bash
+# dry-run it by hand before trusting the timer
+sudo -u <user> /opt/surge/surge-ai/.venv/bin/python /opt/surge/deploy/macmini/scheduled_scan.py
+tail -f /var/log/surge-schedule.log
+```
+
+Cost model behind the defaults: ~400 runs/yr against the OpenRouter balance,
+`z-ai/glm-4.7` for analysis and `z-ai/glm-4.7-flash` for the JSON-only fast
+tier. Re-check pricing before changing models; it moves.
 
 ## Power and unattended recovery
 
@@ -265,14 +244,12 @@ launched by hand.
 ## Operations
 
 ```bash
-# HCU server
-docker compose -f docker-compose.hcu.yml logs -f db
-docker compose -f docker-compose.hcu.yml down        # data persists in the pgdata volume
-
-# Mac mini
+brew services list | grep postgres        # must say 'started'
 tail -f /var/log/surge-api.err.log
+tail -f /var/log/surge-schedule.log
 sudo launchctl kickstart -k system/com.surge.api     # restart after a code change
 sudo launchctl kickstart -k system/com.surge.web     # only serves; rebuild first if env changed
+sudo launchctl kickstart -k system/com.surge.schedule
 ```
 
 ---
