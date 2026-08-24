@@ -8,6 +8,7 @@ Report routes:
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import os
 import re
@@ -17,7 +18,12 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from api.db import get_db, ScanModel, ReportModel, VulnerabilityModel
+from api.db import get_db, ScanModel, ReportModel, VulnerabilityModel, ActivityEventModel
+from agents.prompts import (
+    EXECUTIVE_REPORT_SYSTEM_PROMPT,
+    TECHNICAL_REPORT_SYSTEM_PROMPT,
+    PUBLIC_REPORT_SYSTEM_PROMPT,
+)
 from api.models import (
     ReportTemplate,
     ReportGenerateRequest,
@@ -35,7 +41,22 @@ TEMPLATES: list[ReportTemplate] = [
     ReportTemplate(id="final",      name="Final Report",       description="Complete combined report — all sections from all perspectives"),
 ]
 
-# Maps template id → the filename written by reporter.py
+# Maps template id → the system prompt used to generate it on demand.
+# "final" is absent deliberately: it is produced by the reporter agent during
+# the scan and is the source material every other template is derived from.
+_SPECIALIZED_PROMPTS: dict[str, str] = {
+    "executive": EXECUTIVE_REPORT_SYSTEM_PROMPT,
+    "technical": TECHNICAL_REPORT_SYSTEM_PROMPT,
+    "public":    PUBLIC_REPORT_SYSTEM_PROMPT,
+}
+
+_SPECIALIZED_PREFIX = (
+    "Below is the complete Network Security Assessment Report.\n"
+    "Generate the specialized report now using ONLY this information.\n\n"
+    "---\n\n"
+)
+
+# Maps template id → the filename written into the scan's run_dir
 _TEMPLATE_FILES: dict[str, str] = {
     "executive": "executive_report.md",
     "technical": "technical_report.md",
@@ -51,6 +72,12 @@ def _parse_markdown_sections(markdown: str) -> dict[str, str]:
     current_lines: list[str] = []
 
     def _key(heading: str) -> str:
+        # Strip a leading enumerator first. The reporter prompt yields numbered
+        # headings ("## 1. Executive Summary"), which keyed to
+        # "1_executive_summary" and matched no alias — so every section field
+        # came back NULL and the Reports page rendered blank panels with only
+        # raw_markdown populated.
+        heading = re.sub(r"^\s*\d+\s*[.)\-:]?\s*", "", heading)
         return re.sub(r"[^a-z0-9]+", "_", heading.lower()).strip("_")
 
     for line in markdown.splitlines():
@@ -127,58 +154,90 @@ async def list_templates() -> list[ReportTemplate]:
     return TEMPLATES
 
 
-@router.post("/generate", response_model=ReportRecord, status_code=201)
-async def generate_report(
-    request: ReportGenerateRequest,
-    db: AsyncSession = Depends(get_db),
-) -> ReportRecord:
-    # Validate scan exists and is completed
-    result = await db.execute(select(ScanModel).where(ScanModel.scan_id == request.scan_id))
-    scan = result.scalar_one_or_none()
-    if not scan:
-        raise HTTPException(status_code=404, detail="Scan not found")
-    if scan.status != "completed":
-        raise HTTPException(status_code=409, detail=f"Scan is not completed (status: {scan.status})")
+def _generate_specialized_sync(template_id: str, final_markdown: str) -> str | None:
+    """Blocking LLM call. Callers must run this off the event loop."""
+    from core.llm import get_llm
+    from langchain.schema import SystemMessage, HumanMessage
 
-    # Resolve which .md file to read for this template; fall back to final_report.md
-    filename = _TEMPLATE_FILES.get(request.template_id, "final_report.md")
+    llm = get_llm(tier="analysis")
+    try:
+        resp = llm.invoke([
+            SystemMessage(content=_SPECIALIZED_PROMPTS[template_id]),
+            HumanMessage(content=_SPECIALIZED_PREFIX + final_markdown),
+        ])
+    except Exception:
+        logger.exception("LLM failed generating '%s' report", template_id)
+        return None
+    content = getattr(resp, "content", None)
+    return content.strip() if isinstance(content, str) and content.strip() else None
+
+
+async def _resolve_markdown(scan: ScanModel, template_id: str) -> str | None:
+    """
+    Return the markdown for this template, generating it if it doesn't exist yet.
+
+    The reporter agent only writes final_report.md during a scan. The executive,
+    technical and public variants are produced here the first time they're asked
+    for, then cached as .md in the same run_dir so a second request is free.
+    """
     run_dir = scan.run_dir or ""
-    report_path = os.path.join(run_dir, filename) if run_dir else None
-    fallback_path = os.path.join(run_dir, "final_report.md") if run_dir else None
+    if not run_dir:
+        logger.warning("Scan %s has no run_dir — cannot resolve report", scan.scan_id)
+        return None
 
-    raw_markdown: str | None = None
+    path = os.path.join(run_dir, _TEMPLATE_FILES.get(template_id, "final_report.md"))
+    if os.path.exists(path):
+        with open(path, "r", encoding="utf-8") as f:
+            return f.read()
+
+    final_path = os.path.join(run_dir, "final_report.md")
+    if not os.path.exists(final_path):
+        logger.warning("No final_report.md at %s — nothing to derive from", final_path)
+        return None
+    with open(final_path, "r", encoding="utf-8") as f:
+        final_markdown = f.read()
+
+    if template_id not in _SPECIALIZED_PROMPTS:
+        return final_markdown          # 'final' itself, or an unknown id
+
+    # Generate off the event loop — llm.invoke() blocks.
+    content = await asyncio.to_thread(_generate_specialized_sync, template_id, final_markdown)
+    if not content:
+        logger.warning("Generation of '%s' returned empty — falling back to final report", template_id)
+        return final_markdown
+
+    try:
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(content)
+    except OSError:
+        logger.exception("Could not cache %s (report still returned)", path)
+    return content
+
+
+async def persist_report(db: AsyncSession, scan: ScanModel, template_id: str) -> ReportModel:
+    """
+    Build and store one report row. Shared by POST /reports/generate and by
+    scan completion in api/routes/scans.py, so a scheduled scan lands in the
+    Reports tab without anyone clicking Generate.
+    """
+    raw_markdown = await _resolve_markdown(scan, template_id)
     resolved: dict[str, str | None] = {f: None for f in _FIELD_ALIASES}
-
-    path_to_try = None
-    if report_path and os.path.exists(report_path):
-        path_to_try = report_path
-    elif fallback_path and os.path.exists(fallback_path):
-        logger.warning("%s not found — falling back to final_report.md", filename)
-        path_to_try = fallback_path
-    else:
-        logger.warning("No report file found at %s or %s", report_path, fallback_path)
-
-    if path_to_try:
-        with open(path_to_try, "r", encoding="utf-8") as f:
-            raw_markdown = f.read()
+    if raw_markdown:
         resolved = _resolve_sections(_parse_markdown_sections(raw_markdown))
 
-    # Compute risk matrix from vulnerabilities table
     vuln_result = await db.execute(
-        select(VulnerabilityModel).where(VulnerabilityModel.scan_id == request.scan_id)
+        select(VulnerabilityModel).where(VulnerabilityModel.scan_id == scan.scan_id)
     )
-    vulns = vuln_result.scalars().all()
     risk = {"critical": 0, "high": 0, "medium": 0, "low": 0}
-    for v in vulns:
+    for v in vuln_result.scalars().all():
         sev = (v.severity or "low").lower()
         if sev in risk:
             risk[sev] += 1
 
-    report_id = str(uuid4())
     report = ReportModel(
-        id=report_id,
-        scan_id=request.scan_id,
-        template_id=request.template_id,
+        id=str(uuid4()),
+        scan_id=scan.scan_id,
+        template_id=template_id,
         raw_markdown=raw_markdown,
         executive_summary=resolved["executive_summary"],
         scope=resolved["scope"],
@@ -193,7 +252,10 @@ async def generate_report(
     db.add(report)
     await db.commit()
     await db.refresh(report)
+    return report
 
+
+def _to_record(report: ReportModel) -> ReportRecord:
     return ReportRecord(
         id=report.id,
         scan_id=report.scan_id,
@@ -205,8 +267,40 @@ async def generate_report(
         methodology=report.methodology,
         key_findings=report.key_findings,
         recommendations=report.recommendations,
-        risk_matrix=RiskMatrix(**risk),
+        risk_matrix=RiskMatrix(
+            critical=report.risk_critical, high=report.risk_high,
+            medium=report.risk_medium,     low=report.risk_low,
+        ),
     )
+
+
+@router.post("/generate", response_model=ReportRecord, status_code=201)
+async def generate_report(
+    request: ReportGenerateRequest,
+    db: AsyncSession = Depends(get_db),
+) -> ReportRecord:
+    result = await db.execute(select(ScanModel).where(ScanModel.scan_id == request.scan_id))
+    scan = result.scalar_one_or_none()
+    if not scan:
+        raise HTTPException(status_code=404, detail="Scan not found")
+    if scan.status != "completed":
+        raise HTTPException(status_code=409, detail=f"Scan is not completed (status: {scan.status})")
+
+    name = next((t.name for t in TEMPLATES if t.id == request.template_id), request.template_id)
+    db.add(ActivityEventModel(
+        scan_id=request.scan_id, event_type="info", agent_node="reporter",
+        message=f"Generating {name} for scan {request.scan_id[:8]}",
+    ))
+    await db.commit()
+
+    report = await persist_report(db, scan, request.template_id)
+
+    db.add(ActivityEventModel(
+        scan_id=request.scan_id, event_type="success", agent_node="reporter",
+        message=f"{name} ready — scan {request.scan_id[:8]}",
+    ))
+    await db.commit()
+    return _to_record(report)
 
 
 @router.get("", response_model=list[ReportRecord])

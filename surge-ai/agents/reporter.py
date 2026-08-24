@@ -1,11 +1,6 @@
 from core.state import AgentState
 from core.llm import get_llm
-from agents.prompts import (
-    REPORTER_SYSTEM_PROMPT,
-    EXECUTIVE_REPORT_SYSTEM_PROMPT,
-    TECHNICAL_REPORT_SYSTEM_PROMPT,
-    PUBLIC_REPORT_SYSTEM_PROMPT,
-)
+from agents.prompts import REPORTER_SYSTEM_PROMPT
 from config.logging_config import get_logger
 from api.activity import emit_activity_sync
 
@@ -13,14 +8,6 @@ import json
 from langchain.schema import AIMessage, SystemMessage, HumanMessage
 
 logger = get_logger(__name__)
-
-# Maps template id → (system prompt, output filename, activity label)
-_SPECIALIZED_REPORTS = [
-    ("executive", EXECUTIVE_REPORT_SYSTEM_PROMPT, "executive_report.md", "Executive Report"),
-    ("technical", TECHNICAL_REPORT_SYSTEM_PROMPT, "technical_report.md", "Technical Report"),
-    ("public",    PUBLIC_REPORT_SYSTEM_PROMPT,    "public_report.md",    "Public-Facing Report"),
-]
-
 
 def _invoke_llm(system_prompt: str, human_prompt: str) -> str | None:
     """Call LLM and return content string, or None on empty response."""
@@ -129,31 +116,22 @@ def reporter(state: AgentState) -> AgentState:
         f.write(final_content)
     logger.info("final_report.md written.")
 
-    # ── 2. Generate each specialized report from the final report ─────────────
-    specialized_prompt_prefix = (
-        "Below is the complete Network Security Assessment Report.\n"
-        "Generate the specialized report now using ONLY this information.\n\n"
-        "---\n\n"
-    )
-
-    for template_id, system_prompt, filename, label in _SPECIALIZED_REPORTS:
-        emit_activity_sync(
-            f"Generating {label}",
-            detail=f"Transforming assessment data into {filename}",
-            agent_node="reporter",
-        )
-        content = _invoke_llm(system_prompt, specialized_prompt_prefix + final_content)
-        if content:
-            with open(f"{run_dir}/{filename}", "w", encoding="utf-8") as f:
-                f.write(content)
-            logger.info("%s written.", filename)
-        else:
-            logger.warning("LLM returned empty content for %s — file not written.", filename)
-
+    # ── 2. Specialized reports are NOT generated here ─────────────────────────
+    # Executive/technical/public used to be three more analysis-tier LLM calls
+    # in this loop, each re-sending the whole final report as input — four calls
+    # per scan whether or not anyone ever opened them. With scans running twice
+    # a day unattended that is most of the per-run cost, spent on artefacts
+    # nobody may read.
+    #
+    # They are now generated on demand by POST /reports/generate, which writes
+    # the .md into this same run_dir the first time it is asked and reuses it
+    # afterwards. Scheduled runs pay for one report; the richer views cost only
+    # when a human wants one.
     emit_activity_sync(
-        "All reports generated — scan complete",
+        "Final report generated — scan complete",
         event_type="success",
         agent_node="reporter",
+        detail="Executive, technical and public reports are generated on demand from the Reports page",
     )
     logger.info("Reporter agent finished all reports.")
     return {"network_findings": final_content}

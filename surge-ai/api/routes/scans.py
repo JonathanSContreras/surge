@@ -252,6 +252,20 @@ async def _run_scan_background(
 
             await session.commit()
 
+            # Persist the final report so it appears in the Reports tab without
+            # anyone pressing Generate. Until this existed, the reporter wrote
+            # final_report.md to disk and nothing ever wrote the reports table,
+            # so an unattended twice-daily scan produced a permanently empty
+            # Reports page. This reads the .md the reporter just wrote — no
+            # extra LLM call. The executive/technical/public variants stay lazy.
+            try:
+                from api.routes.reports import persist_report
+                await persist_report(session, scan, "final")
+                logger.info("Scan %s — final report persisted", scan_id)
+            except Exception:
+                # A reporting failure must not flip a completed scan to failed.
+                logger.exception("Scan %s — could not persist final report", scan_id)
+
     except Exception as exc:
         logger.exception("Scan %s — DB persistence failed after scan completed", scan_id)
         async with AsyncSessionLocal() as session:
