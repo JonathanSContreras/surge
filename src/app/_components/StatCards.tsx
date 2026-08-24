@@ -1,60 +1,31 @@
-import { Server, AlertTriangle, Activity, Target } from 'lucide-react';
+import { Server, AlertTriangle, Activity, Radio } from 'lucide-react';
 
-interface Stat {
-  label: string;
-  value: string;
-  icon: React.ElementType;
-  trend?: number[];
+interface StatCardsProps {
+  devicesScanned:       number;
+  vulnerabilitiesFound: number;
+  avgCvss:              number | null;
+  activeScans:          number;
 }
-
-const stats: Stat[] = [
-  {
-    label: 'Devices Scanned',
-    value: '247',
-    icon: Server,
-    trend: [20, 35, 28, 45, 38, 52, 48, 60, 55, 67, 72, 80],
-  },
-  {
-    label: 'Vulnerabilities Found',
-    value: '1,842',
-    icon: AlertTriangle,
-    trend: [40, 42, 38, 48, 52, 55, 58, 54, 60, 65, 62, 68],
-  },
-  {
-    label: 'Avg. CVSS Score',
-    value: '6.4',
-    icon: Activity,
-    trend: [50, 48, 52, 49, 54, 51, 56, 53, 58, 55, 60, 57],
-  },
-  {
-    label: 'Exploit Success Rate',
-    value: '73%',
-    icon: Target,
-    trend: [30, 35, 38, 42, 40, 45, 48, 52, 55, 58, 60, 65],
-  },
-];
 
 function MiniSparkline({ data }: { data: number[] }) {
   const max = Math.max(...data);
   const min = Math.min(...data);
-  const range = max - min;
+  const range = max - min || 1;
 
-  const points = data.map((value, index) => {
-    const x = (index / (data.length - 1)) * 100;
-    const y = 100 - ((value - min) / range) * 100;
-    return `${x},${y}`;
-  }).join(' ');
+  const points = data
+    .map((value, index) => {
+      const x = (index / (data.length - 1)) * 100;
+      const y = 100 - ((value - min) / range) * 100;
+      return `${x},${y}`;
+    })
+    .join(' ');
 
   return (
-    <svg
-      viewBox="0 0 100 30"
-      className="w-20 h-8"
-      preserveAspectRatio="none"
-    >
+    <svg viewBox="0 0 100 30" className="w-20 h-8" preserveAspectRatio="none">
       <polyline
         points={points}
         fill="none"
-        stroke="#00E676"
+        stroke="var(--accent)"
         strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -64,7 +35,17 @@ function MiniSparkline({ data }: { data: number[] }) {
   );
 }
 
-export function StatCards() {
+// Static sparkline placeholder — replace with real time-series data when available
+const PLACEHOLDER_TREND = [20, 35, 28, 45, 38, 52, 48, 60, 55, 67, 72, 80];
+
+export function StatCards({ devicesScanned, vulnerabilitiesFound, avgCvss, activeScans }: StatCardsProps) {
+  const stats = [
+    { label: 'Devices Scanned',      value: devicesScanned.toLocaleString(),                       icon: Server },
+    { label: 'Vulnerabilities Found', value: vulnerabilitiesFound.toLocaleString(),                 icon: AlertTriangle },
+    { label: 'Avg. CVSS Score',       value: avgCvss != null ? avgCvss.toFixed(1) : '—',            icon: Activity },
+    { label: 'Active Scans',          value: activeScans.toString(),                                icon: Radio },
+  ];
+
   return (
     <div className="grid grid-cols-4 gap-4">
       {stats.map((stat) => {
@@ -72,16 +53,14 @@ export function StatCards() {
         return (
           <div
             key={stat.label}
-            className="bg-[#16181F] rounded-lg p-6 hover:bg-[#1A1C23] transition-colors"
+            className="bg-surface-2 rounded-lg p-6 hover:bg-[#1A1C23] transition-colors"
           >
             <div className="flex items-start justify-between mb-3">
-              <Icon className="w-5 h-5 text-[#6B7280]" />
-              {stat.trend && <MiniSparkline data={stat.trend} />}
+              <Icon className="w-5 h-5 text-muted" />
+              <MiniSparkline data={PLACEHOLDER_TREND} />
             </div>
-            <div className="text-3xl font-semibold text-white mb-1">
-              {stat.value}
-            </div>
-            <div className="text-sm text-[#6B7280]">{stat.label}</div>
+            <div className="text-3xl font-semibold text-foreground mb-1">{stat.value}</div>
+            <div className="text-sm text-muted">{stat.label}</div>
           </div>
         );
       })}

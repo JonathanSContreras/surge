@@ -1,4 +1,4 @@
-import { Router, Server, Monitor, Shield, Cpu, HelpCircle, LucideIcon } from 'lucide-react';
+import { Router, Server, Monitor, Shield, Cpu, HelpCircle, Network, LucideIcon } from 'lucide-react';
 import { DeviceType } from '../types/network-topology';
 
 export const DEVICE_ICONS: Record<DeviceType, LucideIcon> = {
@@ -9,6 +9,7 @@ export const DEVICE_ICONS: Record<DeviceType, LucideIcon> = {
   workstation: Monitor,
   iot: Cpu,
   unknown: HelpCircle,
+  subnet: Network,
 };
 
 export function getDeviceIcon(deviceType: DeviceType): LucideIcon {

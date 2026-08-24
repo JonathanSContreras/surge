@@ -11,24 +11,25 @@ interface NetworkGraphForceProps {
   hoveredDeviceId?: string | null;
   onNodeClick?: (deviceId: string) => void;
   onNodeHover?: (deviceId: string | null) => void;
+  pendingColors?: boolean;  // when true, render all nodes neutral grey (scoring not yet confirmed)
 }
 
 const MIN_ZOOM = 0.2;
 const MAX_ZOOM = 5;
 const ZOOM_SENSITIVITY = 0.001;
 
+const PENDING_NODE_COLOR = '#374151';  // neutral grey used when scoring not yet confirmed
+
 export function NetworkGraphForce({
   topology,
   hoveredDeviceId,
   onNodeClick,
   onNodeHover,
+  pendingColors = false,
 }: NetworkGraphForceProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
   const [dimensions, setDimensions] = useState({ width: 600, height: 400 });
-  const [mode, setMode] = useState<'Live' | 'Demo'>('Live');
-  const [progress, setProgress] = useState(67);
-  const [elapsed, setElapsed] = useState(142);
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
   const [nodes, setNodes] = useState<ForceNode[]>([]);
@@ -49,14 +50,6 @@ export function NetworkGraphForce({
     zoomRef.current = 1;
     setZoomLevel(1);
   }, [dimensions]);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setProgress((prev) => (prev >= 100 ? 0 : prev + 1));
-      setElapsed((prev) => prev + 1);
-    }, 2000);
-    return () => clearInterval(interval);
-  }, []);
 
   useEffect(() => {
     const updateDimensions = () => {
@@ -270,27 +263,9 @@ export function NetworkGraphForce({
   const { width, height } = dimensions;
 
   return (
-    <div className="bg-[#13151C] rounded-lg h-full flex flex-col">
-      <div className="p-4 flex items-center justify-between border-b border-[#1F2937]">
-        <h2 className="font-semibold text-white">Network Topology</h2>
-        <div className="flex items-center gap-0 bg-[#0F1117] rounded p-0.5">
-          <button
-            onClick={() => setMode('Live')}
-            className={`px-3 py-1 rounded text-xs font-medium transition-all ${
-              mode === 'Live' ? 'bg-[#16181F] text-white' : 'text-[#6B7280] hover:text-white'
-            }`}
-          >
-            Live
-          </button>
-          <button
-            onClick={() => setMode('Demo')}
-            className={`px-3 py-1 rounded text-xs font-medium transition-all ${
-              mode === 'Demo' ? 'bg-[#16181F] text-white' : 'text-[#6B7280] hover:text-white'
-            }`}
-          >
-            Demo
-          </button>
-        </div>
+    <div className="bg-surface-1 rounded-lg h-full flex flex-col">
+      <div className="p-4 flex items-center justify-between border-b border-border">
+        <h2 className="font-semibold text-foreground">Network Topology</h2>
       </div>
 
       <div
@@ -322,9 +297,9 @@ export function NetworkGraphForce({
               <path
                 d="M 40 0 L 0 0 0 40"
                 fill="none"
-                stroke="#1F2937"
+                style={{ stroke: 'var(--border)' }}
                 strokeWidth="0.5"
-                opacity="0.3"
+                opacity="0.5"
               />
             </pattern>
             <filter id="glow-critical" x="-50%" y="-50%" width="200%" height="200%">
@@ -347,12 +322,12 @@ export function NetworkGraphForce({
                 <motion.path
                   key={i}
                   d={getCurvedPath(edge)}
-                  stroke={isHighlighted ? '#00E676' : '#2D3748'}
+                  stroke={isHighlighted ? 'var(--accent)' : 'var(--border-light)'}
                   strokeWidth={isHighlighted ? '2.5' : '1.5'}
                   fill="none"
                   opacity={hasAnyHover ? (isHighlighted ? 1 : 0.2) : 0.6}
                   animate={{
-                    stroke: isHighlighted ? '#00E676' : '#2D3748',
+                    stroke: isHighlighted ? 'var(--accent)' : '#2D3748',
                     strokeWidth: isHighlighted ? 2.5 : 1.5,
                     opacity: hasAnyHover ? (isHighlighted ? 1 : 0.2) : 0.6,
                   }}
@@ -367,12 +342,65 @@ export function NetworkGraphForce({
 
               const isHovered = hoveredDeviceId === node.id || hoveredNode === node.id;
               const isSelected = selectedNode === node.id;
-              const isCritical = node.severity === 'critical';
+              const strokeW = (isHovered || isSelected ? 3 : 2) / Math.max(zoomLevel, 0.5);
+
+              // Subnet nodes render as dashed rounded rectangles with a label
+              if (node.deviceType === 'subnet') {
+                const SUBNET_COLOR = '#6366F1';
+                const subnetW = 90 / Math.max(zoomLevel, 0.5);
+                const subnetH = 26 / Math.max(zoomLevel, 0.5);
+                const rx = 5 / Math.max(zoomLevel, 0.5);
+                const fontSize = 8.5 / Math.max(zoomLevel, 0.5);
+                const dashLen = 4 / Math.max(zoomLevel, 0.5);
+                const gapLen = 2.5 / Math.max(zoomLevel, 0.5);
+                const label = node.hostname ?? node.ip;
+                return (
+                  <motion.g
+                    key={node.id}
+                    data-graph-node
+                    animate={{ scale: isHovered || isSelected ? 1.06 : 1 }}
+                    transition={{ duration: 0.2 }}
+                    style={{ transformOrigin: `${node.x}px ${node.y}px` }}
+                  >
+                    <rect
+                      x={node.x - subnetW / 2}
+                      y={node.y - subnetH / 2}
+                      width={subnetW}
+                      height={subnetH}
+                      rx={rx}
+                      fill="var(--surface-2)"
+                      stroke={isHovered || isSelected ? '#818CF8' : SUBNET_COLOR}
+                      strokeWidth={strokeW}
+                      strokeDasharray={`${dashLen} ${gapLen}`}
+                      style={{ cursor: 'pointer' }}
+                      onMouseEnter={() => handleNodeHover(node.id)}
+                      onMouseLeave={() => handleNodeHover(null)}
+                      onClick={() => handleNodeClick(node.id)}
+                      data-graph-node
+                    />
+                    <text
+                      x={node.x}
+                      y={node.y}
+                      textAnchor="middle"
+                      dominantBaseline="middle"
+                      fill={SUBNET_COLOR}
+                      fontSize={fontSize}
+                      fontFamily="monospace"
+                      fontWeight="600"
+                      style={{ pointerEvents: 'none', userSelect: 'none' }}
+                    >
+                      {label}
+                    </text>
+                  </motion.g>
+                );
+              }
+
+              const isCritical = !pendingColors && node.severity === 'critical';
+              const nodeColor = pendingColors ? PENDING_NODE_COLOR : (SEVERITY_COLORS[node.severity] ?? PENDING_NODE_COLOR);
               const DeviceIcon = getDeviceIcon(node.deviceType);
               // Scale node radius inversely with zoom so nodes stay visually consistent
               const nodeRadius = 16 / Math.max(zoomLevel, 0.5);
               const iconSize = 16 / Math.max(zoomLevel, 0.5);
-              const strokeW = (isHovered || isSelected ? 3 : 2) / Math.max(zoomLevel, 0.5);
 
               return (
                 <g key={node.id} data-graph-node>
@@ -381,7 +409,7 @@ export function NetworkGraphForce({
                       cx={node.x}
                       cy={node.y}
                       r={24 / Math.max(zoomLevel, 0.5)}
-                      fill={SEVERITY_COLORS[node.severity]}
+                      fill={nodeColor}
                       opacity="0.15"
                       filter="url(#glow-critical)"
                     />
@@ -390,14 +418,14 @@ export function NetworkGraphForce({
                     cx={node.x}
                     cy={node.y}
                     r={nodeRadius}
-                    fill="#16181F"
-                    stroke={SEVERITY_COLORS[node.severity]}
+                    stroke={nodeColor}
                     strokeWidth={strokeW}
                     animate={{
                       scale: isHovered || isSelected ? 1.15 : 1,
                     }}
                     transition={{ duration: 0.2 }}
                     style={{
+                      fill: 'var(--surface-2)',
                       transformOrigin: `${node.x}px ${node.y}px`,
                       cursor: 'pointer',
                     }}
@@ -409,7 +437,7 @@ export function NetworkGraphForce({
                   <g transform={`translate(${node.x - iconSize / 2}, ${node.y - iconSize / 2})`}>
                     <DeviceIcon
                       size={iconSize}
-                      color={SEVERITY_COLORS[node.severity]}
+                      color={nodeColor}
                       style={{ pointerEvents: 'none' }}
                     />
                   </g>
@@ -423,21 +451,21 @@ export function NetworkGraphForce({
         <div className="absolute bottom-3 right-3 flex flex-col gap-1 z-20">
           <button
             onClick={zoomIn}
-            className="w-7 h-7 bg-[#1F2937]/90 hover:bg-[#374151] rounded flex items-center justify-center text-white text-sm transition-colors border border-[#374151]/50"
+            className="w-7 h-7 bg-surface-2/90 hover:bg-surface-3 rounded flex items-center justify-center text-foreground text-sm transition-colors border border-border"
             title="Zoom in"
           >
             +
           </button>
           <button
             onClick={resetView}
-            className="w-7 h-7 bg-[#1F2937]/90 hover:bg-[#374151] rounded flex items-center justify-center text-[#9CA3AF] text-[10px] font-mono transition-colors border border-[#374151]/50"
+            className="w-7 h-7 bg-surface-2/90 hover:bg-surface-3 rounded flex items-center justify-center text-muted text-[10px] font-mono transition-colors border border-border"
             title="Reset view"
           >
             {Math.round(zoomLevel * 100)}%
           </button>
           <button
             onClick={zoomOut}
-            className="w-7 h-7 bg-[#1F2937]/90 hover:bg-[#374151] rounded flex items-center justify-center text-white text-sm transition-colors border border-[#374151]/50"
+            className="w-7 h-7 bg-surface-2/90 hover:bg-surface-3 rounded flex items-center justify-center text-foreground text-sm transition-colors border border-border"
             title="Zoom out"
           >
             −
@@ -450,8 +478,8 @@ export function NetworkGraphForce({
           if (!activeNode || activeNode.x === undefined || activeNode.y === undefined) return null;
 
           const screen = graphToScreen(activeNode.x, activeNode.y);
-          const tooltipWidth = 200;
-          const tooltipHeight = 150;
+          const tooltipWidth = 220;
+          const tooltipHeight = 220;
           const offset = 30;
 
           const containerEl = containerRef.current;
@@ -477,70 +505,72 @@ export function NetworkGraphForce({
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
               transition={{ duration: 0.15 }}
-              className="absolute bg-[#1F2937] rounded-lg p-3 shadow-xl border border-[#374151] pointer-events-none z-10"
+              className="absolute bg-surface-2 rounded-lg p-3 shadow-xl border border-border pointer-events-none z-10"
               style={{
                 left: `${left}px`,
                 top: `${top}px`,
                 maxWidth: `${tooltipWidth}px`,
               }}
             >
-              <div className="flex flex-col gap-1.5 min-w-[150px]">
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-xs text-[#9CA3AF] font-medium">IP Address</span>
-                  <span className="text-sm text-white font-mono">{activeNode.ip}</span>
-                </div>
-                {activeNode.hostname && (
+              {activeNode.deviceType === 'subnet' ? (
+                <div className="flex flex-col gap-1.5 min-w-[150px]">
                   <div className="flex items-center justify-between gap-3">
-                    <span className="text-xs text-[#9CA3AF] font-medium">Hostname</span>
-                    <span className="text-sm text-white font-mono">{activeNode.hostname}</span>
+                    <span className="text-xs text-muted-foreground font-medium">Type</span>
+                    <span className="text-xs text-foreground" style={{ color: '#6366F1' }}>Network Subnet</span>
                   </div>
-                )}
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-xs text-[#9CA3AF] font-medium">Device Type</span>
-                  <span className="text-xs text-white capitalize">{activeNode.deviceType}</span>
-                </div>
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-xs text-[#9CA3AF] font-medium">Severity</span>
-                  <span
-                    className="text-xs font-semibold px-2 py-0.5 rounded capitalize"
-                    style={{
-                      backgroundColor: `${SEVERITY_COLORS[activeNode.severity]}20`,
-                      color: SEVERITY_COLORS[activeNode.severity],
-                    }}
-                  >
-                    {activeNode.severity}
-                  </span>
-                </div>
-                {activeNode.description && (
-                  <div className="mt-1 pt-1.5 border-t border-[#374151]">
-                    <p className="text-xs text-[#9CA3AF]">{activeNode.description}</p>
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-xs text-muted-foreground font-medium">Subnet</span>
+                    <span className="text-sm text-foreground font-mono">{activeNode.hostname ?? activeNode.ip}</span>
                   </div>
-                )}
-              </div>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-1.5 min-w-[150px]">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-xs text-muted-foreground font-medium">IP Address</span>
+                    <span className="text-sm text-foreground font-mono">{activeNode.ip}</span>
+                  </div>
+                  {activeNode.hostname && (
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-xs text-muted-foreground font-medium">Hostname</span>
+                      <span className="text-sm text-foreground font-mono">{activeNode.hostname}</span>
+                    </div>
+                  )}
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-xs text-muted-foreground font-medium">Device Type</span>
+                    <span className="text-xs text-foreground capitalize">{activeNode.deviceType ?? 'unknown'}</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-xs text-muted-foreground font-medium">Severity</span>
+                    <span
+                      className="text-xs font-semibold px-2 py-0.5 rounded capitalize"
+                      style={{
+                        backgroundColor: `${SEVERITY_COLORS[activeNode.severity]}20`,
+                        color: SEVERITY_COLORS[activeNode.severity],
+                      }}
+                    >
+                      {activeNode.severity}
+                    </span>
+                  </div>
+                  {activeNode.description && (
+                    <div className="mt-1 pt-1.5 border-t border-border">
+                      <p className="text-xs text-muted-foreground">{activeNode.description}</p>
+                    </div>
+                  )}
+                </div>
+              )}
             </motion.div>
           );
         })()}
       </div>
 
-      <div className="p-4 border-t border-[#1F2937]">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-xs text-[#6B7280]">
-            Active Scan Progress {simulationActive && '(Calculating layout...)'}
+      <div className="p-4 border-t border-border">
+        <div className="flex items-center justify-between">
+          <span className="text-xs text-muted">
+            {simulationActive ? 'Calculating layout…' : `${nodes.length} nodes · ${edges.length} connections`}
           </span>
-          <div className="flex items-center gap-3">
-            <span className="text-xs text-[#6B7280]">
-              {Math.floor(elapsed / 60)}:{(elapsed % 60).toString().padStart(2, '0')} elapsed
-            </span>
-            <span className="text-xs font-semibold text-white">{progress}%</span>
-          </div>
-        </div>
-        <div className="h-1 bg-[#1F2937] rounded-full overflow-hidden">
-          <motion.div
-            className="h-full bg-[#00E676]"
-            initial={{ width: 0 }}
-            animate={{ width: `${progress}%` }}
-            transition={{ duration: 0.3 }}
-          />
+          <span className="text-xs text-muted">
+            {topology.networkName ?? 'Network Topology'}
+          </span>
         </div>
       </div>
     </div>

@@ -1,4 +1,4 @@
-export type DeviceType = 'router' | 'switch' | 'firewall' | 'server' | 'workstation' | 'iot' | 'unknown';
+export type DeviceType = 'router' | 'switch' | 'firewall' | 'server' | 'workstation' | 'iot' | 'unknown' | 'subnet';
 export type Severity = 'low' | 'medium' | 'high' | 'critical';
 
 export interface NetworkDevice {
