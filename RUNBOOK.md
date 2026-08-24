@@ -135,6 +135,31 @@ Expected reasons it skips, both normal and logged plainly:
   scan can run longer)
 - the API was unreachable
 
+### A service won't start, exit code 78 (`EX_CONFIG`), and there is no log
+
+This has a single cause, and the missing log *is* the clue. Any launchd job
+with a `UserName` set runs as that user, but launchd opens its
+`StandardOutPath` / `StandardErrorPath` **as that user, before running the
+program**. If the log file is owned by root, the open fails, launchd aborts the
+job, and nothing gets written — because writing the log is what failed.
+
+Find who owns the log the job wants:
+
+```bash
+/usr/libexec/PlistBuddy -c "Print :StandardOutPath" /Library/LaunchDaemons/<job>.plist
+ls -la <that path>
+```
+
+Fix by handing the file to the user the job runs as:
+
+```bash
+sudo chown hcu.cose:admin <that path>
+sudo launchctl kickstart -k system/<job>
+```
+
+Bitten `com.surge.web` and Ollama. It appears whenever something is installed
+or started with `sudo` and later switched to run as a normal user.
+
 ### The backend keeps restarting, exit code 3
 
 Exit 3 means the server never finished starting. Two common causes:
