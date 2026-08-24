@@ -1,0 +1,34 @@
+.env
+**/__pycache__/
+data/merged_cve.csv
+data/processed_cve_data.csv
+/scan_results
+log/scan_dumps.txt
+log/surge_log.log
+
+# runtime artifacts
+output/
+cvs_data_debug.csv
+vuln_scoring.txt
+final_state_result.txt
+
+# virtual environment
+.venv/
+venv/
+
+# delete after code is fully polished
+/dump
+/fixes
+test_dashboard_payload.py
+fake_vuln_data.py
+json_print.txt
+lst.txt
+
+report
+log
+# local database + OS cruft
+*.db
+*.sqlite
+*.sqlite3
+.DS_Store
+**/.DS_Store

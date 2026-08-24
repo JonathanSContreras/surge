@@ -1,0 +1,24 @@
+**Network Summary**  
+The subnet 192.168.1.0/24 contains 10 live hosts (≈4 % of the 256‑address space).  The hosts are a mix of consumer devices (router, Roku, iRobot, iPad, Nintendo), a Raspberry Pi running Pi‑hole, a Windows workstation with VMware services, and several unknown or partially‑visible devices.  The most common open ports are 53, 80, 443 (router), 22/53 (Pi‑hole), 7000/9080 (Roku), 135/139/445/902/912/5357 (Windows/VMware), and 49152/62078 (tcpwrapped on a few hosts).  OS fingerprints indicate Linux (OpenWrt, Raspberry Pi), Windows 10/11/Server 2022, and Android (Chromecast).  Several hosts show many filtered ports, suggesting aggressive firewalling or hidden services.
+
+**Key Observations**  
+- **Router (192.168.1.1 / 24:41:FE:10:27:11)** – Open HTTP/HTTPS with a “Fios Router” web UI; likely a broadband gateway.  
+- **Pi‑hole (192.168.1.152 / D8:3A:DD:ED:73:2F)** – Open SSH (OpenSSH 10.0p2) and DNS (dnsmasq 2.92test21).  
+- **Roku (192.168.1.160 / D4:BE:DC:80:3A:7E)** – Open RTSP (AirTunes rtspd 377.40.00) and glrpc.  
+- **Windows workstation (192.168.1.159)** – SMB ports 135/139/445, VMware auth (902/912), and UPnP HTTP (5357). Vulnerability scripts report no critical SMB flaws but note potential for exploitation via VMware services.  
+- **iPad (192.168.1.166 / DE:BD:4C:22:44:B9)** – tcpwrapped on 49152/62078; likely a Windows‑based device or a Windows VM.  
+- **Unknown devices (192.168.1.171 / 82:87:18:BE:F6:F1, 192.168.1.174 / 2A:5E:43:B4:C1:93)** – tcpwrapped on 49152/62078; many filtered ports.  
+- **iRobot (192.168.1.164 / 50:14:79:A0:A2:72)** – No ports reported; likely a network‑connected vacuum with a closed firewall.  
+- **Nintendo (192.168.1.176 / EC:C4:0D:F5:01:C2)** – No ports discovered; possibly a handheld console or a device with a closed firewall.  
+- **Anomalies** – Several hosts (e.g., 192.168.1.156, 192.168.1.166, 192.168.1.176) show no open ports despite being up, suggesting aggressive filtering or mis‑reported state.  The earlier scan timed out on the full subnet, but the final scan succeeded, indicating that the network is stable but may have intermittent packet loss.
+
+**Recommended Next Actions**  
+1. **Deepen OS and service fingerprinting** – Run `nmap -sV -O -p-` on the hosts with tcpwrapped (iPad, 192.168.1.171, 192.168.1.174) to identify the underlying OS and any hidden services.  
+2. **SMB enumeration on the Windows workstation** – Use `nmap --script smb-enum-shares,smb-enum-users -p 139,445 192.168.1.159` and consider a SMBv1/SMB2/SMB3 audit to check for weak credentials or misconfigurations.  
+3. **Vulnerability assessment of the router** – Scan the router’s HTTP/HTTPS endpoints with `nmap --script http-vuln* -p 80,443 192.168.1.1` and check for default credentials or firmware updates.  
+4. **Roku and Chromecast checks** – Run `nmap -sV -p 7000,9080 192.168.1.160` and `nmap -sV -p 7000,9080 192.168.1.160` again, then use `nmap --script rtmp,rtsp-*` to probe for known Roku/Chromecast exploits.  
+5. **Pi‑hole hardening** – Verify SSH key authentication, disable root login, and ensure the Pi‑hole is running the latest version.  
+6. **UDP scanning** – Execute `nmap -sU -p- 192.168.1.0/24` to uncover any hidden UDP services, especially on the filtered hosts.  
+7. **Log and monitor** – Enable logging on the router and Windows workstation to detect any anomalous activity, and consider deploying a lightweight IDS (e.g., Snort) on the Pi‑hole for network traffic inspection.  
+
+These steps will confirm the true service landscape, expose any misconfigurations or vulnerabilities, and provide a solid foundation for further penetration testing or hardening.

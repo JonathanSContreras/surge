@@ -1,0 +1,32 @@
+**Network Summary**  
+The subnet 192.168.1.0/24 contains 9 live hosts (10 MAC‑based devices were also detected but only 9 IPs responded to ARP).  
+- **Router / Gateway** – 192.168.1.1 (CR200A, Asus RT‑AC66U, OpenWrt 21/22).  
+- **DNS / Ad‑blocker** – 192.168.1.152 (pi.hole, OpenWrt, OpenSSH, dnsmasq).  
+- **Windows workstation** – 192.168.1.159 (Windows 10/11, SMB, VMware‑auth, UPnP).  
+- **iOS devices** – 192.168.1.162, 192.168.1.171, 192.168.1.174 (iPhone, Apple iOS 15, tcpwrapped on high ports).  
+- **Nintendo Switch** – 192.168.1.176 (no open ports detected).  
+- **iRobot vacuum** – 192.168.1.164 (no open ports detected).  
+- **Unknown devices** – 192.168.1.153, 192.168.1.156, 192.168.1.166 (no services reported).  
+
+Open ports are limited to the router (53, 80, 443), the pi‑hole (22, 53), the Windows PC (135, 139, 445, 902, 912, 5357), and the iOS devices (49152, 62078). All other hosts show no open TCP services in the default scan.
+
+**Key Observations**  
+- The router exposes DNS and HTTPS, with a valid Verizon Fios certificate.  
+- The pi‑hole runs OpenSSH 10.0p2 and dnsmasq 2.92test21; the SSH service is reachable on port 22.  
+- The Windows PC is a typical Windows 10/11 machine with SMB (ports 135/139/445) and VMware‑auth services; SMB security mode is “message signing enabled but not required.”  
+- iOS devices are only reachable on high, tcpwrapped ports (49152, 62078); no standard services are exposed.  
+- The iRobot vacuum and Nintendo Switch show no open ports, suggesting they are behind a firewall or use non‑standard ports.  
+- Several hosts (e.g., 192.168.1.153, 192.168.1.156, 192.168.1.166) have no services reported, yet OS detection indicates iOS or Windows, implying possible port filtering or hidden services.  
+- The scan timed out on the more aggressive `-A` + `-sV` + scripts runs, but the plain `-A` scan succeeded, indicating that the network is somewhat restrictive to heavy traffic.
+
+**Recommended Next Actions**  
+1. **Targeted SMB enumeration on 192.168.1.159** – run `nmap -p 1-65535 -sV --script smb* -T4 192.168.1.159` to identify SMB vulnerabilities (e.g., MS17‑010, SMB signing enforcement).  
+2. **SSH key‑scan on the pi‑hole** – use `ssh-keyscan 192.168.1.152` and check for weak host keys or default credentials.  
+3. **Router firmware audit** – manually verify the router’s firmware version (OpenWrt 21/22) and check for known CVEs; consider scanning for exposed management interfaces (e.g., 8080, 8443).  
+4. **High‑port scan on iOS devices** – run `nmap -p 1-65535 -sS -T4 192.168.1.162,192.168.1.171,192.168.1.174` to discover any hidden services or misconfigurations.  
+5. **IoT device checks** – use `nmap --script "default or broadcast or vuln"` on the iRobot and Nintendo Switch IPs to surface any exposed APIs or default credentials.  
+6. **Re‑scan unknown hosts** – perform a full TCP/UDP scan (`-sS -sU -p 1-65535 -T4`) on 192.168.1.153, 192.168.1.156, 192.168.1.166 to confirm whether services are truly absent or simply filtered.  
+7. **Vulnerability assessment** – once services are confirmed, run `nmap --script vuln -p <open_ports>` on each host to surface known exploits.  
+8. **Monitor for anomalies** – set up passive monitoring on the router to detect any unusual outbound connections from the iOS devices or the Windows PC.  
+
+These steps will provide a deeper understanding of the exposed services, validate OS fingerprints, and surface any exploitable vulnerabilities in the current network.

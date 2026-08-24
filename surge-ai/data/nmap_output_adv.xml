@@ -1,0 +1,81 @@
+<?xml version="1.0"?>
+<!DOCTYPE nmaprun>
+<nmaprun scanner="nmap" args="nmap -sV -O -oX test_scan.xml 10.0.0.0/30" start="1733765000" version="7.94" xmloutputversion="1.05">
+  <scaninfo type="syn" protocol="tcp" numservices="1000" services="1-1000"/>
+
+  <!-- Host with multiple addresses and multiple hostnames -->
+  <host>
+    <status state="up"/>
+    <address addr="10.0.0.1" addrtype="ipv4"/>
+    <address addr="00:1A:2B:3C:4D:5E" addrtype="mac" vendor="Cisco"/>
+    <hostnames>
+      <hostname name="gateway.local" type="PTR"/>
+      <hostname name="router.example.com" type="user"/>
+    </hostnames>
+    <ports>
+      <port protocol="tcp" portid="80">
+        <state state="open" reason="syn-ack"/>
+        <service name="http" product="nginx" version="1.18.0"/>
+      </port>
+      <port protocol="tcp" portid="443">
+        <state state="filtered" reason="no-response"/>
+        <service name="https"/>
+      </port>
+    </ports>
+    <os>
+      <osmatch name="Linux 3.10" accuracy="88"/>
+      <osmatch name="Linux 4.x" accuracy="85"/>
+    </os>
+  </host>
+
+  <!-- Host with no OS section -->
+  <host>
+    <status state="up"/>
+    <address addr="10.0.0.2" addrtype="ipv4"/>
+    <hostnames>
+      <hostname name="fileserver.local" type="PTR"/>
+    </hostnames>
+    <ports>
+      <port protocol="tcp" portid="21">
+        <state state="open" reason="syn-ack"/>
+        <service name="ftp" product="vsftpd" version="3.0.3"/>
+      </port>
+      <port protocol="tcp" portid="22">
+        <state state="closed" reason="reset"/>
+      </port>
+    </ports>
+  </host>
+
+  <!-- Host with extraports and missing service element -->
+  <host>
+    <status state="up"/>
+    <address addr="10.0.0.3" addrtype="ipv4"/>
+    <hostnames/>
+    <ports>
+      <extraports state="closed" count="997">
+        <extrareasons reason="reset" count="997"/>
+      </extraports>
+      <port protocol="tcp" portid="25">
+        <state state="open" reason="syn-ack"/>
+      </port>
+      <port protocol="tcp" portid="110">
+        <state state="open" reason="syn-ack"/>
+        <service name="pop3" product="Dovecot pop3d" version="2.3.7"/>
+      </port>
+    </ports>
+    <os>
+      <osmatch name="FreeBSD 12" accuracy="90"/>
+    </os>
+  </host>
+
+  <!-- Host down -->
+  <host>
+    <status state="down"/>
+    <address addr="10.0.0.4" addrtype="ipv4"/>
+  </host>
+
+  <runstats>
+    <finished time="1733765060" elapsed="60"/>
+    <hosts up="3" down="1" total="4"/>
+  </runstats>
+</nmaprun>
