@@ -30,8 +30,8 @@ engine = create_async_engine(
     DATABASE_URL,
     echo=False,
     future=True,
-    # Postgres lives on another host across the tailnet; a multi-hour scan
-    # can idle a pooled connection long enough for it to be dropped.
+    # Postgres is local, but a multi-hour Deep scan can still idle a pooled
+    # connection long enough for it to be dropped. Cheap insurance.
     pool_pre_ping=True,
     # SQLite needs check_same_thread=False via connect_args
     **({} if _is_postgres else {"connect_args": {"check_same_thread": False}}),

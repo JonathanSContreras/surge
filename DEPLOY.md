@@ -50,8 +50,9 @@ That is why the local model is `qwen3:4b` (~2.5 GB at Q4_K_M) and not
 
 ```bash
 brew install nmap python@3.13 node postgresql@16 ollama
-sudo tailscale up
-tailscale ip -4          # note this — the dashboard build needs it
+
+# The address the dashboard will be reached at. Usually the LAN IP:
+ipconfig getifaddr en0   # e.g. 10.10.160.55  — note this, the build needs it
 ```
 
 ## 2. Postgres
@@ -111,9 +112,19 @@ on this hardware will blow through it.
 ## 5. Dashboard
 
 `NEXT_PUBLIC_*` are compiled into the bundle, so the address must be right
-*before* you build. It is the Mac mini's **tailnet** address, not `localhost` —
-the browser is on someone else's laptop, where `localhost` would mean their
-machine.
+*before* you build. It must be an address **the browser can reach**, which
+depends on where you view the dashboard from:
+
+| Viewing from | Use |
+|---|---|
+| the Mac mini itself (monitor attached) | `http://localhost:8000` |
+| a laptop on the same network | the mini's LAN IP, e.g. `http://10.10.160.55:8000` |
+| off-site | a tailnet address, or whatever remote access you set up |
+
+`localhost` only works if the browser is running *on the mini*. From any other
+machine it resolves to that machine, and the dashboard will sit there failing to
+fetch. Tailscale is entirely optional — it was only required back when the
+backend lived on a second host.
 
 Write `.env.local` with only the two public vars; do not copy the root `.env`,
 which carries the Postgres password and the OpenRouter key:
@@ -123,15 +134,15 @@ cd /opt/surge/web-page
 npm ci
 
 cat > .env.local <<'EOF'
-NEXT_PUBLIC_API_URL=http://macmini.your-tailnet.ts.net:8000
-NEXT_PUBLIC_WS_URL=ws://macmini.your-tailnet.ts.net:8000
+NEXT_PUBLIC_API_URL=http://10.10.160.55:8000
+NEXT_PUBLIC_WS_URL=ws://10.10.160.55:8000
 EOF
 
 npm run build
 npm start -- --hostname 0.0.0.0 --port 3000
 ```
 
-Dashboard: `http://macmini.your-tailnet.ts.net:3000`
+Dashboard: `http://<that same address>:3000`
 
 ## 6. Install the services
 
@@ -263,7 +274,8 @@ sudo launchctl kickstart -k system/com.surge.schedule
   moved. This is the easiest thing to get backwards in the split layout.
 - **The database is now across a network.** Both engines set `pool_pre_ping=True`
   so a connection idled out during a multi-hour Deep scan gets re-established
-  instead of throwing. If the tailnet drops mid-scan, the scan still fails —
+  instead of throwing. (Postgres is local now, so this is belt-and-braces.) If
+  the database goes away mid-scan the scan still fails —
   it'll show up as `failed` on the next API start, via the stale-scan cleanup
   in `api/main.py`.
 - **Scan artifacts live on the Mac mini.** `report/{timestamp}_{scan_id}/dashboard_data.json`
