@@ -1,5 +1,9 @@
 # Deploying Surge to the Mac mini
 
+> **Already deployed and just need to keep it running?** See
+> [RUNBOOK.md](RUNBOOK.md) — health checks, log locations, and what to do when
+> something breaks. This file is for building it from scratch.
+
 Everything runs on one machine: an Apple M2 Mac mini with 8 GB of unified
 memory. Backend, agent graph, nmap, Postgres, the local fallback model, and the
 Next.js dashboard.
