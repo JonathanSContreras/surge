@@ -207,6 +207,61 @@ macOS may also prompt for Full Disk Access the first time the daemon writes to
 
 ---
 
+## Power and unattended recovery
+
+The Mac mini is expected to stay powered on continuously, so the goal here is
+narrow: never sleep through a scan slot, and come back by itself if the building
+loses power.
+
+```bash
+# Boot automatically when power is restored. THIS is the one that matters for a
+# building outage — without it the mini stays off until someone presses the button.
+sudo pmset -a autorestart 1
+
+# Never sleep. An always-on box should not be sleeping at 09:00; if it does,
+# launchd fires the job late (on wake) rather than on time.
+sudo pmset -a sleep 0
+sudo pmset -a disksleep 0
+
+# Wake for network access, so you can still reach it over Tailscale.
+sudo pmset -a womp 1
+
+pmset -g            # verify: sleep 0, disksleep 0, autorestart 1, womp 1
+```
+
+Belt-and-braces, only useful if you decide to leave sleep enabled after all —
+wake five minutes before each slot. Weekday codes are MTWRF (R = Thursday):
+
+```bash
+sudo pmset repeat wakeorpoweron MTWRF 08:55:00
+```
+
+### FileVault will defeat all of this
+
+**Check `fdesetup status` on the Mac mini before relying on auto-restart.** With
+FileVault enabled, a reboot halts at the unlock screen and the OS never finishes
+starting, so no LaunchDaemon runs and no scan happens — the machine looks on but
+Surge is dead until somebody types a password at the console. `autorestart` does
+not help; it just gets you to the unlock prompt faster.
+
+For a headless lab machine that has to recover on its own, FileVault needs to be
+off. That is a real tradeoff — this box holds scan history and the OpenRouter key
+in `surge-ai/.env` — so it is a decision to make deliberately, not by default. If
+the data sensitivity means FileVault has to stay on, accept that power loss
+requires a manual unlock and don't pretend the schedule is unattended.
+
+### After a reboot, check these came back
+
+```bash
+sudo launchctl list | grep surge     # api, web, schedule
+brew services list | grep postgres   # must be 'started', not 'none'
+tail -20 /var/log/surge-schedule.log
+```
+
+The API and web daemons carry `RunAtLoad` + `KeepAlive`, so they return on their
+own. Postgres only does if it was registered with `brew services start`, not
+launched by hand.
+
 ## Operations
 
 ```bash
