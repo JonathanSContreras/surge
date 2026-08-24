@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Surge backend (FastAPI + the agent graph + nmap) on the Mac mini.
+
+  Install to /Library/LaunchDaemons/ — NOT ~/Library/LaunchAgents/. Two reasons:
+    1. LaunchDaemons run as root. nmap needs root for -sS (SYN scan) and -O
+       (OS detection), both of which the medium/high sanitizer tiers allow and
+       the recon agent regularly proposes. Without root nmap exits with
+       "You requested a scan type which requires root privileges" and the scan
+       comes back empty.
+    2. LaunchDaemons start at boot without anyone logging in. A headless Mac
+       mini that reboots overnight comes back on its own.
+
+  Adjust SURGE_ROOT paths below to wherever the repo actually lives.
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.surge.api</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/opt/surge/surge-ai/.venv/bin/uvicorn</string>
+        <string>api.main:app</string>
+        <string>--host</string>
+        <string>0.0.0.0</string>
+        <string>--port</string>
+        <string>8000</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <!-- Must be the surge-ai root: load_dotenv() reads ./.env, and several
+         constants are relative paths (./model, ./data, ./log, ./report). -->
+    <string>/opt/surge/surge-ai</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <!-- launchd's default PATH is /usr/bin:/bin:/usr/sbin:/sbin, which does
+             NOT include nmap. Without this the subprocess call in
+             execution/nmap_scanner.py fails with FileNotFoundError. -->
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    </dict>
+
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+
+    <key>StandardOutPath</key>
+    <string>/var/log/surge-api.log</string>
+    <key>StandardErrorPath</key>
+    <string>/var/log/surge-api.err.log</string>
+</dict>
+</plist>

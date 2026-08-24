@@ -1,0 +1,37 @@
+# Surge — HCU server half of the split deployment.
+#
+# The HCU server holds STATE and the MODEL. It does not scan and it does not
+# serve the site:
+#
+#   * db      — Postgres 16, the system of record for scans/devices/vulns/reports.
+#   * ollama  — NOT in this file. It stays running natively on the host (see
+#               DEPLOY.md Part A step 3); containerizing it would cut it off from
+#               the GPU/accelerator and buys nothing here.
+#
+# The Mac mini reaches both over the tailnet, so unlike the old single-host
+# layout Postgres CANNOT bind to 127.0.0.1 — it binds to this host's Tailscale
+# address only. Never 0.0.0.0: that would expose the DB to the campus network.
+#
+# Copy .env.example -> .env and fill in the HCU section before running.
+
+services:
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: surge
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: surge
+    ports:
+      # Tailscale IP only — reachable by the Mac mini, invisible to the LAN.
+      - "${HCU_TAILSCALE_IP}:5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U surge -d surge"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  pgdata:

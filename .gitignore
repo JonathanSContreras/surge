@@ -1,0 +1,71 @@
+# ---------------------------------------------------------------------------
+# Secrets — never commit. .env.example is the tracked template.
+# ---------------------------------------------------------------------------
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# ---------------------------------------------------------------------------
+# Dependencies / build output  (~3 GB — these are why the repo must ignore them)
+# ---------------------------------------------------------------------------
+**/.venv/
+**/venv/
+**/node_modules/
+**/.next/
+**/out/
+**/__pycache__/
+*.py[cod]
+*.egg-info/
+.pnp
+.pnp.*
+
+# ---------------------------------------------------------------------------
+# Scan output — regenerated every run, and it grows without bound.
+# report/ was 59 MB and scan_results/ 47 MB at the time this was written.
+# Individual final_state_result.json files reach 9 MB each.
+# ---------------------------------------------------------------------------
+surge-ai/report/
+surge-ai/scan_results/
+surge-ai/output/
+surge-ai/log/
+*.xml.gz
+
+# Local databases
+*.db
+*.sqlite
+*.sqlite3
+
+# ---------------------------------------------------------------------------
+# Kept deliberately:
+#   surge-ai/model/       — 596 KB, the trained XGBoost + encoders. Required at
+#                           runtime (loaded at import), so it MUST be tracked.
+#   surge-ai/data/cve.csv — 37 MB training data, already in history. Under
+#                           GitHub's 100 MB limit; removing it now wouldn't
+#                           shrink existing clones anyway.
+# ---------------------------------------------------------------------------
+
+# macOS
+.DS_Store
+**/.DS_Store
+
+# Editors
+.vscode/
+.idea/
+*.swp
+
+# Test/coverage
+/coverage
+.pytest_cache/
+.vitest/
+
+# ---------------------------------------------------------------------------
+# Capstone document drafts — superseded by Surge_Senior_Capstone_Final_Report.*
+# which IS tracked. Excluded to keep the clone lean: 4 draft revisions at
+# 8.8 MB each plus an 18 MB third-party example = 53 MB of dead weight, and
+# binary PDFs don't delta-compress, so each revision costs its full size.
+# The files remain on disk; they're simply not pushed.
+# ---------------------------------------------------------------------------
+Surge_Senior_Capstone_Final_Report_v*.pdf
+Senior Design FInal Report Example.pdf

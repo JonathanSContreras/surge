@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Runs a Surge scan at 09:00 and 15:00, Monday-Friday.
+
+  Weekday is 1=Mon .. 5=Fri (0 and 7 both mean Sunday). Two dicts under
+  StartCalendarInterval = two firings per matching day.
+
+  This is a LaunchDaemon rather than an Agent so it fires on a headless Mac mini
+  with nobody logged in. It does NOT need root itself — it only makes HTTP calls
+  to the local API, which is the thing that needs root for nmap — so it drops to
+  a normal user via UserName.
+
+  If the Mac is asleep at 09:00, launchd fires the job when it next wakes. If it
+  is fully powered off, that slot is missed; use `pmset repeat wakeorpoweron` if
+  the machine is expected to sleep.
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.surge.schedule</string>
+
+    <key>UserName</key>
+    <string>CHANGE-ME</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/opt/surge/surge-ai/.venv/bin/python</string>
+        <string>/opt/surge/deploy/macmini/scheduled_scan.py</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/opt/surge/surge-ai</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+        <key>SURGE_API</key>
+        <string>http://127.0.0.1:8000</string>
+        <!-- Pin the lab CIDR rather than relying on auto-detect for an unattended run. -->
+        <key>SURGE_TARGET</key>
+        <string></string>
+        <!-- 'quick' on purpose: deep scans run 3-5h and would overlap the next slot. -->
+        <key>SURGE_SCAN_TYPE</key>
+        <string>quick</string>
+        <!-- Dollars. Below this, scans fall back to the local model. -->
+        <key>SURGE_CREDIT_FLOOR</key>
+        <string>2.00</string>
+    </dict>
+
+    <key>StartCalendarInterval</key>
+    <array>
+        <dict><key>Weekday</key><integer>1</integer><key>Hour</key><integer>9</integer><key>Minute</key><integer>0</integer></dict>
+        <dict><key>Weekday</key><integer>2</integer><key>Hour</key><integer>9</integer><key>Minute</key><integer>0</integer></dict>
+        <dict><key>Weekday</key><integer>3</integer><key>Hour</key><integer>9</integer><key>Minute</key><integer>0</integer></dict>
+        <dict><key>Weekday</key><integer>4</integer><key>Hour</key><integer>9</integer><key>Minute</key><integer>0</integer></dict>
+        <dict><key>Weekday</key><integer>5</integer><key>Hour</key><integer>9</integer><key>Minute</key><integer>0</integer></dict>
+        <dict><key>Weekday</key><integer>1</integer><key>Hour</key><integer>15</integer><key>Minute</key><integer>0</integer></dict>
+        <dict><key>Weekday</key><integer>2</integer><key>Hour</key><integer>15</integer><key>Minute</key><integer>0</integer></dict>
+        <dict><key>Weekday</key><integer>3</integer><key>Hour</key><integer>15</integer><key>Minute</key><integer>0</integer></dict>
+        <dict><key>Weekday</key><integer>4</integer><key>Hour</key><integer>15</integer><key>Minute</key><integer>0</integer></dict>
+        <dict><key>Weekday</key><integer>5</integer><key>Hour</key><integer>15</integer><key>Minute</key><integer>0</integer></dict>
+    </array>
+
+    <!-- RunAtLoad is deliberately absent: loading the daemon should not kick off a scan. -->
+    <key>StandardOutPath</key>
+    <string>/var/log/surge-schedule.log</string>
+    <key>StandardErrorPath</key>
+    <string>/var/log/surge-schedule.log</string>
+</dict>
+</plist>

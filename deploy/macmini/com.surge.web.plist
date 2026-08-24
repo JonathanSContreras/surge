@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Surge dashboard (Next.js) on the Mac mini.
+
+  Install to /Library/LaunchDaemons/ so it survives reboot without a login.
+  Unlike the API this does NOT need root — it only serves HTTP — so it drops to
+  a normal user via UserName below. Set that to the Mac mini's login account.
+
+  Remember: NEXT_PUBLIC_* are baked in at BUILD time. This plist only *serves*
+  an already-built app. Changing the API address means re-running `npm run build`
+  and then `launchctl kickstart -k system/com.surge.web`.
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.surge.web</string>
+
+    <key>UserName</key>
+    <string>CHANGE-ME</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/usr/local/bin/npm</string>
+        <string>run</string>
+        <string>start</string>
+        <string>--</string>
+        <string>--hostname</string>
+        <string>0.0.0.0</string>
+        <string>--port</string>
+        <string>3000</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/opt/surge/web-page</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+        <key>NODE_ENV</key>
+        <string>production</string>
+    </dict>
+
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+
+    <key>StandardOutPath</key>
+    <string>/var/log/surge-web.log</string>
+    <key>StandardErrorPath</key>
+    <string>/var/log/surge-web.err.log</string>
+</dict>
+</plist>
