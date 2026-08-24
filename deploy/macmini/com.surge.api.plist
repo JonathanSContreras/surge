@@ -41,6 +41,21 @@
              execution/nmap_scanner.py fails with FileNotFoundError. -->
         <key>PATH</key>
         <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+
+        <!-- OpenMP crash guard. Three separate OpenMP runtimes end up in this
+             one process: torch/lib/libomp.dylib, sklearn/.dylibs/libomp.dylib,
+             and Homebrew's /opt/homebrew/opt/libomp/lib/libomp.dylib, which
+             xgboost dlopens via @rpath. Loading more than one is undefined
+             behaviour on macOS and segfaults inside libomp the first time
+             xgboost predicts on real data — i.e. only on scans that actually
+             found hosts, which is why it hides during empty test runs.
+             KMP_DUPLICATE_LIB_OK tolerates the duplicates; OMP_NUM_THREADS=1
+             keeps xgboost off the threaded paths that crash. Inference here is
+             a handful of CVEs against a 548 KB model, so the cost is nil. -->
+        <key>KMP_DUPLICATE_LIB_OK</key>
+        <string>TRUE</string>
+        <key>OMP_NUM_THREADS</key>
+        <string>1</string>
     </dict>
 
     <key>RunAtLoad</key>
