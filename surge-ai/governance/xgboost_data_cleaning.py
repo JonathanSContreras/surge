@@ -15,6 +15,45 @@ with open("./model/feature_schema.json", "r") as f:
 OHE_ENCODER = joblib.load("./model/ohe_encoder.pkl")
 TFIDF_ENCODER = joblib.load("./model/tfidf_encoder.pkl")
 
+
+def _verify_encoders() -> None:
+    """
+    Fail loudly if the pickled encoders no longer produce the feature layout the
+    XGBoost model was trained on.
+
+    These .pkl files were fitted under scikit-learn 1.3.0; requirements.txt pins
+    >=1.4.0, so every install unpickles across a version boundary and sklearn
+    emits InconsistentVersionWarning. Verified working on 1.8.0 and 1.9.0 — the
+    OneHotEncoder still yields its 24 training categories and the TF-IDF
+    vectorizer its 50-term vocabulary.
+
+    The danger is not today, it is a future sklearn that changes unpickling
+    semantics: the encoders would still load, produce a different width, and
+    align_features_to_xgb_model would quietly zero-fill the difference. The
+    scores would stay plausible and be wrong. This check turns that into a
+    startup failure instead.
+    """
+    n_ohe = sum(len(c) for c in getattr(OHE_ENCODER, "categories_", []))
+    expected_ohe = len([f for f in EXPECTED_FEATURES
+                        if f.startswith(("access_", "impact_"))])
+    if n_ohe != expected_ohe:
+        raise RuntimeError(
+            f"ohe_encoder.pkl yields {n_ohe} one-hot categories but the model "
+            f"schema expects {expected_ohe}. The encoder and model/xgb_regressor.json "
+            f"are out of sync — do not trust any CVSS prediction until this is fixed."
+        )
+
+    n_tfidf = len(getattr(TFIDF_ENCODER, "vocabulary_", {}))
+    expected_tfidf = len([f for f in EXPECTED_FEATURES if f.startswith("tfidf_name_")])
+    if n_tfidf != expected_tfidf:
+        raise RuntimeError(
+            f"tfidf_encoder.pkl has a {n_tfidf}-term vocabulary but the model "
+            f"schema expects {expected_tfidf} tfidf_name_* features."
+        )
+
+
+_verify_encoders()
+
 def align_features_to_xgb_model(df, expected_features):
     """
     Ensure dataframe has exact same columns as model expects, in same order.
