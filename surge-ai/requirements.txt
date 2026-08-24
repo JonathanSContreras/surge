@@ -7,6 +7,9 @@ langchain-openai>=0.2.0,<0.3.0
 langgraph>=0.2.0,<0.3.0
 
 # ML / Data
+# NOTE: on macOS, xgboost also needs the OpenMP runtime, which pip does NOT
+# provide:  brew install libomp
+# Without it `import xgboost` raises "Library not loaded: @rpath/libomp.dylib".
 xgboost>=2.0.0,<3.0.0
 sentence-transformers>=3.0.0,<4.0.0
 pandas>=2.1.0,<3.0.0

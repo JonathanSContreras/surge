@@ -48,8 +48,14 @@ That is why the local model is `qwen3:4b` (~2.5 GB at Q4_K_M) and not
 
 ## 1. Prerequisites
 
+`libomp` is not optional. XGBoost's macOS wheel links against `libomp.dylib`
+at runtime, but it is a Homebrew system library rather than a pip dependency —
+so `pip install xgboost` succeeds and then `import xgboost` fails with
+"Library not loaded: @rpath/libomp.dylib". That takes down the whole CVSS
+scoring path, and the failure only shows up mid-scan.
+
 ```bash
-brew install nmap python@3.13 node postgresql@16 ollama
+brew install nmap python@3.13 node postgresql@16 ollama libomp
 
 # The address the dashboard will be reached at. Usually the LAN IP:
 ipconfig getifaddr en0   # e.g. 10.10.160.55  — note this, the build needs it
