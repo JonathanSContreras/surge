@@ -27,6 +27,32 @@ import sys
 
 import requests
 
+# Load surge-ai/.env before reading any of the settings below.
+#
+# OPENROUTER_API_KEY lives in that file, NOT in the launchd plist, and launchd
+# hands a daemon a near-empty environment. Without this, credits_remaining()
+# finds no key, returns None, and the credit check silently degrades to a no-op
+# — so the automatic fallback to the local model would never fire when the
+# balance ran out, which is the one thing it exists to do.
+#
+# Resolved relative to THIS file (deploy/macmini/ -> repo root -> surge-ai/)
+# rather than the working directory, so it holds however the script is invoked.
+_ENV_PATH = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+    "surge-ai", ".env",
+)
+try:
+    from dotenv import load_dotenv
+    load_dotenv(_ENV_PATH)          # does not override real env vars
+except ImportError:                  # dotenv absent — fall back to a manual parse
+    if os.path.exists(_ENV_PATH):
+        with open(_ENV_PATH) as _f:
+            for _line in _f:
+                _line = _line.strip()
+                if _line and not _line.startswith("#") and "=" in _line:
+                    _k, _v = _line.split("=", 1)
+                    os.environ.setdefault(_k.strip(), _v.strip().strip('"').strip("'"))
+
 API         = os.getenv("SURGE_API",    "http://127.0.0.1:8000")
 TARGET      = os.getenv("SURGE_TARGET", "")          # blank => backend auto-detects via ARP/gateway
 SCAN_TYPE   = os.getenv("SURGE_SCAN_TYPE", "quick")  # quick|normal|deep|stealth
