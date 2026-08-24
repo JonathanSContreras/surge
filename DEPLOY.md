@@ -49,7 +49,7 @@ That is why the local model is `qwen3:4b` (~2.5 GB at Q4_K_M) and not
 ## 1. Prerequisites
 
 ```bash
-brew install nmap python@3.12 node postgresql@16 ollama
+brew install nmap python@3.13 node postgresql@16 ollama
 sudo tailscale up
 tailscale ip -4          # note this — the dashboard build needs it
 ```
@@ -75,7 +75,7 @@ nothing connects from another host.
 
 ```bash
 cd /opt/surge/surge-ai              # adjust to wherever the repo lives
-python3.12 -m venv .venv
+python3.13 -m venv .venv
 .venv/bin/pip install -r requirements.txt -r requirements-api.txt
 cp ../.env.example .env
 nano .env                           # fill in DATABASE_URL and OPENROUTER_API_KEY
