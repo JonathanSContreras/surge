@@ -135,6 +135,34 @@ Expected reasons it skips, both normal and logged plainly:
   scan can run longer)
 - the API was unreachable
 
+### A service ignores your edits to its .plist
+
+`launchctl print` shows what launchd is **actually running**. The .plist file
+shows what you **meant**. When they disagree, the file is a lie — launchd
+caches a job's configuration when it is first bootstrapped and never re-reads
+it, and `kickstart` only restarts the process with that cached copy.
+
+Compare them:
+
+```bash
+sudo launchctl print system/<job> | grep -E "username|environment" -A6
+/usr/libexec/PlistBuddy -c "Print" /Library/LaunchDaemons/<job>.plist
+```
+
+Reload properly — the `sleep` matters, unloading is asynchronous:
+
+```bash
+sudo launchctl bootout system/<job>
+sleep 2
+sudo launchctl bootstrap system /Library/LaunchDaemons/<job>.plist
+```
+
+This is why the 09:00 job silently failed for a day: the plist said
+`UserName = hcu.cose`, but launchd was still holding an earlier value naming a
+user that did not exist, so every firing died instantly with `EX_CONFIG`. Use
+`kickstart` after a **code** change; use `bootout`/`bootstrap` after a
+**configuration** change.
+
 ### A service won't start, exit code 78 (`EX_CONFIG`), and there is no log
 
 This has a single cause, and the missing log *is* the clue. Any launchd job
